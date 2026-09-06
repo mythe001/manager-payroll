@@ -39,6 +39,23 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 .modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
+
+/* Review & Summary Table Total Row Styling */
+.modal table tfoot tr th,
+.modal table tfoot tr td {
+  font-size: 1.15em !important;
+  font-weight: 800 !important;
+  color: #1b5e20 !important;
+  background-color: #e8f5e9 !important;
+  border-top: 2px solid #a5d6a7 !important;
+  border-bottom: 2px solid #a5d6a7 !important;
+  padding: 10px 8px !important;
+}
+
+.modal table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
 </style>
 </head>
@@ -219,13 +236,16 @@ function render(){
     </tr>`;
   }).join('')}</tbody></table>`;
 
-  document.querySelectorAll('.pay-input').forEach(input=>input.addEventListener('input',()=>{
-    const row = input.closest('tr'), id = row.dataset.id, field = input.dataset.field, v = getValues(id);
-    v[field] = num(input.value);
-    updateRow(id);
-    updateSummary();
-    setButtons();
-  }));
+  document.querySelectorAll('.pay-input').forEach(input => {
+    input.addEventListener('focus', () => input.select());
+    input.addEventListener('input', () => {
+      const row = input.closest('tr'), id = row.dataset.id, field = input.dataset.field, v = getValues(id);
+      v[field] = num(input.value);
+      updateRow(id);
+      updateSummary();
+      setButtons();
+    });
+  });
 
   document.querySelectorAll('.exclude-btn').forEach(btn => {
     btn.addEventListener('click', () => excludeEmployee(btn.dataset.exclude));
@@ -430,7 +450,7 @@ function reviewHtml(){
   }).join('');
 
   return `<div class="notice"><b>Review payroll summary below before writing to Manager.io.</b></div>
-    <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th>Gross</th><th>Deductions</th><th>Employer Contributions</th><th>Net Pay</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>Total</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
+    <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Employer Contributions</th><th style="text-align:right">Net Pay</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
     <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Confirm & Create ${state.employees.length} Payslip${state.employees.length===1?'':'s'}</button></div>`;
 }
 
@@ -445,7 +465,7 @@ function previewPayslips(){
 
   modalTitle.textContent = 'Review Payslips';
   modalIntro.textContent = `${state.employees.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
-  modalBody.innerHTML = `<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  modalBody.innerHTML = `<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th style="text-align:right">Daily Rate</th><th style="text-align:right">Basic</th><th style="text-align:right">OT</th><th style="text-align:right">Holiday</th><th style="text-align:right">Allowances</th><th style="text-align:right">Commission</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Net</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th colspan="6"></th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>`;
   modalBackdrop.style.display = 'flex';
 }
 
@@ -480,8 +500,7 @@ async function confirmCreatePayslips(){
     writeStatus.textContent = `✓ ${payload.Values.length} payslip(s) created in Manager`;
     modalTitle.textContent = 'Payslips Created';
     modalIntro.textContent = 'Payslips were successfully posted to Manager.io.';
-    modalBody.innerHTML = `<div class="notice"><b>Success!</b> ${payload.Values.length} payslip(s) were created.</div><div class="success-actions"><button id="closeSuccessBtn" type="button">Close</button></div>`;
-    document.getElementById('closeSuccessBtn')?.addEventListener('click', () => modalBackdrop.style.display = 'none');
+    modalBody.innerHTML = `<div class="notice"><b>Success!</b> ${payload.Values.length} payslip(s) were created.</div>`;
   }catch(err){
     if(btn) btn.disabled = false;
     modalBody.innerHTML = `<div class="error"><b>Failed to create payslips:</b><br>${esc(err.message)}</div>`;
