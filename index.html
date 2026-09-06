@@ -35,7 +35,7 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
 .note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
-.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)
+.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
 .modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
@@ -43,7 +43,6 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </style>
 
 <style id="v10-ui-final">
-/* V1.0 visual hierarchy */
 .review-total-row td,
 .review-total-row th,
 .total-row td,
@@ -65,7 +64,6 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
   color: #1f2937 !important;
 }
 </style>
-
 
 <style id="v1-final-total-style">
 .review-total-row td, .review-total-row th,
@@ -197,8 +195,8 @@ function getValues(id){
   return state.values.get(id);
 }
 const HOURS_PER_DAY = 8;
-function calculate(v){
-  const dailyRate=num(v.dailyRate);
+function calculate(e, v){
+  const dailyRate=num(e?.dailyRate);
   const hourlyRate=dailyRate/HOURS_PER_DAY;
   const basicPay=dailyRate*num(v.actualDaysDuty);
   const overtimePay=hourlyRate*num(v.overtimeHours);
@@ -207,14 +205,14 @@ function calculate(v){
   const commission=num(v.commission);
   const lateDeduction=hourlyRate*num(v.lateHours);
   const gross=Math.max(0,basicPay+overtimePay+holidayPay+allowance+commission);
-  const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan);
+  const deductions=lateDeduction+num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan);
   const net=Math.max(0,gross-deductions);
   const contributions=num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
   return {dailyRate,hourlyRate,basicPay,overtimePay,holidayPay,allowance,commission,lateDeduction,gross,deductions,net,contributions};
 }
 function updateSummary(){
   let g=0,d=0,n=0,c=0;
-  for(const e of state.employees){const r=calculate(getValues(e.id));g+=r.gross;d+=r.deductions;n+=r.net;c+=r.contributions;}
+  for(const e of state.employees){const r=calculate(e, getValues(e.id));g+=r.gross;d+=r.deductions;n+=r.net;c+=r.contributions;}
   employeeCount.textContent=state.employees.length.toLocaleString();
   grossTotal.textContent=money(g); deductionTotal.textContent=money(d); netTotal.textContent=money(n); contributionTotal.textContent=money(c);
 }
@@ -233,7 +231,7 @@ function render(){
     <th class="employee-head">Employee</th><th>Actual Days Duty</th><th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
     <th class="reference-head">Daily Rate</th><th class="calc-head">Hourly Rate</th><th class="calc-head">Basic Pay</th><th class="calc-head">OT Pay</th><th class="calc-head">Holiday Pay</th><th class="calc-head">Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
-    const v=getValues(e.id),r=calculate(v);
+    const v=getValues(e.id),r=calculate(e, v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
       <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td><td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td><td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
@@ -247,7 +245,7 @@ function render(){
     <th class="employee-head">Employee</th><th class="calc-head">Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th><th>Loans / Advances</th>
     <th class="calc-head">Total Deductions</th><th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th class="calc-head">Net Pay</th>
   </tr></thead><tbody>${state.employees.map(e=>{
-    const v=getValues(e.id),r=calculate(v);
+    const v=getValues(e.id),r=calculate(e, v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
       <td class="calc-cell money tardiness">${money(r.lateDeduction)}</td>
@@ -289,7 +287,8 @@ function restoreEmployee(id){
 }
 
 function updateRow(id){
-  const r=calculate(getValues(id));
+  const employee=state.employees.find(e=>String(e.id)===String(id));
+  const r=calculate(employee, getValues(id));
   document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
     const fields={
       '.dailyRate':r.dailyRate,'.hourlyRate':r.hourlyRate,'.basicPay':r.basicPay,
@@ -343,13 +342,12 @@ async function loadEmployees(){
         dailyRate:Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
       };
     }).filter(e=>e.id&&!e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
-    state.employees.forEach(e=>getValues(e.id).dailyRate=e.dailyRate??0);
     status.textContent=`✓ ${state.employees.length.toLocaleString()} active employees loaded`;loadBtn.textContent='↻ Reload Employees';render();
   }catch(err){status.textContent='Could not load employees';error.innerHTML=`<div class="error">⚠ ${esc(err?.message||'Unknown API error')}<br><small>Make sure the extension is running inside Manager.io.</small></div>`;loadBtn.textContent='↻ Retry';}
   finally{loadBtn.disabled=false;}
 }
 function payrollRows(){
-  return state.employees.map(e=>({employee:e,values:getValues(e.id),calc:calculate(getValues(e.id))}));
+  return state.employees.map(e=>({employee:e,values:getValues(e.id),calc:calculate(e, getValues(e.id))}));
 }
 function normalizeName(s){
   return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -365,9 +363,6 @@ function extractName(x){
   return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
 }
 async function loadPayslipItemMappings(){
-  // Payslip Item UUIDs confirmed from the test payslip in this Manager business.
-  // These explicit mappings make the first working version deterministic. A later
-  // version can replace them with a user-configurable mapping screen for other businesses.
   state.mappings={
     earnings:{
       basic:{key:'01a073de-2e72-7fd1-8a67-16b81d70d547',name:'Basic Salaries'},
@@ -406,17 +401,34 @@ function mappingRows(){
 function buildLine(item, description, units, unitPrice){
   if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
   const u=Number(units)||0, p=Number(unitPrice)||0;
-  return {item:item.key,description,units:u,unitPrice:p,earningsAmount:u*p};
+  return {
+    Item: item.key,
+    Description: description,
+    Units: u,
+    UnitPrice: p,
+    Amount: u * p,
+    EarningsAmount: u * p
+  };
 }
 function buildDeduction(item, description, amount){
   const a=Number(amount)||0;
   if(!item || a<=0) return null;
-  return {item:item.key,description,deductionAmount:a};
+  return {
+    Item: item.key,
+    Description: description,
+    Amount: a,
+    DeductionAmount: a
+  };
 }
 function buildContribution(item, description, amount){
   const a=Number(amount)||0;
   if(!item || a<=0) return null;
-  return {item:item.key,description,contributionAmount:a};
+  return {
+    Item: item.key,
+    Description: description,
+    Amount: a,
+    ContributionAmount: a
+  };
 }
 function buildBatchPayload(){
   const items=payrollRows().map(x=>{
@@ -439,10 +451,26 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
-    // API4 batch POST expects each entry in Values to be the payslip value itself.
-    // The GET response wraps values as {key, item:{...}}, but that GET wrapper
-    // must NOT be sent back to the create endpoint.
-    return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
+
+    return {
+      Key: crypto.randomUUID(),
+      Date: payslipDate.value,
+      Employee: x.employee.id,
+      Description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
+      Earnings: earnings,
+      Deductions: deductions,
+      Contributions: contributions,
+      ShowTotalsForThePeriod: false,
+      // Fallback keys in lowercase for general API support
+      key: crypto.randomUUID(),
+      date: payslipDate.value,
+      employee: x.employee.id,
+      description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
+      earnings,
+      deductions,
+      contributions,
+      showTotalsForThePeriod: false
+    };
   });
   return {Values:items};
 }
@@ -493,11 +521,11 @@ async function findExistingPayslips(payload){
     const pv=p?.item||p||{};
     const hit=items.find(x=>{
       const i=x?.item||x||{};
-      return String(i.employee||'')===String(pv.employee||'') &&
-             String(i.date||'').slice(0,10)===String(pv.date||'').slice(0,10) &&
-             String(i.description||'')===String(pv.description||'');
+      return String(i.employee||i.Employee||'')===String(pv.employee||pv.Employee||'') &&
+             String(i.date||i.Date||'').slice(0,10)===String(pv.date||pv.Date||'').slice(0,10) &&
+             String(i.description||i.Description||'')===String(pv.description||pv.Description||'');
     });
-    if(hit)matches.push({employee:pv.employee,date:pv.date,description:pv.description,key:extractKey(hit)});
+    if(hit)matches.push({employee:pv.employee||pv.Employee,date:pv.date||pv.Date,description:pv.description||pv.Description,key:extractKey(hit)});
   }
   return matches;
 }
@@ -505,7 +533,6 @@ async function confirmCreatePayslips(){
   const missing=validateMappings(); if(missing.length)return;
   const btn=document.getElementById('confirmCreateBtn'); if(btn)btn.disabled=true;
   try{
-    // Always build from the current worksheet/date fields. Never reuse a prior payload.
     state.pendingPayload=null;
     const payload=buildBatchPayload();
     const existing=await findExistingPayslips(payload);
@@ -522,11 +549,11 @@ async function confirmCreatePayslips(){
     modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the request. Verifying created payslips…</div>');
     const verify=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
     const verifyItems=unwrapItems(verify);
-    const expectedKeys=payload.Values.map(x=>x.key);
-    const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.item?.key||x?.item?.id));
+    const expectedKeys=payload.Values.map(x=>x.key||x.Key);
+    const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.Key||x?.item?.key||x?.item?.id));
     const missingKeys=expectedKeys.filter(k=>!foundKeys.has(k));
-    const submittedSignatures=new Set(payload.Values.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
-    const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
+    const submittedSignatures=new Set(payload.Values.map(x=>{const i=x?.item||x||{};return `${i.employee||i.Employee||''}|${String(i.date||i.Date||'').slice(0,10)}|${i.description||i.Description||''}`;}));
+    const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||i.Employee||''}|${String(i.date||i.Date||'').slice(0,10)}|${i.description||i.Description||''}`;}));
     const missingSignatures=[...submittedSignatures].filter(k=>!foundSignatures.has(k));
     if(missingKeys.length && missingSignatures.length){
       throw new Error(`Manager accepted the POST but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
@@ -600,7 +627,6 @@ periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;paysl
 })();
 </script>
 
-
 <script id="v10-final-ui">
 (function () {
   function markTotalRows() {
@@ -619,7 +645,6 @@ periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;paysl
   });
 })();
 </script>
-
 
 <script id="v10-close-cleanup">
 (function () {
