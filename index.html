@@ -171,9 +171,9 @@ function inputCell(e, field, value){
 
 function render(){
   if(!state.employees.length){
-    earningsApp.className='empty'; earningsApp.textContent='No active employees loaded.';
-    deductionsApp.className='empty'; deductionsApp.textContent='No active employees loaded.';
-    updateSummary(); setButtons(); return;
+    earningsApp.className='empty'; earningsApp.textContent='No active employees included in this payroll.';
+    deductionsApp.className='empty'; deductionsApp.textContent='No active employees included in this payroll.';
+    renderExcluded(); updateSummary(); setButtons(); return;
   }
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
@@ -182,7 +182,7 @@ function render(){
   </tr></thead><tbody>${state.employees.map(e=>{
     const v = getValues(e.id), r = calculate(e, v);
     return `<tr data-id="${esc(e.id)}">
-      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}">×</button><span>${esc(e.name)}</span></td>
+      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)}">×</button><span>${esc(e.name)}</span></td>
       <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
       <td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
       <td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
@@ -204,7 +204,7 @@ function render(){
   </tr></thead><tbody>${state.employees.map(e=>{
     const v = getValues(e.id), r = calculate(e, v);
     return `<tr data-id="${esc(e.id)}">
-      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}">×</button><span>${esc(e.name)}</span></td>
+      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)}">×</button><span>${esc(e.name)}</span></td>
       <td class="calc-cell money tardiness">${money(r.lateDeduction)}</td>
       <td class="manual-cell">${inputCell(e,'sss',v.sss)}</td>
       <td class="manual-cell">${inputCell(e,'phic',v.phic)}</td>
@@ -227,8 +227,50 @@ function render(){
     setButtons();
   }));
 
+  document.querySelectorAll('.exclude-btn').forEach(btn => {
+    btn.addEventListener('click', () => excludeEmployee(btn.dataset.exclude));
+  });
+
+  renderExcluded();
   updateSummary();
   setButtons();
+}
+
+function renderExcluded(){
+  if(!excludedApp) return;
+  if(!state.excludedEmployees.length){ excludedApp.innerHTML = ''; return; }
+  excludedApp.innerHTML = `<div class="excluded-bar"><span><b>${state.excludedEmployees.length}</b> employee${state.excludedEmployees.length===1?'':'s'} excluded from this payroll.</span><button type="button" id="showExcludedBtn">Show excluded</button></div>`;
+  document.getElementById('showExcludedBtn')?.addEventListener('click', showExcludedEmployees);
+}
+
+function excludeEmployee(id){
+  const index = state.employees.findIndex(e => String(e.id) === String(id));
+  if(index < 0) return;
+  const [employee] = state.employees.splice(index, 1);
+  state.excludedEmployees.push(employee);
+  render();
+  writeStatus.textContent = `${employee.name} excluded from this payroll.`;
+}
+
+function showExcludedEmployees(){
+  if(!state.excludedEmployees.length) return;
+  const names = state.excludedEmployees.map(e => `<div class="excluded-row"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
+  modalTitle.textContent = 'Excluded Employees';
+  modalIntro.textContent = 'These employees are excluded only from the current payroll.';
+  modalBody.innerHTML = `<div class="excluded-list">${names}</div>`;
+  modalBackdrop.style.display = 'flex';
+  document.querySelectorAll('[data-restore]').forEach(btn => btn.addEventListener('click', () => restoreEmployee(btn.dataset.restore)));
+}
+
+function restoreEmployee(id){
+  const index = state.excludedEmployees.findIndex(e => String(e.id) === String(id));
+  if(index < 0) return;
+  const [employee] = state.excludedEmployees.splice(index, 1);
+  state.employees.push(employee);
+  state.employees.sort((a,b) => a.name.localeCompare(b.name));
+  modalBackdrop.style.display = 'none';
+  render();
+  writeStatus.textContent = `${employee.name} restored to this payroll.`;
 }
 
 function updateRow(id){
@@ -264,7 +306,7 @@ async function loadEmployees(){
     await loadDailyRateField();
     const data = await postMessageWithResponse({type:'api-request', method:'GET', path:'/api4/employee-batch?PageSize=99999'});
     const records = Array.isArray(data)?data:(data?.items||data?.data||[]);
-    
+    state.excludedEmployees = [];
     state.employees = records.map(record => {
       const item = record?.item || {};
       const decimals = item?.customFields2?.decimals || item?.customFields?.decimals || {};
@@ -280,7 +322,7 @@ async function loadEmployees(){
       };
     }).filter(e => e.id && !e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
 
-    status.textContent = `✓ ${state.employees.length} employees loaded`;
+    status.textContent = `✓ ${state.employees.length} active employees loaded`;
     loadBtn.textContent = '↻ Reload Employees';
     render();
   }catch(err){
@@ -379,30 +421,92 @@ function buildBatchPayload(){
   return {Values: items};
 }
 
+function reviewHtml(){
+  let totals = {gross:0, ded:0, net:0, con:0};
+  const rows = state.employees.map(e => {
+    const r = calculate(e, getValues(e.id));
+    totals.gross += r.gross; totals.ded += r.deductions; totals.net += r.net; totals.con += r.contributions;
+    return `<tr><td>${esc(e.name)}</td><td class="money">${money(r.gross)}</td><td class="money">${money(r.deductions)}</td><td class="money">${money(r.contributions)}</td><td class="money net">${money(r.net)}</td></tr>`;
+  }).join('');
+
+  return `<div class="notice"><b>Review payroll summary below before writing to Manager.io.</b></div>
+    <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th>Gross</th><th>Deductions</th><th>Employer Contributions</th><th>Net Pay</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>Total</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
+    <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Confirm & Create ${state.employees.length} Payslip${state.employees.length===1?'':'s'}</button></div>`;
+}
+
+function previewPayslips(){
+  if(!state.employees.length) return;
+  let totals = {gross:0, ded:0, net:0};
+  const rows = state.employees.map(e => {
+    const v = getValues(e.id), r = calculate(e, v);
+    totals.gross += r.gross; totals.ded += r.deductions; totals.net += r.net;
+    return `<tr><td>${esc(e.name)}</td><td class="money">${money(r.dailyRate)}</td><td class="money">${money(r.basicPay)}</td><td class="money">${money(r.overtimePay)}</td><td class="money">${money(r.holidayPay)}</td><td class="money">${money(r.allowance)}</td><td class="money">${money(r.commission)}</td><td class="money">${money(r.gross)}</td><td class="money">${money(r.deductions)}</td><td class="money net">${money(r.net)}</td></tr>`;
+  }).join('');
+
+  modalTitle.textContent = 'Review Payslips';
+  modalIntro.textContent = `${state.employees.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
+  modalBody.innerHTML = `<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  modalBackdrop.style.display = 'flex';
+}
+
 async function createPayslips(){
+  if(!state.employees.length) return;
+  modalTitle.textContent = 'Review & Create Payslips';
+  modalIntro.textContent = 'Please double check totals before writing to Manager. No records are written until you click Confirm & Create.';
+  modalBody.innerHTML = '<div class="notice">Loading mappings...</div>';
+  modalBackdrop.style.display = 'flex';
+
   try{
     await loadPayslipItemMappings();
-    const payload = buildBatchPayload();
-    modalTitle.textContent = 'Create Payslips';
-    modalIntro.textContent = 'Creating payslips in Manager.io...';
-    modalBackdrop.style.display = 'flex';
-    
-    const response = await postMessageWithResponse({type:'api-request', method:'POST', path:'/api4/payslip-batch', body: payload});
-    if(response?.error || response?.errors) throw new Error(response?.message || 'Error writing to Manager.');
-    
-    modalBody.innerHTML = `<div class="notice"><b>Success!</b> ${payload.Values.length} Payslip(s) generated.</div>`;
-    writeStatus.textContent = `✓ Created ${payload.Values.length} payslip(s)`;
+    modalBody.innerHTML = reviewHtml();
+    document.getElementById('confirmCreateBtn')?.addEventListener('click', confirmCreatePayslips);
   }catch(err){
-    modalBody.innerHTML = `<div class="error"><b>Error:</b> ${esc(err.message)}</div>`;
+    modalBody.innerHTML = `<div class="error"><b>Error preparing payslips:</b> ${esc(err.message)}</div>`;
+  }
+}
+
+async function confirmCreatePayslips(){
+  const btn = document.getElementById('confirmCreateBtn');
+  if(btn) btn.disabled = true;
+  modalBody.innerHTML = '<div class="notice">Creating payslips in Manager.io...</div>';
+
+  try{
+    const payload = buildBatchPayload();
+    const response = await postMessageWithResponse({type:'api-request', method:'POST', path:'/api4/payslip-batch', body: payload});
+    if(response?.error || response?.errors || response?.success === false){
+      throw new Error(response?.message || response?.error || 'Manager rejected the request.');
+    }
+    
+    writeStatus.textContent = `✓ ${payload.Values.length} payslip(s) created in Manager`;
+    modalTitle.textContent = 'Payslips Created';
+    modalIntro.textContent = 'Payslips were successfully posted to Manager.io.';
+    modalBody.innerHTML = `<div class="notice"><b>Success!</b> ${payload.Values.length} payslip(s) were created.</div><div class="success-actions"><button id="closeSuccessBtn" type="button">Close</button></div>`;
+    document.getElementById('closeSuccessBtn')?.addEventListener('click', () => modalBackdrop.style.display = 'none');
+  }catch(err){
+    if(btn) btn.disabled = false;
+    modalBody.innerHTML = `<div class="error"><b>Failed to create payslips:</b><br>${esc(err.message)}</div>`;
   }
 }
 
 function setButtons(){ previewBtn.disabled = !state.employees.length; createBtn.disabled = !state.employees.length; }
 
+function clearManualInputs(){
+  state.employees.forEach(e => Object.assign(getValues(e.id), {
+    actualDaysDuty:0, overtimeHours:0, lateHours:0, holidayFactor:0, allowance:0, commission:0,
+    sss:0, phic:0, pagibig:0, tax:0, loan:0,
+    employerSss:0, employerPhic:0, employerPagibig:0
+  }));
+  render();
+  writeStatus.textContent = 'Manual payroll inputs cleared.';
+}
+
 loadBtn.addEventListener('click', loadEmployees);
 recalcBtn.addEventListener('click', render);
+clearBtn.addEventListener('click', clearManualInputs);
+previewBtn.addEventListener('click', previewPayslips);
 createBtn.addEventListener('click', createPayslips);
-closeModal.addEventListener('click', ()=> modalBackdrop.style.display='none');
+closeModal.addEventListener('click', () => modalBackdrop.style.display = 'none');
+modalBackdrop.addEventListener('click', e => { if(e.target === modalBackdrop) modalBackdrop.style.display = 'none'; });
 
 const today = new Date(), yyyy = today.getFullYear(), mm = String(today.getMonth()+1).padStart(2,'0'), dd = String(today.getDate()).padStart(2,'0');
 periodStart.value = `${yyyy}-${mm}-01`; periodEnd.value = `${yyyy}-${mm}-${dd}`; payslipDate.value = `${yyyy}-${mm}-${dd}`;
