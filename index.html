@@ -53,7 +53,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V2 prototype • calculated payroll worksheet</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V4 prototype • review & create payslips</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -136,7 +136,7 @@ function postMessageWithResponse(message) {
   });
 }
 
-const state = {employees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), mappings: {
+const state = {employees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), payslipItems: {earnings:[],deductions:[],contributions:[]}, createdResponse:null, mappings: {
   earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null, other:null},
   deductions: {sss:null, phic:null, pagibig:null, tax:null, loan:null, other:null},
   contributions: {sss:null, phic:null, pagibig:null}
@@ -296,46 +296,171 @@ async function loadEmployees(){
 function payrollRows(){
   return state.employees.map(e=>({employee:e,values:getValues(e.id),calc:calculate(getValues(e.id))}));
 }
-function previewPayslips(){
-  const rows=payrollRows();
-  const summary=rows.map(x=>({employee:x.employee.name,gross:x.calc.gross,deductions:x.calc.deductions,net:x.calc.net,contributions:x.calc.contributions}));
-  modalTitle.textContent='Payslip Preview';
-  modalIntro.textContent=`${rows.length} employee(s) are prepared for the payroll period ${periodStart.value} to ${periodEnd.value}. No Manager records have been created.`;
-  modalBody.innerHTML=`<pre>${esc(JSON.stringify(summary,null,2))}</pre>`;
-  modalBackdrop.style.display='flex';
+function normalizeName(s){
+  return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function unwrapItems(data){
+  const arr=Array.isArray(data)?data:(data?.items||data?.data||data?.results||[]);
+  return Array.isArray(arr)?arr:[];
+}
+function extractKey(x){
+  return x?.key||x?.Key||x?.id||x?.Id||x?.item?.key||x?.item?.id||x?.item?.Key||x?.item?.Id||null;
+}
+function extractName(x){
+  return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
+}
+async function getLegacyList(candidates){
+  let lastErr=null;
+  for(const path of candidates){
+    try{
+      const data=await postMessageWithResponse({type:'api-request',method:'GET',path});
+      const items=unwrapItems(data).map(x=>({key:extractKey(x),name:extractName(x),raw:x})).filter(x=>x.key&&x.name);
+      if(items.length) return items;
+    }catch(err){ lastErr=err; }
+  }
+  if(lastErr) throw lastErr;
+  return [];
+}
+async function loadPayslipItemMappings(){
+  const [earnings,deductions,contributions]=await Promise.all([
+    getLegacyList(['/api/PayslipEarningsItem','/api/payslip-earnings-item','/api/payslip-earnings-items']),
+    getLegacyList(['/api/PayslipDeductionItem','/api/payslip-deduction-item','/api/payslip-deduction-items']),
+    getLegacyList(['/api/PayslipContributionItem','/api/payslip-contribution-item','/api/payslip-contribution-items'])
+  ]);
+  const pick=(list,patterns)=>{
+    const exact=list.find(x=>patterns.some(p=>normalizeName(x.name)===normalizeName(p)));
+    if(exact) return exact;
+    return list.find(x=>patterns.some(p=>normalizeName(x.name).includes(normalizeName(p))))||null;
+  };
+  state.payslipItems={earnings,deductions,contributions};
+  state.mappings.earnings.basic=pick(earnings,['Basic Salaries','Basic Salary','Regular Salaries','Regular Salary']);
+  state.mappings.earnings.holiday=pick(earnings,['Holiday Pay','Holiday']);
+  state.mappings.earnings.overtime=pick(earnings,['Overtime','Overtime Pay']);
+  state.mappings.earnings.allowance=pick(earnings,['Allowances','Allowance']);
+  state.mappings.earnings.commission=pick(earnings,['Commissions','Commission']);
+  state.mappings.earnings.other=pick(earnings,['Others','Other']);
+  state.mappings.deductions.sss=pick(deductions,['SSS Contributions','SSS Contribution','SSS']);
+  state.mappings.deductions.phic=pick(deductions,['PHIC Contributions','PHIC Contribution','PhilHealth Contributions','PhilHealth Contribution','PHIC']);
+  state.mappings.deductions.pagibig=pick(deductions,['Pag-IBIG Contributions','Pag-IBIG Contribution','Pag IBIG Contributions','Pag IBIG Contribution','Pag-IBIG']);
+  state.mappings.deductions.tax=pick(deductions,['Withholding Tax','Withholding']);
+  state.mappings.deductions.loan=pick(deductions,['Employee Cash Advances/Loans','Employee Cash Advances / Loans','Cash Advances/Loans','Loans / Advances','Loans','Advances']);
+  state.mappings.deductions.other=pick(deductions,['Other Deductions','Other Deduction']);
+  state.mappings.contributions.sss=pick(contributions,['SSS Employer','Employer SSS','SSS Employer Contribution','SSS']);
+  state.mappings.contributions.phic=pick(contributions,['PHIC Employer','Employer PHIC','Employer PHIC Contribution','PhilHealth Employer','PHIC']);
+  state.mappings.contributions.pagibig=pick(contributions,['Pag-IBIG Employer','Employer Pag-IBIG','Employer Pag IBIG','Pag-IBIG Employer Contribution','Pag-IBIG']);
+  return state.mappings;
+}
+function mappingRows(){
+  const groups=[
+    ['Earnings','earnings',[['Basic Pay','basic'],['Holiday Pay','holiday'],['OT Pay','overtime'],['Allowances','allowance'],['Commissions','commission']]],
+    ['Deductions','deductions',[['SSS','sss'],['PHIC','phic'],['Pag-IBIG','pagibig'],['Withholding Tax','tax'],['Loans / Advances','loan'],['Late / Other Deductions','other']]],
+    ['Employer Contributions','contributions',[['Employer SSS','sss'],['Employer PHIC','phic'],['Employer Pag-IBIG','pagibig']]]
+  ];
+  return groups.map(([title,group,rows])=>`<div class="box"><b>${title}</b>${rows.map(([label,key])=>{
+    const m=state.mappings[group]?.[key];
+    return `<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--border);font-size:12px"><span>${esc(label)}</span><span>${m?`<span style="color:#7ee787">✓ ${esc(m.name)}</span>`:`<span style="color:#ffb4b0">⚠ Not mapped</span>`}</span></div>`;
+  }).join('')}</div>`).join('');
+}
+function buildLine(item, description, units, unitPrice){
+  if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
+  const u=Number(units)||0, p=Number(unitPrice)||0;
+  return {item:item.key,description,units:u,unitPrice:p,earningsAmount:u*p};
+}
+function buildDeduction(item, description, amount){
+  const a=Number(amount)||0;
+  if(!item || a<=0) return null;
+  return {item:item.key,description,deductionAmount:a};
+}
+function buildContribution(item, description, amount){
+  const a=Number(amount)||0;
+  if(!item || a<=0) return null;
+  return {item:item.key,description,contributionAmount:a};
 }
 function buildBatchPayload(){
-  // API4 payslip-batch uses Manager payslip-item UUIDs for each line.
-  // The mapping object is intentionally explicit; we will fill it from the user's configured items.
-  const items=payrollRows().map(x=>({item:{
-    date:payslipDate.value,
-    employee:x.employee.id,
-    description:`Payroll ${periodStart.value} to ${periodEnd.value}`,
-    earnings:[],
-    deductions:[],
-    contributions:[]
-  }}));
+  const items=payrollRows().map(x=>{
+    const v=x.values,r=x.calc;
+    const earnings=[]; const deductions=[]; const contributions=[];
+    const add=(a)=>a&&earnings.push(a);
+    add(buildLine(state.mappings.earnings.basic,'Basic Pay',num(v.actualDaysDuty),r.dailyRate));
+    add(buildLine(state.mappings.earnings.holiday,'Holiday Pay',num(v.holidayFactor),r.dailyRate));
+    add(buildLine(state.mappings.earnings.overtime,'Overtime',num(v.overtimeHours),r.hourlyRate));
+    add(buildLine(state.mappings.earnings.allowance,'Allowances',1,num(v.allowance)));
+    add(buildLine(state.mappings.earnings.commission,'Commissions',1,num(v.commission)));
+    const addD=(a)=>a&&deductions.push(a);
+    addD(buildDeduction(state.mappings.deductions.sss,'SSS',v.sss));
+    addD(buildDeduction(state.mappings.deductions.phic,'PHIC',v.phic));
+    addD(buildDeduction(state.mappings.deductions.pagibig,'Pag-IBIG',v.pagibig));
+    addD(buildDeduction(state.mappings.deductions.tax,'Withholding Tax',v.tax));
+    addD(buildDeduction(state.mappings.deductions.loan,'Loans / Advances',v.loan));
+    // Tardiness is treated as a payroll deduction in the Manager payslip so the
+    // payslip net matches the worksheet. It uses the same Other Deductions item.
+    addD(buildDeduction(state.mappings.deductions.other,'Late / Tardiness',r.lateDeduction));
+    addD(buildDeduction(state.mappings.deductions.other,'Other Deductions',v.otherDeduction));
+    const addC=(a)=>a&&contributions.push(a);
+    addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
+    addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
+    addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
+    return {key:crypto.randomUUID(),item:{date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false}};
+  });
   return {items};
 }
-async function createPayslips(){
+function validateMappings(){
+  const required=[
+    ['Basic Salaries','earnings','basic'],['Holiday Pay','earnings','holiday'],['Overtime','earnings','overtime'],['Allowances','earnings','allowance'],['Commissions','earnings','commission'],
+    ['SSS Contributions','deductions','sss'],['PHIC Contributions','deductions','phic'],['Pag-IBIG Contributions','deductions','pagibig'],['Withholding Tax','deductions','tax'],['Employee Cash Advances/Loans','deductions','loan'],['Other Deductions','deductions','other'],
+    ['SSS Employer','contributions','sss'],['PHIC Employer','contributions','phic'],['Pag-IBIG Employer','contributions','pagibig']
+  ];
+  return required.filter(x=>!state.mappings[x[1]]?.[x[2]]);
+}
+function reviewHtml(){
   const rows=payrollRows();
-  if(!rows.length){return;}
-  // Guard: do not write until at least one payslip item UUID is configured.
-  const hasMapping=Object.values(state.mappings).some(group=>Object.values(group).some(Boolean));
-  if(!hasMapping){
-    modalTitle.textContent='Payslip creation needs item mappings';
-    modalIntro.textContent='Manager requires each payslip Earnings/Deduction/Contribution line to reference a configured Payslip Item UUID. We have not guessed those IDs.';
-    modalBody.innerHTML=`<div class="error">No payslip-item mappings are configured yet. Your worksheet is working, but I am deliberately blocking the write operation so we do not create malformed payslips.</div>
-      <p>Next we will connect the worksheet fields to the actual Payslip Items in your Manager business, then this same button can write the batch.</p>`;
-    modalBackdrop.style.display='flex';
-    return;
-  }
-  // Placeholder guarded path: once mappings are filled, populate exact API4 line structures here.
+  const missing=validateMappings();
   const payload=buildBatchPayload();
-  modalTitle.textContent='Create Payslips';
-  modalIntro.textContent='The batch payload is ready, but the line-item mapping is not yet wired to your Manager Payslip Items.';
-  modalBody.innerHTML=`<pre>${esc(JSON.stringify(payload,null,2))}</pre><div class="notice">No records were written.</div>`;
+  const totals=rows.reduce((a,x)=>({gross:a.gross+x.calc.gross,ded:a.ded+x.calc.deductions,net:a.net+x.calc.net,con:a.con+x.calc.contributions}),{gross:0,ded:0,net:0,con:0});
+  return `<div class="mapping">${mappingRows()}</div>
+    ${missing.length?`<div class="error" style="margin-top:12px"><b>Cannot create yet.</b> Missing mappings: ${missing.map(x=>esc(x[0])).join(', ')}.</div>`:`<div class="notice" style="margin-top:12px"><b>All required Payslip Items are mapped.</b> Review the payroll totals below before writing to Manager.</div>`}
+    <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th>Gross</th><th>Deductions</th><th>Employer Contributions</th><th>Net Pay</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money">${money(x.calc.contributions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody><tfoot><tr><th>Total</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
+    <div class="actions" style="margin-top:12px"><button class="good" id="confirmCreateBtn" type="button" ${missing.length?'disabled':''}>✓ Confirm & Create ${rows.length} Payslip${rows.length===1?'':'s'}</button></div>`;
+}
+async function previewPayslips(){
+  const rows=payrollRows();
+  modalTitle.textContent='Review Payslips';
+  modalIntro.textContent=`${rows.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
+  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Late</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.lateDeduction)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is shown separately here but will be posted as a deduction using the mapped <b>Other Deductions</b> Payslip Item so the Manager payslip net matches the worksheet.</div>`;
   modalBackdrop.style.display='flex';
+}
+async function createPayslips(){
+  const rows=payrollRows(); if(!rows.length)return;
+  modalTitle.textContent='Review & Create Payslips';
+  modalIntro.textContent='First, the extension will identify your Manager Payslip Items by name. No records are written until you click Confirm & Create.';
+  modalBody.innerHTML='<div class="notice">Reading Payslip Item definitions from Manager…</div>';
+  modalBackdrop.style.display='flex';
+  try{
+    await loadPayslipItemMappings();
+    modalBody.innerHTML=reviewHtml();
+    const btn=document.getElementById('confirmCreateBtn');
+    if(btn) btn.addEventListener('click',confirmCreatePayslips);
+  }catch(err){
+    modalBody.innerHTML=`<div class="error"><b>Could not read Payslip Items.</b><br>${esc(err?.message||'Unknown API error')}</div><p>Manager's current API does not expose Payslip Item settings through API4. The extension tried the legacy item endpoints as a compatibility bridge. If your Manager version blocks those endpoints, we will need to use a one-time mapping approach instead.</p>`;
+  }
+}
+async function confirmCreatePayslips(){
+  const missing=validateMappings();
+  if(missing.length)return;
+  const btn=document.getElementById('confirmCreateBtn'); if(btn)btn.disabled=true;
+  try{
+    const payload=buildBatchPayload();
+    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Creating payslips in Manager…</div>');
+    const response=await postMessageWithResponse({type:'api-request',method:'PUT',path:'/api4/payslip-batch',body:payload});
+    state.createdResponse=response;
+    writeStatus.textContent=`✓ ${payrollRows().length} payslip(s) submitted to Manager`;
+    modalTitle.textContent='Payslips Created';
+    modalIntro.textContent='Manager accepted the batch request. Verify the Payslips tab in Manager before paying employees.';
+    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were submitted.</div><pre>${esc(JSON.stringify(response,null,2))}</pre>`;
+  }catch(err){
+    if(btn)btn.disabled=false;
+    modalBody.insertAdjacentHTML('afterbegin',`<div class="error"><b>Manager did not accept the batch.</b><br>${esc(err?.message||'Unknown API error')}</div>`);
+  }
 }
 function setButtons(){previewBtn.disabled=!state.employees.length;createBtn.disabled=!state.employees.length;}
 loadBtn.addEventListener('click',loadEmployees);recalcBtn.addEventListener('click',render);previewBtn.addEventListener('click',previewPayslips);createBtn.addEventListener('click',createPayslips);closeModal.addEventListener('click',()=>modalBackdrop.style.display='none');
