@@ -83,6 +83,12 @@ tfoot tr td:last-child, tfoot tr th:last-child {
 .net, .net-pay, .net-total { color: #1f2937 !important; }
 </style>
 
+<style id="v1-deductions-alignment">
+.deductions-table th, .deductions-table td { vertical-align: middle; }
+.deductions-table .calc-cell,
+.deductions-table .calc-head { text-align: right; }
+.deductions-table .manual-cell { text-align: center; }
+</style>
 </head>
 <body>
 <div class="top">
@@ -237,13 +243,14 @@ function render(){
     </tr>`;
   }).join('')}</tbody></table>`;
 
-  deductionsApp.innerHTML=`<table><thead><tr>
+  deductionsApp.innerHTML=`<table class="deductions-table"><thead><tr>
     <th class="employee-head">Employee</th><th class="calc-head">Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th><th>Loans / Advances</th>
     <th class="calc-head">Total Deductions</th><th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th class="calc-head">Net Pay</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
+      <td class="calc-cell money tardiness">${money(r.lateDeduction)}</td>
       <td class="manual-cell">${inputCell(e,'sss',v.sss)}</td><td class="manual-cell">${inputCell(e,'phic',v.phic)}</td><td class="manual-cell">${inputCell(e,'pagibig',v.pagibig)}</td>
       <td class="manual-cell">${inputCell(e,'tax',v.tax)}</td><td class="manual-cell">${inputCell(e,'loan',v.loan)}</td>
       <td class="calc-cell money deductionTotal">${money(r.deductions)}</td>
