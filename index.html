@@ -44,7 +44,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V2 prototype • worksheet + payslip preparation</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V2 prototype • calculated payroll worksheet</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -66,9 +66,10 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 </div>
 
 <div class="notice">
-  Enter the payroll amounts manually. <b>Holiday/Double Pay</b> is an additional-day multiplier:
-  0.30 = 30% of one day's pay, 1.00 = one additional day's pay. This prototype does not decide
-  Philippine statutory rates for you.
+  <b>Calculation model:</b> Daily Rate = Monthly Basic Salary ÷ Days Duty/Month.
+  Hourly Rate = Daily Rate ÷ Hours/Day. Basic Pay = Daily Rate × Actual Days Duty.
+  OT Pay = Hourly Rate × OT Hours × OT Multiplier. Holiday Pay = Daily Rate × Holiday Days × Holiday Multiplier.
+  Late Deduction = Hourly Rate × Late Hours. Deductions and employer contributions remain manual.
 </div>
 
 <div class="table-wrap">
@@ -87,10 +88,10 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <span class="status" id="writeStatus">No payslips created yet.</span>
 </div>
 <div class="note">
-  Manager's payslip API requires each Earnings/Deduction/Contribution line to reference a configured
-  payslip-item UUID. This build therefore includes a preview step and a guarded create action; item
-  mappings must be configured before writing. We will connect those mappings to your actual Manager
-  payslip items in the next test.
+  Assumptions for this prototype: 8 hours/day and 1.25× overtime. Holiday multiplier is entered per employee
+  (for example 1.00 for one additional day or 0.30 for a 30% premium). These are calculation settings, not
+  a determination of Philippine statutory compliance. Payslip writing remains guarded until the Manager
+  Payslip Item mappings are connected.
 </div>
 
 <div class="modal-backdrop" id="modalBackdrop">
@@ -131,19 +132,28 @@ const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.m
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
-    daysDuty:0,basic:0,holiday:0,overtimeHours:0,overtimePay:0,lateHours:0,lateDeduction:0,
-    allowance:0,commission:0,otherEarnings:0,sss:0,phic:0,pagibig:0,tax:0,loan:0,otherDeduction:0,
+    daysPerMonth:0,basicSalary:0,actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayDays:0,holidayMultiplier:1,
+    sss:0,phic:0,pagibig:0,tax:0,loan:0,otherDeduction:0,
     employerSss:0,employerPhic:0,employerPagibig:0
   });
   return state.values.get(id);
 }
+const HOURS_PER_DAY = 8;
+const OT_MULTIPLIER = 1.25;
 function calculate(v){
-  const holidayPay = num(v.holiday); // user-entered peso amount for now; multiplier is preserved separately
-  const gross = num(v.basic)+holidayPay+num(v.overtimePay)+num(v.allowance)+num(v.commission)+num(v.otherEarnings)-num(v.lateDeduction);
-  const deductions = num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan)+num(v.otherDeduction);
-  const net = Math.max(0,gross-deductions);
-  const contributions = num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
-  return {gross,deductions,net,contributions};
+  const daysPerMonth=num(v.daysPerMonth);
+  const basicSalary=num(v.basicSalary);
+  const dailyRate=daysPerMonth>0 ? basicSalary/daysPerMonth : 0;
+  const hourlyRate=dailyRate/HOURS_PER_DAY;
+  const basicPay=dailyRate*num(v.actualDaysDuty);
+  const overtimePay=hourlyRate*num(v.overtimeHours)*OT_MULTIPLIER;
+  const holidayPay=dailyRate*num(v.holidayDays)*num(v.holidayMultiplier);
+  const lateDeduction=hourlyRate*num(v.lateHours);
+  const gross=Math.max(0,basicPay+overtimePay+holidayPay-lateDeduction);
+  const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan)+num(v.otherDeduction);
+  const net=Math.max(0,gross-deductions);
+  const contributions=num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
+  return {dailyRate,hourlyRate,basicPay,overtimePay,holidayPay,lateDeduction,gross,deductions,net,contributions};
 }
 function updateSummary(){
   let g=0,d=0,n=0,c=0;
@@ -152,32 +162,73 @@ function updateSummary(){
   grossTotal.textContent=money(g); deductionTotal.textContent=money(d); netTotal.textContent=money(n); contributionTotal.textContent=money(c);
 }
 function inputCell(e,field,value){
-  return `<input class="pay-input" data-field="${field}" type="number" min="0" step="0.01" value="${value||''}" aria-label="${esc(e.name)} ${field}">`;
+  const display=(field==='holidayMultiplier' && (value===undefined || value===null || value==='')) ? 1 : value;
+  return `<input class="pay-input" data-field="${field}" type="number" min="0" step="0.01" value="${display||''}" aria-label="${esc(e.name)} ${field}">`;
 }
 function render(){
-  if(!state.employees.length){earningsApp.className='empty';earningsApp.textContent='No active employees found.';deductionsApp.className='empty';deductionsApp.textContent='No active employees found.';updateSummary();setButtons();return;}
+  if(!state.employees.length){
+    earningsApp.className='empty'; earningsApp.textContent='No active employees found.';
+    deductionsApp.className='empty'; deductionsApp.textContent='No active employees found.';
+    updateSummary(); setButtons(); return;
+  }
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
-    <th>Employee</th><th>Days Duty</th><th>Basic Pay</th><th>Holiday / Double Pay</th><th>OT Hours</th><th>OT Pay</th><th>Late Hours</th><th>Late Deduction</th><th>Allowances</th><th>Commissions</th><th>Other Earnings</th><th>Gross</th>
-  </tr></thead><tbody>${state.employees.map(e=>{const v=getValues(e.id),r=calculate(v);return `<tr data-id="${esc(e.id)}">
-    <td class="name">${esc(e.name)}</td><td>${inputCell(e,'daysDuty',v.daysDuty)}</td><td>${inputCell(e,'basic',v.basic)}</td><td>${inputCell(e,'holiday',v.holiday)}</td><td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td><td>${inputCell(e,'overtimePay',v.overtimePay)}</td><td>${inputCell(e,'lateHours',v.lateHours)}</td><td>${inputCell(e,'lateDeduction',v.lateDeduction)}</td><td>${inputCell(e,'allowance',v.allowance)}</td><td>${inputCell(e,'commission',v.commission)}</td><td>${inputCell(e,'otherEarnings',v.otherEarnings)}</td><td class="money gross">${money(r.gross)}</td>
-  </tr>`}).join('')}</tbody></table>`;
+    <th>Employee</th><th>Days Duty / Month</th><th>Monthly Basic Salary</th><th>Actual Days Duty</th>
+    <th>OT Hours</th><th>Late Hours</th><th>Holiday Days</th><th>Holiday Multiplier</th>
+    <th>Daily Rate</th><th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Gross</th>
+  </tr></thead><tbody>${state.employees.map(e=>{
+    const v=getValues(e.id),r=calculate(v);
+    return `<tr data-id="${esc(e.id)}">
+      <td class="name">${esc(e.name)}</td>
+      <td>${inputCell(e,'daysPerMonth',v.daysPerMonth)}</td>
+      <td>${inputCell(e,'basicSalary',v.basicSalary)}</td>
+      <td>${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
+      <td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
+      <td>${inputCell(e,'lateHours',v.lateHours)}</td>
+      <td>${inputCell(e,'holidayDays',v.holidayDays)}</td>
+      <td>${inputCell(e,'holidayMultiplier',v.holidayMultiplier)}</td>
+      <td class="money dailyRate">${money(r.dailyRate)}</td>
+      <td class="money hourlyRate">${money(r.hourlyRate)}</td>
+      <td class="money basicPay">${money(r.basicPay)}</td>
+      <td class="money overtimePay">${money(r.overtimePay)}</td>
+      <td class="money holidayPay">${money(r.holidayPay)}</td>
+      <td class="money lateDeduction">${money(r.lateDeduction)}</td>
+      <td class="money gross">${money(r.gross)}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+
   deductionsApp.innerHTML=`<table><thead><tr>
-    <th>Employee</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th><th>Loans / Advances</th><th>Other Deductions</th><th>Total Deductions</th><th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th>Net Pay</th>
-  </tr></thead><tbody>${state.employees.map(e=>{const v=getValues(e.id),r=calculate(v);return `<tr data-id="${esc(e.id)}">
-    <td class="name">${esc(e.name)}</td><td>${inputCell(e,'sss',v.sss)}</td><td>${inputCell(e,'phic',v.phic)}</td><td>${inputCell(e,'pagibig',v.pagibig)}</td><td>${inputCell(e,'tax',v.tax)}</td><td>${inputCell(e,'loan',v.loan)}</td><td>${inputCell(e,'otherDeduction',v.otherDeduction)}</td><td class="money">${money(r.deductions)}</td><td>${inputCell(e,'employerSss',v.employerSss)}</td><td>${inputCell(e,'employerPhic',v.employerPhic)}</td><td>${inputCell(e,'employerPagibig',v.employerPagibig)}</td><td class="money net">${money(r.net)}</td>
-  </tr>`}).join('')}</tbody></table>`;
+    <th>Employee</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th>
+    <th>Loans / Advances</th><th>Other Deductions</th><th>Total Deductions</th>
+    <th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th>Net Pay</th>
+  </tr></thead><tbody>${state.employees.map(e=>{
+    const v=getValues(e.id),r=calculate(v);
+    return `<tr data-id="${esc(e.id)}">
+      <td class="name">${esc(e.name)}</td>
+      <td>${inputCell(e,'sss',v.sss)}</td><td>${inputCell(e,'phic',v.phic)}</td><td>${inputCell(e,'pagibig',v.pagibig)}</td>
+      <td>${inputCell(e,'tax',v.tax)}</td><td>${inputCell(e,'loan',v.loan)}</td><td>${inputCell(e,'otherDeduction',v.otherDeduction)}</td>
+      <td class="money deductionTotal">${money(r.deductions)}</td>
+      <td>${inputCell(e,'employerSss',v.employerSss)}</td><td>${inputCell(e,'employerPhic',v.employerPhic)}</td><td>${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
+      <td class="money net">${money(r.net)}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+
   document.querySelectorAll('.pay-input').forEach(input=>input.addEventListener('input',()=>{
-    const row=input.closest('tr'), id=row.dataset.id, field=input.dataset.field, v=getValues(id); v[field]=num(input.value); updateRow(id); updateSummary(); setButtons();
+    const row=input.closest('tr'), id=row.dataset.id, field=input.dataset.field, v=getValues(id);
+    v[field]=num(input.value);
+    updateRow(id); updateSummary(); setButtons();
   }));
-  updateSummary();setButtons();
+  updateSummary(); setButtons();
 }
 function updateRow(id){
   const r=calculate(getValues(id));
   document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
-    const g=row.querySelector('.gross'); if(g) g.textContent=money(r.gross);
-    const n=row.querySelector('.net'); if(n) n.textContent=money(r.net);
-    const d=row.children[7]; if(d && row.closest('#deductionsApp')) d.textContent=money(r.deductions);
+    const fields={
+      '.dailyRate':r.dailyRate,'.hourlyRate':r.hourlyRate,'.basicPay':r.basicPay,
+      '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.lateDeduction':r.lateDeduction,
+      '.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions
+    };
+    Object.entries(fields).forEach(([sel,val])=>{const el=row.querySelector(sel);if(el)el.textContent=money(val);});
   });
 }
 async function getAllEmployees(onProgress){
