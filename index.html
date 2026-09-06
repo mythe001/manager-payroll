@@ -135,7 +135,7 @@ function postMessageWithResponse(message) {
   });
 }
 
-const state = {employees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), payslipItems: {earnings:[],deductions:[],contributions:[]}, createdResponse:null, mappings: {
+const state = {employees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), payslipItems: {earnings:[],deductions:[],contributions:[]}, createdResponse:null, pendingPayload:null, mappings: {
   earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
   deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
   contributions: {sss:null, phic:null, pagibig:null}
@@ -230,6 +230,7 @@ function render(){
   document.querySelectorAll('.pay-input').forEach(input=>input.addEventListener('input',()=>{
     const row=input.closest('tr'), id=row.dataset.id, field=input.dataset.field, v=getValues(id);
     v[field]=num(input.value);
+    state.pendingPayload=null;
     updateRow(id); updateSummary(); setButtons();
   }));
   updateSummary(); setButtons();
@@ -386,7 +387,7 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
     return {key:crypto.randomUUID(),item:{date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false}};
   });
-  return {items};
+  return {Values:items};
 }
 function validateMappings(){
   const required=[
@@ -433,14 +434,18 @@ async function confirmCreatePayslips(){
   if(missing.length)return;
   const btn=document.getElementById('confirmCreateBtn'); if(btn)btn.disabled=true;
   try{
-    const payload=buildBatchPayload();
+    const payload=state.pendingPayload || (state.pendingPayload=buildBatchPayload());
     modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Creating payslips in Manager…</div>');
     const response=await postMessageWithResponse({type:'api-request',method:'PUT',path:'/api4/payslip-batch',body:payload});
+    if(response?.error || response?.errors || response?.success===false){
+      const message=response?.message || response?.error || 'Manager rejected the request.';
+      throw new Error(message);
+    }
     state.createdResponse=response;
-    writeStatus.textContent=`✓ ${payrollRows().length} payslip(s) submitted to Manager`;
+    writeStatus.textContent=`✓ ${payrollRows().length} payslip(s) created in Manager`;
     modalTitle.textContent='Payslips Created';
-    modalIntro.textContent='Manager accepted the batch request. Verify the Payslips tab in Manager before paying employees.';
-    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were submitted.</div><pre>${esc(JSON.stringify(response,null,2))}</pre>`;
+    modalIntro.textContent='Manager confirmed the batch request. Verify the Payslips tab in Manager before paying employees.';
+    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created in Manager.</div><pre>${esc(JSON.stringify(response,null,2))}</pre>`;
   }catch(err){
     if(btn)btn.disabled=false;
     modalBody.insertAdjacentHTML('afterbegin',`<div class="error"><b>Manager did not accept the batch.</b><br>${esc(err?.message||'Unknown API error')}</div>`);
