@@ -53,7 +53,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V5 prototype • review & create payslips</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V6 prototype • POST payslip creation</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -436,16 +436,31 @@ async function confirmCreatePayslips(){
   try{
     const payload=state.pendingPayload || (state.pendingPayload=buildBatchPayload());
     modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Creating payslips in Manager…</div>');
-    const response=await postMessageWithResponse({type:'api-request',method:'PUT',path:'/api4/payslip-batch',body:payload});
+    // POST is the create operation for payslip-batch. PUT is intended for
+    // idempotent updates and may return true without creating new records.
+    const response=await postMessageWithResponse({type:'api-request',method:'POST',path:'/api4/payslip-batch',body:payload});
     if(response?.error || response?.errors || response?.success===false){
       const message=response?.message || response?.error || 'Manager rejected the request.';
       throw new Error(message);
     }
-    state.createdResponse=response;
+
+    // Some Manager batch responses are simply `true`, so verify that the
+    // client-generated payslip keys can actually be found after the POST.
+    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the request. Verifying created payslips…</div>');
+    const verify=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
+    const verifyItems=Array.isArray(verify)?verify:(verify?.items||verify?.data||[]);
+    const expectedKeys=payload.Values.map(x=>x.key);
+    const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.item?.key||x?.item?.id));
+    const missingKeys=expectedKeys.filter(k=>!foundKeys.has(k));
+    if(missingKeys.length){
+      throw new Error(`Manager accepted the POST but verification could not find ${missingKeys.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
+    }
+
+    state.createdResponse={postResponse:response,verification:verify};
     writeStatus.textContent=`✓ ${payrollRows().length} payslip(s) created in Manager`;
     modalTitle.textContent='Payslips Created';
-    modalIntro.textContent='Manager confirmed the batch request. Verify the Payslips tab in Manager before paying employees.';
-    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created in Manager.</div><pre>${esc(JSON.stringify(response,null,2))}</pre>`;
+    modalIntro.textContent='Manager accepted the batch and the created payslips were verified through the API. Verify the Payslips tab before paying employees.';
+    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created and verified in Manager.</div><pre>${esc(JSON.stringify(response,null,2))}</pre>`;
   }catch(err){
     if(btn)btn.disabled=false;
     modalBody.insertAdjacentHTML('afterbegin',`<div class="error"><b>Manager did not accept the batch.</b><br>${esc(err?.message||'Unknown API error')}</div>`);
