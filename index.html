@@ -35,14 +35,15 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
 .note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
-.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)
 .modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
-</style>
+.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
 
 <style id="v10-ui-final">
+/* V1.0 visual hierarchy */
 .review-total-row td,
 .review-total-row th,
 .total-row td,
@@ -63,7 +64,8 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 .net-total {
   color: #1f2937 !important;
 }
-</style>
+.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
+
 
 <style id="v1-final-total-style">
 .review-total-row td, .review-total-row th,
@@ -79,14 +81,14 @@ tfoot tr td:last-child, tfoot tr th:last-child {
   color: #1f2937 !important;
 }
 .net, .net-pay, .net-total { color: #1f2937 !important; }
-</style>
+.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
 
 <style id="v1-deductions-alignment">
 .deductions-table th, .deductions-table td { vertical-align: middle; }
 .deductions-table .calc-cell,
 .deductions-table .calc-head { text-align: right; }
 .deductions-table .manual-cell { text-align: center; }
-</style>
+.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
 </head>
 <body>
 <div class="top">
@@ -195,8 +197,8 @@ function getValues(id){
   return state.values.get(id);
 }
 const HOURS_PER_DAY = 8;
-function calculate(e, v){
-  const dailyRate=num(e?.dailyRate);
+function calculate(v){
+  const dailyRate=num(v.dailyRate);
   const hourlyRate=dailyRate/HOURS_PER_DAY;
   const basicPay=dailyRate*num(v.actualDaysDuty);
   const overtimePay=hourlyRate*num(v.overtimeHours);
@@ -205,14 +207,14 @@ function calculate(e, v){
   const commission=num(v.commission);
   const lateDeduction=hourlyRate*num(v.lateHours);
   const gross=Math.max(0,basicPay+overtimePay+holidayPay+allowance+commission);
-  const deductions=lateDeduction+num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan);
+  const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan);
   const net=Math.max(0,gross-deductions);
   const contributions=num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
   return {dailyRate,hourlyRate,basicPay,overtimePay,holidayPay,allowance,commission,lateDeduction,gross,deductions,net,contributions};
 }
 function updateSummary(){
   let g=0,d=0,n=0,c=0;
-  for(const e of state.employees){const r=calculate(e, getValues(e.id));g+=r.gross;d+=r.deductions;n+=r.net;c+=r.contributions;}
+  for(const e of state.employees){const r=calculate(getValues(e.id));g+=r.gross;d+=r.deductions;n+=r.net;c+=r.contributions;}
   employeeCount.textContent=state.employees.length.toLocaleString();
   grossTotal.textContent=money(g); deductionTotal.textContent=money(d); netTotal.textContent=money(n); contributionTotal.textContent=money(c);
 }
@@ -231,7 +233,7 @@ function render(){
     <th class="employee-head">Employee</th><th>Actual Days Duty</th><th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
     <th class="reference-head">Daily Rate</th><th class="calc-head">Hourly Rate</th><th class="calc-head">Basic Pay</th><th class="calc-head">OT Pay</th><th class="calc-head">Holiday Pay</th><th class="calc-head">Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
-    const v=getValues(e.id),r=calculate(e, v);
+    const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
       <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td><td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td><td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
@@ -245,7 +247,7 @@ function render(){
     <th class="employee-head">Employee</th><th class="calc-head">Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th><th>Loans / Advances</th>
     <th class="calc-head">Total Deductions</th><th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th class="calc-head">Net Pay</th>
   </tr></thead><tbody>${state.employees.map(e=>{
-    const v=getValues(e.id),r=calculate(e, v);
+    const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
       <td class="calc-cell money tardiness">${money(r.lateDeduction)}</td>
@@ -287,12 +289,11 @@ function restoreEmployee(id){
 }
 
 function updateRow(id){
-  const employee=state.employees.find(e=>String(e.id)===String(id));
-  const r=calculate(employee, getValues(id));
+  const r=calculate(getValues(id));
   document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
     const fields={
       '.dailyRate':r.dailyRate,'.hourlyRate':r.hourlyRate,'.basicPay':r.basicPay,
-      '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.allowance':r.allowance,'.commission':r.commission,'.lateDeduction':r.lateDeduction,
+      '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.tardiness':r.lateDeduction,'.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions,
       '.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions
     };
     Object.entries(fields).forEach(([sel,val])=>{const el=row.querySelector(sel);if(el)el.textContent=money(val);});
@@ -342,12 +343,13 @@ async function loadEmployees(){
         dailyRate:Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
       };
     }).filter(e=>e.id&&!e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
+    state.employees.forEach(e=>getValues(e.id).dailyRate=e.dailyRate??0);
     status.textContent=`✓ ${state.employees.length.toLocaleString()} active employees loaded`;loadBtn.textContent='↻ Reload Employees';render();
   }catch(err){status.textContent='Could not load employees';error.innerHTML=`<div class="error">⚠ ${esc(err?.message||'Unknown API error')}<br><small>Make sure the extension is running inside Manager.io.</small></div>`;loadBtn.textContent='↻ Retry';}
   finally{loadBtn.disabled=false;}
 }
 function payrollRows(){
-  return state.employees.map(e=>({employee:e,values:getValues(e.id),calc:calculate(e, getValues(e.id))}));
+  return state.employees.map(e=>({employee:e,values:getValues(e.id),calc:calculate(getValues(e.id))}));
 }
 function normalizeName(s){
   return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -363,6 +365,9 @@ function extractName(x){
   return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
 }
 async function loadPayslipItemMappings(){
+  // Payslip Item UUIDs confirmed from the test payslip in this Manager business.
+  // These explicit mappings make the first working version deterministic. A later
+  // version can replace them with a user-configurable mapping screen for other businesses.
   state.mappings={
     earnings:{
       basic:{key:'01a073de-2e72-7fd1-8a67-16b81d70d547',name:'Basic Salaries'},
@@ -401,34 +406,17 @@ function mappingRows(){
 function buildLine(item, description, units, unitPrice){
   if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
   const u=Number(units)||0, p=Number(unitPrice)||0;
-  return {
-    Item: item.key,
-    Description: description,
-    Units: u,
-    UnitPrice: p,
-    Amount: u * p,
-    EarningsAmount: u * p
-  };
+  return {item:item.key,description,units:u,unitPrice:p};
 }
 function buildDeduction(item, description, amount){
   const a=Number(amount)||0;
   if(!item || a<=0) return null;
-  return {
-    Item: item.key,
-    Description: description,
-    Amount: a,
-    DeductionAmount: a
-  };
+  return {item:item.key,description,deductionAmount:a};
 }
 function buildContribution(item, description, amount){
   const a=Number(amount)||0;
   if(!item || a<=0) return null;
-  return {
-    Item: item.key,
-    Description: description,
-    Amount: a,
-    ContributionAmount: a
-  };
+  return {item:item.key,description,contributionAmount:a};
 }
 function buildBatchPayload(){
   const items=payrollRows().map(x=>{
@@ -451,26 +439,10 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
-
-    return {
-      Key: crypto.randomUUID(),
-      Date: payslipDate.value,
-      Employee: x.employee.id,
-      Description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
-      Earnings: earnings,
-      Deductions: deductions,
-      Contributions: contributions,
-      ShowTotalsForThePeriod: false,
-      // Fallback keys in lowercase for general API support
-      key: crypto.randomUUID(),
-      date: payslipDate.value,
-      employee: x.employee.id,
-      description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
-      earnings,
-      deductions,
-      contributions,
-      showTotalsForThePeriod: false
-    };
+    // API4 batch POST expects each entry in Values to be the payslip value itself.
+    // The GET response wraps values as {key, item:{...}}, but that GET wrapper
+    // must NOT be sent back to the create endpoint.
+    return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
   });
   return {Values:items};
 }
@@ -521,11 +493,11 @@ async function findExistingPayslips(payload){
     const pv=p?.item||p||{};
     const hit=items.find(x=>{
       const i=x?.item||x||{};
-      return String(i.employee||i.Employee||'')===String(pv.employee||pv.Employee||'') &&
-             String(i.date||i.Date||'').slice(0,10)===String(pv.date||pv.Date||'').slice(0,10) &&
-             String(i.description||i.Description||'')===String(pv.description||pv.Description||'');
+      return String(i.employee||'')===String(pv.employee||'') &&
+             String(i.date||'').slice(0,10)===String(pv.date||'').slice(0,10) &&
+             String(i.description||'')===String(pv.description||'');
     });
-    if(hit)matches.push({employee:pv.employee||pv.Employee,date:pv.date||pv.Date,description:pv.description||pv.Description,key:extractKey(hit)});
+    if(hit)matches.push({employee:pv.employee,date:pv.date,description:pv.description,key:extractKey(hit)});
   }
   return matches;
 }
@@ -533,6 +505,7 @@ async function confirmCreatePayslips(){
   const missing=validateMappings(); if(missing.length)return;
   const btn=document.getElementById('confirmCreateBtn'); if(btn)btn.disabled=true;
   try{
+    // Always build from the current worksheet/date fields. Never reuse a prior payload.
     state.pendingPayload=null;
     const payload=buildBatchPayload();
     const existing=await findExistingPayslips(payload);
@@ -541,32 +514,51 @@ async function confirmCreatePayslips(){
       const list=existing.map(x=>esc(names.get(String(x.employee))||'Employee')).join(', ');
       throw new Error(`Payslip(s) already exist for this payroll date and period: ${list}. No new records were created. Review the Payslips tab before trying again.`);
     }
-    modalBody.innerHTML='<div class="notice">Creating payslips in Manager…</div>';
-    const response=await postMessageWithResponse({type:'api-request',method:'POST',path:'/api4/payslip-batch',body:payload});
+    modalBody.innerHTML='<div class="notice">Writing payslips to Manager…</div>';
+    const response=await postMessageWithResponse({type:'api-request',method:'PUT',path:'/api4/payslip-batch',body:payload});
     if(response?.error || response?.errors || response?.success===false){
       throw new Error(response?.message || response?.error || 'Manager rejected the request.');
     }
-    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the request. Verifying created payslips…</div>');
+    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the write. Verifying created payslips and Payslip Items…</div>');
     const verify=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
     const verifyItems=unwrapItems(verify);
-    const expectedKeys=payload.Values.map(x=>x.key||x.Key);
-    const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.Key||x?.item?.key||x?.item?.id));
+    const expectedKeys=payload.Values.map(x=>x.key);
+    const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.item?.key||x?.item?.id));
     const missingKeys=expectedKeys.filter(k=>!foundKeys.has(k));
-    const submittedSignatures=new Set(payload.Values.map(x=>{const i=x?.item||x||{};return `${i.employee||i.Employee||''}|${String(i.date||i.Date||'').slice(0,10)}|${i.description||i.Description||''}`;}));
-    const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||i.Employee||''}|${String(i.date||i.Date||'').slice(0,10)}|${i.description||i.Description||''}`;}));
+    const submittedSignatures=new Set(payload.Values.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
+    const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
     const missingSignatures=[...submittedSignatures].filter(k=>!foundSignatures.has(k));
     if(missingKeys.length && missingSignatures.length){
-      throw new Error(`Manager accepted the POST but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
+      throw new Error(`Manager accepted the write but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
+    }
+    const itemProblems=[];
+    for(const submitted of payload.Values){
+      const created=verifyItems.find(x=>extractKey(x)===submitted.key || extractKey(x?.item)===submitted.key);
+      const actual=created?.item||created||{};
+      for(const line of (submitted.earnings||[])){
+        const ok=(actual.earnings||[]).some(a=>String(a?.item||'')===String(line.item||'') && String(a?.description||'')===String(line.description||''));
+        if(!ok) itemProblems.push(`${actual.description||'Payslip'}: ${line.description}`);
+      }
+      for(const line of (submitted.deductions||[])){
+        const ok=(actual.deductions||[]).some(a=>String(a?.item||'')===String(line.item||'') && String(a?.description||'')===String(line.description||''));
+        if(!ok) itemProblems.push(`${actual.description||'Payslip'}: ${line.description}`);
+      }
+      for(const line of (submitted.contributions||[])){
+        const ok=(actual.contributions||[]).some(a=>String(a?.item||'')===String(line.item||'') && String(a?.description||'')===String(line.description||''));
+        if(!ok) itemProblems.push(`${actual.description||'Payslip'}: ${line.description}`);
+      }
+    }
+    if(itemProblems.length){
+      throw new Error(`Manager saved the payslip amounts, but the Payslip Item/Description fields were not preserved for: ${itemProblems.slice(0,5).join(', ')}. The extension stopped before showing success so the issue is visible instead of silently creating incomplete payslips.`);
     }
     state.createdResponse={postResponse:response,verification:verify}; state.pendingPayload=null;
     writeStatus.textContent=`✓ ${payload.Values.length} payslip(s) created in Manager`;
     modalTitle.textContent='Payslips Created';
     modalIntro.textContent='Manager accepted the batch and the created payslips were verified through the API. Verify the Payslips tab before paying employees.';
-    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payload.Values.length} payslip(s) were created and verified in Manager.</div><div class="success-actions"><button id="closeSuccessBtn" type="button">Close</button></div>`;
-    document.getElementById('closeSuccessBtn')?.addEventListener('click',()=>modalBackdrop.style.display='none');
+    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payload.Values.length} payslip(s) were created and verified in Manager, including the mapped Payslip Items and line descriptions.</div>`;
   }catch(err){
     if(btn)btn.disabled=false;
-    modalBody.insertAdjacentHTML('afterbegin',`<div class="error"><b>Manager did not accept the batch.</b><br>${esc(err?.message||'Unknown API error')}</div>`);
+    modalBody.insertAdjacentHTML('afterbegin',`<div class="error"><b>Manager did not complete the payroll write.</b><br>${esc(err?.message||'Unknown API error')}</div>`);
   }
 }
 function setButtons(){previewBtn.disabled=!state.employees.length;createBtn.disabled=!state.employees.length;}
@@ -627,6 +619,7 @@ periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;paysl
 })();
 </script>
 
+
 <script id="v10-final-ui">
 (function () {
   function markTotalRows() {
@@ -645,6 +638,7 @@ periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;paysl
   });
 })();
 </script>
+
 
 <script id="v10-close-cleanup">
 (function () {
