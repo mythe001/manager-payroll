@@ -6,48 +6,20 @@
 <title>Manager Payroll Worksheet V2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0d1117;--panel:#161b22;--panel2:#11161d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--good:#3fb950;--danger:#f85149;--warn:#d29922}
+:root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
 body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:18px}
-button,input,select{font:inherit}
-.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
-h1{font-size:20px}.sub{color:var(--muted);font-size:12px;margin-top:3px}.spacer{flex:1}
-button{border:1px solid var(--border);background:#21262d;color:var(--text);border-radius:7px;padding:9px 14px;cursor:pointer;font-weight:650}
-button:hover{border-color:#8b949e}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-button.good{background:var(--good);border-color:var(--good);color:#07130a}button.warn{background:#9e6a03;border-color:#9e6a03;color:#fff}
-button:disabled{opacity:.45;cursor:not-allowed}
-.period{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);padding:12px 14px;border-radius:10px;margin-bottom:14px}
-label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:12px;font-weight:650}
-input,select{background:#0d1117;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 9px;min-height:38px}
-input:focus,select:focus{outline:2px solid rgba(88,166,255,.35);border-color:var(--accent)}
-.summary{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:14px}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.card .value{font-size:19px;font-weight:750;margin-top:4px}
-.table-wrap{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px}
-.manual-head{background:#12304a !important;color:#d9ecff !important}
-.calc-head{background:#242a31 !important;color:#d5dbe1 !important}
-.manual-cell{background:rgba(88,166,255,.10) !important}
-.calc-cell{background:rgba(255,255,255,.025) !important;color:#d5dbe1}
-.manual-cell input{background:#102638 !important;border-color:#3978a9 !important}
-.calc-cell .money,.calc-cell .rate{font-weight:650}
-.reference-head{background:#3a2f12 !important;color:#ffe8a3 !important}
-.reference-cell{background:rgba(210,153,34,.10) !important;color:#ffe8a3}
-
-table{width:100%;border-collapse:collapse;min-width:2200px}
-th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
-th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}
-td.name{font-weight:650;min-width:180px;position:sticky;left:0;background:var(--panel);z-index:1}
-td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#7ee787}
-.section-title{padding:11px 13px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:13px;font-weight:750}
-.empty{padding:35px;text-align:center;color:var(--muted)}.status{color:var(--muted);font-size:12px}
-.error,.notice{padding:10px 12px;border-radius:7px;margin-bottom:12px;font-size:12px;line-height:1.5}
-.error{color:#ffb4b0;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3)}
-.notice{color:#e6edf3;background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.25)}
-.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
-.note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
-.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px}
-.modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
-pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
-.mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
+button,input,select{font:inherit}button{border:1px solid #ccc;background:#fff;color:#222;border-radius:4px;padding:8px 13px;cursor:pointer;font-weight:600}button:hover{border-color:#aaa;background:#fafafa}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.good{background:var(--good);border-color:var(--good);color:#fff}button.warn{background:#fff;border-color:#d2b05d;color:#77580c}button.danger{background:#fff;border-color:#d8aaa7;color:#9d3833}button:disabled{opacity:.5;cursor:not-allowed}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:4px;margin-bottom:14px}.top h1{font-size:20px;font-weight:650}.sub{color:var(--muted);font-size:12px;margin-top:3px}.spacer{flex:1}
+.period{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);padding:12px 14px;border-radius:4px;margin-bottom:14px}.period label{display:flex;flex-direction:column;gap:6px;color:#666;font-size:12px;font-weight:650}.period input{min-width:155px}
+input,select{background:#fff;border:1px solid #cfcfcf;color:var(--text);border-radius:4px;padding:8px 9px;min-height:38px}input:focus,select:focus{outline:2px solid rgba(43,131,198,.2);border-color:var(--accent)}input[type=date]{cursor:pointer}
+.period-summary{display:none;flex-basis:100%;font-size:12px;color:var(--muted);padding-top:2px}.period-summary.visible{display:block}.period-summary.warning{color:#795c0d}
+.summary{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:14px}.card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.card .value{font-size:19px;font-weight:700;margin-top:4px}
+.legend{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.legend span{padding:5px 8px;border-radius:3px;font-size:10px;font-weight:700}.legend .manual-legend{background:var(--accent-soft);color:#22699d;border:1px solid #c5e1f4}.legend .calc-legend{background:#f2f2f2;color:#555;border:1px solid #d9d9d9}.legend .reference-legend{background:var(--warn-soft);color:#7b5b0c;border:1px solid #ead58e}
+.table-wrap{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:4px}.manual-head{background:var(--accent-soft)!important;color:#246b9d!important}.calc-head{background:#f0f0f0!important;color:#555!important}.manual-cell{background:#f7fbfe!important}.calc-cell{background:#fff!important;color:#444}.manual-cell input{background:#fff!important;border-color:#9fc9e6!important}.calc-cell .money,.calc-cell .rate{font-weight:650}.reference-head{background:var(--warn-soft)!important;color:#785b0b!important}.reference-cell{background:#fffaf0!important;color:#72590f}
+table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}th{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}td.name{font-weight:650;min-width:180px;position:sticky;left:0;background:var(--panel);z-index:3}td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#2d7f45}.section-title{padding:11px 13px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700}.empty{padding:35px;text-align:center;color:var(--muted)}.status{color:var(--muted);font-size:12px}
+.error,.notice{padding:10px 12px;border-radius:4px;margin-bottom:12px;font-size:12px;line-height:1.5}.error{color:#9b3732;background:var(--danger-soft);border:1px solid #e5b3b0}.notice{color:#444;background:#f5f9fc;border:1px solid #c8ddeb}.warning{color:#795c0d;background:var(--warn-soft);border:1px solid #ead58e}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}.note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}.modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}pre{background:#f7f7f7;border:1px solid var(--border);border-radius:4px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}.mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mapping .box{background:#fafafa;padding:10px;border:1px solid var(--border);border-radius:4px}.mapping .ok{color:#3d8a52}.mapping .bad{color:#a13b36}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
 </style>
 </head>
@@ -64,6 +36,8 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <label>Payroll period end<input id="periodEnd" type="date"></label>
   <label>Payslip date<input id="payslipDate" type="date"></label>
   <button id="recalcBtn" type="button">Recalculate</button>
+  <button id="clearBtn" class="danger" type="button">Clear Inputs</button>
+  <div id="periodSummary" class="period-summary"></div>
 </div>
 
 <div class="summary">
@@ -71,13 +45,12 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <div class="card"><div class="label">Gross Earnings</div><div class="value" id="grossTotal">₱0.00</div></div>
   <div class="card"><div class="label">Total Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
   <div class="card"><div class="label">Employer Contributions</div><div class="value" id="contributionTotal">₱0.00</div></div>
-  
-<div class="legend" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--muted)">
-  <span style="padding:7px 10px;border-radius:6px;background:#12304a;color:#d9ecff;border:1px solid #3978a9">MANUAL INPUT</span>
-  <span style="padding:7px 10px;border-radius:6px;background:#242a31;color:#d5dbe1;border:1px solid var(--border)">CALCULATED</span>
-  <span style="padding:7px 10px;border-radius:6px;background:#3a2f12;color:#ffe8a3;border:1px solid #8b6f25">REFERENCE</span>
+  <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
 </div>
-<div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
+<div class="legend" style="margin:-4px 0 14px">
+  <span class="manual-legend">MANUAL INPUT</span>
+  <span class="calc-legend">CALCULATED</span>
+  <span class="reference-legend">REFERENCE</span>
 </div>
 
 <div class="notice">
@@ -103,9 +76,9 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <span class="status" id="writeStatus">No payslips created yet.</span>
 </div>
 <div class="note">
-  Assumptions for this prototype: Daily Rate is read from the Employee custom field named "Daily Rate"; 8 hours/day; overtime uses the regular hourly rate. Holiday Factor is entered per employee
-  (for example 1.00 for one additional day or 0.30 for a 30% premium). The Daily Rate is read-only here for verification. These are calculation settings, not
-  a determination of Philippine statutory compliance. Payslip writing uses the Payslip Item mappings confirmed in this Manager business.
+  Calculation assumptions: Daily Rate is read from the Employee custom field named "Daily Rate"; 8 hours/day; overtime uses the regular hourly rate. Holiday Factor is entered per employee
+  (for example 1.00 for one additional day or 0.30 for a 30% premium). Daily Rate is read-only here for verification. These are calculation settings, not a determination
+  of Philippine statutory compliance. Payslip writing uses the Payslip Item mappings confirmed in this Manager business.
 </div>
 
 <div class="modal-backdrop" id="modalBackdrop">
@@ -200,7 +173,6 @@ function render(){
       <td>${inputCell(e,'holidayFactor',v.holidayFactor)}</td>
       <td>${inputCell(e,'allowance',v.allowance)}</td>
       <td>${inputCell(e,'commission',v.commission)}</td>
-      <td class="money dailyRate">${money(r.dailyRate)}</td>
       <td class="money hourlyRate">${money(r.hourlyRate)}</td>
       <td class="money basicPay">${money(r.basicPay)}</td>
       <td class="money overtimePay">${money(r.overtimePay)}</td>
@@ -414,7 +386,7 @@ async function previewPayslips(){
   const rows=payrollRows();
   modalTitle.textContent='Review Payslips';
   modalIntro.textContent=`${rows.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
-  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Late</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.lateDeduction)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is calculated from Late Hours and will be posted using the dedicated <b>Tardiness</b> Payslip Item. Other Income and Other Deductions are not included in this payroll setup.</div>`;
+  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Allowances</th><th>Commissions</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.lateDeduction)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is calculated from Late Hours and will be posted using the dedicated <b>Tardiness</b> Payslip Item. The payroll setup includes only the defined earnings, deductions, and employer contribution items.</div>`;
   modalBackdrop.style.display='flex';
 }
 async function createPayslips(){
@@ -432,12 +404,28 @@ async function createPayslips(){
     modalBody.innerHTML=`<div class="error"><b>Could not prepare Payslip Items.</b><br>${esc(err?.message||'Unknown error')}</div><p>The extension uses the Payslip Item mappings confirmed in this Manager business. No records were written.</p>`;
   }
 }
+async function findExistingPayslips(payload){
+  const data=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
+  const items=unwrapItems(data);
+  const matches=[];
+  for(const p of payload.Values){
+    const hit=items.find(x=>{const i=x?.item||x||{};return String(i.employee||'')===String(p.employee||'') && String(i.date||'').slice(0,10)===String(p.date||'').slice(0,10) && String(i.description||'')===String(p.description||'');});
+    if(hit)matches.push({employee:p.employee,date:p.date,description:p.description,key:extractKey(hit)});
+  }
+  return matches;
+}
 async function confirmCreatePayslips(){
   const missing=validateMappings();
   if(missing.length)return;
   const btn=document.getElementById('confirmCreateBtn'); if(btn)btn.disabled=true;
   try{
     const payload=state.pendingPayload || (state.pendingPayload=buildBatchPayload());
+    const existing=await findExistingPayslips(payload);
+    if(existing.length){
+      const names=new Map(state.employees.map(e=>[String(e.id),e.name]));
+      const list=existing.map(x=>esc(names.get(String(x.employee))||'Employee')).join(', ');
+      throw new Error(`Payslip(s) already exist for this payroll date and period: ${list}. No new records were created. Review the Payslips tab before trying again.`);
+    }
     modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Creating payslips in Manager…</div>');
     // POST is the create operation for payslip-batch. PUT is intended for
     // idempotent updates and may return true without creating new records.
@@ -471,17 +459,35 @@ async function confirmCreatePayslips(){
     writeStatus.textContent=`✓ ${payrollRows().length} payslip(s) created in Manager`;
     modalTitle.textContent='Payslips Created';
     modalIntro.textContent='Manager accepted the batch and the created payslips were verified through the API. Verify the Payslips tab before paying employees.';
-    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created and verified in Manager.</div><pre>${esc(JSON.stringify(response,null,2))}</pre>`;
+    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created and verified in Manager.</div><div class="success-actions"><button class="primary" id="viewPayslipsBtn" type="button">View Payslips</button><button id="closeSuccessBtn" type="button">Close</button></div>`;
+    document.getElementById('viewPayslipsBtn')?.addEventListener('click',()=>{try{window.parent.location.href='/payslips';}catch(e){window.location.href='/payslips';}});
+    document.getElementById('closeSuccessBtn')?.addEventListener('click',()=>modalBackdrop.style.display='none');
   }catch(err){
     if(btn)btn.disabled=false;
     modalBody.insertAdjacentHTML('afterbegin',`<div class="error"><b>Manager did not accept the batch.</b><br>${esc(err?.message||'Unknown API error')}</div>`);
   }
 }
 function setButtons(){previewBtn.disabled=!state.employees.length;createBtn.disabled=!state.employees.length;}
-loadBtn.addEventListener('click',loadEmployees);recalcBtn.addEventListener('click',render);previewBtn.addEventListener('click',previewPayslips);createBtn.addEventListener('click',createPayslips);closeModal.addEventListener('click',()=>modalBackdrop.style.display='none');
+function updatePeriodSummary(){
+  if(!periodStart.value||!periodEnd.value){periodSummary.className='period-summary';periodSummary.textContent='';return;}
+  const a=new Date(periodStart.value+'T00:00:00'),b=new Date(periodEnd.value+'T00:00:00');
+  if(Number.isNaN(a.getTime())||Number.isNaN(b.getTime())||b<a){periodSummary.className='period-summary visible warning';periodSummary.textContent='⚠ Payroll period end must be on or after the start date.';return;}
+  const days=Math.floor((b-a)/86400000)+1;
+  const fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  periodSummary.className='period-summary visible';periodSummary.textContent=`Payroll period: ${fmt(a)} – ${fmt(b)} · ${days} calendar day${days===1?'':'s'}`;
+}
+function clearManualInputs(){
+  state.employees.forEach(e=>{const v=getValues(e.id);Object.assign(v,{actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,sss:0,phic:0,pagibig:0,tax:0,loan:0,employerSss:0,employerPhic:0,employerPagibig:0});});
+  render(); writeStatus.textContent='Manual payroll inputs cleared.';
+}
+function enableNativeDatePicker(el){
+  el.addEventListener('click',()=>{try{if(typeof el.showPicker==='function')el.showPicker();}catch(e){}});
+}
+loadBtn.addEventListener('click',loadEmployees);recalcBtn.addEventListener('click',render);clearBtn.addEventListener('click',clearManualInputs);previewBtn.addEventListener('click',previewPayslips);createBtn.addEventListener('click',createPayslips);closeModal.addEventListener('click',()=>modalBackdrop.style.display='none');
 modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)modalBackdrop.style.display='none';});
+[periodStart,periodEnd,payslipDate].forEach(el=>{enableNativeDatePicker(el);el.addEventListener('change',updatePeriodSummary);});
 const today=new Date(),yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,'0'),dd=String(today.getDate()).padStart(2,'0');
-periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;payslipDate.value=`${yyyy}-${mm}-${dd}`;
+periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;payslipDate.value=`${yyyy}-${mm}-${dd}`;updatePeriodSummary();
 </script>
 
 <script>
@@ -493,7 +499,7 @@ periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;paysl
         'ACTUAL DAYS DUTY','OT HOURS','LATE HOURS',
         'HOLIDAY FACTOR','ALLOWANCES','COMMISSIONS',
         'SSS','PHIC','PAG-IBIG','WITHHOLDING TAX',
-        'LOANS / ADVANCES','OTHER DEDUCTIONS',
+        'LOANS / ADVANCES',
         'EMPLOYER SSS','EMPLOYER PHIC','EMPLOYER PAG-IBIG'
       ]);
       const reference = new Set(['DAILY RATE']);
