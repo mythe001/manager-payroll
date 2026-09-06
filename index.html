@@ -15,17 +15,18 @@ input,select{background:#fff;border:1px solid #cfcfcf;color:var(--text);border-r
 .period-summary{display:none;flex-basis:100%;font-size:12px;color:var(--muted);padding-top:2px}.period-summary.visible{display:block}.period-summary.warning{color:#795c0d}
 .summary{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:14px}.card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.card .value{font-size:19px;font-weight:700;margin-top:4px}
 .legend{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.legend span{padding:5px 8px;border-radius:3px;font-size:10px;font-weight:700}.legend .manual-legend{background:var(--accent-soft);color:#22699d;border:1px solid #c5e1f4}.legend .calc-legend{background:#f2f2f2;color:#555;border:1px solid #d9d9d9}.legend .reference-legend{background:var(--warn-soft);color:#7b5b0c;border:1px solid #ead58e}
-.table-wrap{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:4px}.manual-head{background:var(--accent-soft)!important;color:#246b9d!important}.calc-head{background:#f0f0f0!important;color:#555!important}.manual-cell{background:#f7fbfe!important}.calc-cell{background:#fff!important;color:#444}.manual-cell input{background:#fff!important;border-color:#9fc9e6!important}.calc-cell .money,.calc-cell .rate{font-weight:650}.reference-head{background:var(--warn-soft)!important;color:#785b0b!important}.reference-cell{background:#fffaf0!important;color:#72590f}
-table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}th{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}td.name{font-weight:650;min-width:180px;position:sticky;left:0;background:var(--panel);z-index:3}td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#2d7f45}.section-title{padding:11px 13px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700}.empty{padding:35px;text-align:center;color:var(--muted)}.status{color:var(--muted);font-size:12px}
+.table-wrap{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:4px}.manual-head{background:var(--accent-soft)!important;color:#246b9d!important}.calc-head{background:#f0f0f0!important;color:#555!important}.manual-cell{background:#f7fbfe!important}.calc-cell{background:#fff!important;color:#444}.reference-head,.calc-head{text-align:right!important}.reference-cell,.calc-cell{text-align:right!important}.employee-head{text-align:left!important}.manual-cell input{background:#fff!important;border-color:#9fc9e6!important}.calc-cell .money,.calc-cell .rate{font-weight:650}.reference-head{background:var(--warn-soft)!important;color:#785b0b!important}.reference-cell{background:#fffaf0!important;color:#72590f}
+table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}th{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}td.name{font-weight:650;min-width:220px;position:sticky;left:0;background:var(--panel);z-index:3;white-space:nowrap}td.name span{vertical-align:middle}.exclude-btn{width:22px;height:22px;padding:0;margin-right:7px;border:1px solid transparent;background:transparent;color:#777;font-size:17px;line-height:18px;border-radius:3px;vertical-align:middle}.exclude-btn:hover{border-color:#cfcfcf;background:#f5f5f5;color:#a13b36}td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#2d7f45}.section-title{padding:11px 13px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700}.empty{padding:35px;text-align:center;color:var(--muted)}.status{color:var(--muted);font-size:12px}
 .error,.notice{padding:10px 12px;border-radius:4px;margin-bottom:12px;font-size:12px;line-height:1.5}.error{color:#9b3732;background:var(--danger-soft);border:1px solid #e5b3b0}.notice{color:#444;background:#f5f9fc;border:1px solid #c8ddeb}.warning{color:#795c0d;background:var(--warn-soft);border:1px solid #ead58e}
 .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}.note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}.modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}pre{background:#f7f7f7;border:1px solid var(--border);border-radius:4px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}.mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mapping .box{background:#fafafa;padding:10px;border:1px solid var(--border);border-radius:4px}.mapping .ok{color:#3d8a52}.mapping .bad{color:#a13b36}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V7 prototype • POST payslip creation</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V8 prototype • POST payslip creation</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -70,6 +71,8 @@ table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;bor
   <div id="deductionsApp" class="empty">No employees loaded yet.</div>
 </div>
 
+<div id="excludedApp"></div>
+
 <div class="actions">
   <button class="primary" id="previewBtn" type="button" disabled>Preview Payslips</button>
   <button class="good" id="createBtn" type="button" disabled>Create Payslips in Manager</button>
@@ -108,7 +111,7 @@ function postMessageWithResponse(message) {
   });
 }
 
-const state = {employees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), payslipItems: {earnings:[],deductions:[],contributions:[]}, createdResponse:null, pendingPayload:null, mappings: {
+const state = {employees: [], excludedEmployees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), payslipItems: {earnings:[],deductions:[],contributions:[]}, createdResponse:null, pendingPayload:null, mappings: {
   earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
   deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
   contributions: {sss:null, phic:null, pagibig:null}
@@ -153,19 +156,19 @@ function inputCell(e,field,value){
 }
 function render(){
   if(!state.employees.length){
-    earningsApp.className='empty'; earningsApp.textContent='No active employees found.';
-    deductionsApp.className='empty'; deductionsApp.textContent='No active employees found.';
-    updateSummary(); setButtons(); return;
+    earningsApp.className='empty'; earningsApp.textContent='No active employees included in this payroll.';
+    deductionsApp.className='empty'; deductionsApp.textContent='No active employees included in this payroll.';
+    renderExcluded(); updateSummary(); setButtons(); return;
   }
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
-    <th>Employee</th><th>Daily Rate</th><th>Actual Days Duty</th>
+    <th class="employee-head">Employee</th><th>Daily Rate</th><th>Actual Days Duty</th>
     <th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
     <th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
-      <td class="name">${esc(e.name)}</td>
+      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
       <td class="reference-cell money">${e.dailyRate==null?'⚠ Not set':money(e.dailyRate)}</td>
       <td>${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
       <td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
@@ -183,13 +186,13 @@ function render(){
   }).join('')}</tbody></table>`;
 
   deductionsApp.innerHTML=`<table><thead><tr>
-    <th>Employee</th><th>Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th>
+    <th class="employee-head">Employee</th><th>Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th>
     <th>Loans / Advances</th><th>Total Deductions</th>
     <th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th>Net Pay</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
-      <td class="name">${esc(e.name)}</td>
+      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
       <td class="money lateDeduction">${money(r.lateDeduction)}</td>
       <td>${inputCell(e,'sss',v.sss)}</td><td>${inputCell(e,'phic',v.phic)}</td><td>${inputCell(e,'pagibig',v.pagibig)}</td>
       <td>${inputCell(e,'tax',v.tax)}</td><td>${inputCell(e,'loan',v.loan)}</td>
@@ -205,8 +208,45 @@ function render(){
     state.pendingPayload=null;
     updateRow(id); updateSummary(); setButtons();
   }));
-  updateSummary(); setButtons();
+  document.querySelectorAll('.exclude-btn').forEach(btn=>btn.addEventListener('click',()=>excludeEmployee(btn.dataset.exclude)));
+  renderExcluded(); updateSummary(); setButtons();
 }
+function renderExcluded(){
+  if(!excludedApp)return;
+  if(!state.excludedEmployees.length){excludedApp.innerHTML=''; return;}
+  excludedApp.innerHTML=`<div class="excluded-bar"><span><b>${state.excludedEmployees.length}</b> employee${state.excludedEmployees.length===1?'':'s'} excluded from this payroll.</span><button type="button" id="showExcludedBtn">Show excluded</button></div>`;
+  document.getElementById('showExcludedBtn')?.addEventListener('click',showExcludedEmployees);
+}
+function excludeEmployee(id){
+  const index=state.employees.findIndex(e=>String(e.id)===String(id));
+  if(index<0)return;
+  const [employee]=state.employees.splice(index,1);
+  state.excludedEmployees.push(employee);
+  state.pendingPayload=null;
+  render();
+  writeStatus.textContent=`${employee.name} excluded from this payroll.`;
+}
+function showExcludedEmployees(){
+  if(!state.excludedEmployees.length)return;
+  const names=state.excludedEmployees.map(e=>`<div class="excluded-row"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
+  modalTitle.textContent='Excluded Employees';
+  modalIntro.textContent='These employees are excluded only from the current payroll. Their Manager Employee records are unchanged.';
+  modalBody.innerHTML=`<div class="excluded-list">${names}</div>`;
+  modalBackdrop.style.display='flex';
+  document.querySelectorAll('[data-restore]').forEach(btn=>btn.addEventListener('click',()=>restoreEmployee(btn.dataset.restore)));
+}
+function restoreEmployee(id){
+  const index=state.excludedEmployees.findIndex(e=>String(e.id)===String(id));
+  if(index<0)return;
+  const [employee]=state.excludedEmployees.splice(index,1);
+  state.employees.push(employee);
+  state.employees.sort((a,b)=>a.name.localeCompare(b.name));
+  state.pendingPayload=null;
+  modalBackdrop.style.display='none';
+  render();
+  writeStatus.textContent=`${employee.name} restored to this payroll.`;
+}
+
 function updateRow(id){
   const r=calculate(getValues(id));
   document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
@@ -250,7 +290,7 @@ async function loadEmployees(){
     status.textContent='Finding Daily Rate custom field…';
     await loadDailyRateField();
     const records=await getAllEmployees((loaded,page)=>status.textContent=`Loading page ${page} · ${loaded.toLocaleString()} records`);
-    state.employees=records.map(record=>{
+    state.excludedEmployees=[]; state.employees=records.map(record=>{
       const item=record?.item||{};
       const decimals=item?.customFields2?.decimals||{};
       const rawRate=state.dailyRateFieldId ? decimals[state.dailyRateFieldId] : null;
