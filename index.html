@@ -8,25 +8,43 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
 body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:18px}
-button,input,select{font:inherit}button{border:1px solid #ccc;background:#fff;color:#222;border-radius:4px;padding:8px 13px;cursor:pointer;font-weight:600}button:hover{border-color:#aaa;background:#fafafa}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.good{background:var(--good);border-color:var(--good);color:#fff}button.warn{background:#fff;border-color:#d2b05d;color:#77580c}button.danger{background:#fff;border-color:#d8aaa7;color:#9d3833}button:disabled{opacity:.5;cursor:not-allowed}
-.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:4px;margin-bottom:14px}.top h1{font-size:20px;font-weight:650}.sub{color:var(--muted);font-size:12px;margin-top:3px}.spacer{flex:1}
-.period{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);padding:12px 14px;border-radius:4px;margin-bottom:14px}.period label{display:flex;flex-direction:column;gap:6px;color:#666;font-size:12px;font-weight:650}.period input{min-width:155px}
-input,select{background:#fff;border:1px solid #cfcfcf;color:var(--text);border-radius:4px;padding:8px 9px;min-height:38px}input:focus,select:focus{outline:2px solid rgba(43,131,198,.2);border-color:var(--accent)}input[type=date]{cursor:pointer}
-.period-summary{display:none;flex-basis:100%;font-size:12px;color:var(--muted);padding-top:2px}.period-summary.visible{display:block}.period-summary.warning{color:#795c0d}
-.summary{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:14px}.card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.card .value{font-size:19px;font-weight:700;margin-top:4px}
+button,input,select{font:inherit}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
+h1{font-size:20px}.sub{color:var(--muted);font-size:12px;margin-top:3px}.spacer{flex:1}
+button{border:1px solid #ccc;background:#fff;color:#222;border-radius:4px;padding:8px 13px;cursor:pointer;font-weight:600}
+button:hover{border-color:#aaa;background:#fafafa}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.good{background:var(--good);border-color:var(--good);color:#fff}button.warn{background:#fff;border-color:#d2b05d;color:#77580c}button.danger{background:#fff;border-color:#d8aaa7;color:#9d3833}
+button:disabled{opacity:.5;cursor:not-allowed}
+.period{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);padding:12px 14px;border-radius:4px;margin-bottom:14px}
+.period label{display:flex;flex-direction:column;gap:6px;color:#666;font-size:12px;font-weight:650}.period input{min-width:155px}
+input,select{background:#fff;border:1px solid #cfcfcf;color:var(--text);border-radius:4px;padding:8px 9px;min-height:38px}
+input:focus,select:focus{outline:2px solid rgba(43,131,198,.2);border-color:var(--accent)}input[type=date]{cursor:pointer}.period-summary{display:none;flex-basis:100%;font-size:12px;color:var(--muted);padding-top:2px}.period-summary.visible{display:block}.period-summary.warning{color:#795c0d}
+.summary{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.card .value{font-size:19px;font-weight:750;margin-top:4px}
 .legend{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.legend span{padding:5px 8px;border-radius:3px;font-size:10px;font-weight:700}.legend .manual-legend{background:var(--accent-soft);color:#22699d;border:1px solid #c5e1f4}.legend .calc-legend{background:#f2f2f2;color:#555;border:1px solid #d9d9d9}.legend .reference-legend{background:var(--warn-soft);color:#7b5b0c;border:1px solid #ead58e}
 .table-wrap{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:4px}.manual-head{background:var(--accent-soft)!important;color:#246b9d!important}.calc-head{background:#f0f0f0!important;color:#555!important}.manual-cell{background:#f7fbfe!important}.calc-cell{background:#fff!important;color:#444}.reference-head,.calc-head{text-align:right!important}.reference-cell,.calc-cell{text-align:right!important}.employee-head{text-align:left!important}.manual-cell input{background:#fff!important;border-color:#9fc9e6!important}.calc-cell .money,.calc-cell .rate{font-weight:650}.reference-head{background:var(--warn-soft)!important;color:#785b0b!important}.reference-cell{background:#fffaf0!important;color:#72590f}
-table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}th{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}td.name{font-weight:650;min-width:220px;position:sticky;left:0;background:var(--panel);z-index:3;white-space:nowrap}td.name span{vertical-align:middle}.exclude-btn{width:22px;height:22px;padding:0;margin-right:7px;border:1px solid transparent;background:transparent;color:#777;font-size:17px;line-height:18px;border-radius:3px;vertical-align:middle}.exclude-btn:hover{border-color:#cfcfcf;background:#f5f5f5;color:#a13b36}td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#2d7f45}.section-title{padding:11px 13px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700}.empty{padding:35px;text-align:center;color:var(--muted)}.status{color:var(--muted);font-size:12px}
+
+table{width:100%;border-collapse:collapse;min-width:2200px}
+th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
+th{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}
+td.name{font-weight:650;min-width:220px;position:sticky;left:0;background:var(--panel);z-index:3;white-space:nowrap}td.name span{vertical-align:middle}.exclude-btn{width:22px;height:22px;padding:0;margin-right:7px;border:1px solid transparent;background:transparent;color:#777;font-size:17px;line-height:18px;border-radius:3px;vertical-align:middle}.exclude-btn:hover{border-color:#cfcfcf;background:#f5f5f5;color:#a13b36}
+td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#7ee787}
+.section-title{padding:11px 13px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700}
+.empty{padding:35px;text-align:center;color:var(--muted)}.status{color:var(--muted);font-size:12px}
 .error,.notice{padding:10px 12px;border-radius:4px;margin-bottom:12px;font-size:12px;line-height:1.5}.error{color:#9b3732;background:var(--danger-soft);border:1px solid #e5b3b0}.notice{color:#444;background:#f5f9fc;border:1px solid #c8ddeb}.warning{color:#795c0d;background:var(--warn-soft);border:1px solid #ead58e}
-.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}.note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}.modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}pre{background:#f7f7f7;border:1px solid var(--border);border-radius:4px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}.mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mapping .box{background:#fafafa;padding:10px;border:1px solid var(--border);border-radius:4px}.mapping .ok{color:#3d8a52}.mapping .bad{color:#a13b36}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}
+.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)
+.modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
+.mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V9 • POST payslip creation</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V10 • Payroll worksheet</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -46,13 +64,15 @@ table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;bor
   <div class="card"><div class="label">Gross Earnings</div><div class="value" id="grossTotal">₱0.00</div></div>
   <div class="card"><div class="label">Total Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
   <div class="card"><div class="label">Employer Contributions</div><div class="value" id="contributionTotal">₱0.00</div></div>
-  <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
+  
+<div class="legend" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--muted)">
+  <span style="padding:7px 10px;border-radius:6px;background:#12304a;color:#d9ecff;border:1px solid #3978a9">MANUAL INPUT</span>
+  <span style="padding:7px 10px;border-radius:6px;background:#242a31;color:#d5dbe1;border:1px solid var(--border)">CALCULATED</span>
+  <span style="padding:7px 10px;border-radius:6px;background:#3a2f12;color:#ffe8a3;border:1px solid #8b6f25">REFERENCE</span>
 </div>
-<div class="legend" style="margin:-4px 0 14px">
-  <span class="manual-legend">MANUAL INPUT</span>
-  <span class="calc-legend">CALCULATED</span>
-  <span class="reference-legend">REFERENCE</span>
+<div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
 </div>
+<div class="legend" style="margin:-4px 0 14px"><span class="manual-legend">MANUAL INPUT</span><span class="calc-legend">CALCULATED</span><span class="reference-legend">REFERENCE</span></div>
 
 <div class="notice">
   <b>Calculation model:</b> Daily Rate is read-only from the Employee record's <b>Daily Rate</b> custom field.
@@ -79,9 +99,9 @@ table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;bor
   <span class="status" id="writeStatus">No payslips created yet.</span>
 </div>
 <div class="note">
-  Calculation assumptions: Daily Rate is read from the Employee custom field named "Daily Rate"; 8 hours/day; overtime uses the regular hourly rate. Holiday Factor is entered per employee
-  (for example 1.00 for one additional day or 0.30 for a 30% premium). Daily Rate is read-only here for verification. These are calculation settings, not a determination
-  of Philippine statutory compliance. Payslip writing uses the Payslip Item mappings confirmed in this Manager business.
+  Assumptions for this prototype: Daily Rate is read from the Employee custom field named "Daily Rate"; 8 hours/day; overtime uses the regular hourly rate. Holiday Factor is entered per employee
+  (for example 1.00 for one additional day or 0.30 for a 30% premium). The Daily Rate is read-only here for verification. These are calculation settings, not
+  a determination of Philippine statutory compliance. Payslip writing uses the Payslip Item mappings confirmed in this Manager business.
 </div>
 
 <div class="modal-backdrop" id="modalBackdrop">
@@ -162,89 +182,62 @@ function render(){
   }
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
-    <th class="employee-head">Employee</th><th>Daily Rate</th><th>Actual Days Duty</th>
-    <th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
-    <th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Gross</th>
+    <th class="employee-head">Employee</th><th>Actual Days Duty</th><th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
+    <th class="reference-head">Daily Rate</th><th class="calc-head">Hourly Rate</th><th class="calc-head">Basic Pay</th><th class="calc-head">OT Pay</th><th class="calc-head">Holiday Pay</th><th class="calc-head">Late Deduction</th><th class="calc-head">Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
-      <td class="reference-cell money">${e.dailyRate==null?'⚠ Not set':money(e.dailyRate)}</td>
-      <td>${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
-      <td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
-      <td>${inputCell(e,'lateHours',v.lateHours)}</td>
-      <td>${inputCell(e,'holidayFactor',v.holidayFactor)}</td>
-      <td>${inputCell(e,'allowance',v.allowance)}</td>
-      <td>${inputCell(e,'commission',v.commission)}</td>
-      <td class="money hourlyRate">${money(r.hourlyRate)}</td>
-      <td class="money basicPay">${money(r.basicPay)}</td>
-      <td class="money overtimePay">${money(r.overtimePay)}</td>
-      <td class="money holidayPay">${money(r.holidayPay)}</td>
-      <td class="money lateDeduction">${money(r.lateDeduction)}</td>
-      <td class="money gross">${money(r.gross)}</td>
+      <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td><td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td><td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
+      <td class="manual-cell">${inputCell(e,'holidayFactor',v.holidayFactor)}</td><td class="manual-cell">${inputCell(e,'allowance',v.allowance)}</td><td class="manual-cell">${inputCell(e,'commission',v.commission)}</td>
+      <td class="reference-cell money dailyRate">${e.dailyRate==null?'⚠ Not set':money(e.dailyRate)}</td><td class="calc-cell money hourlyRate">${money(r.hourlyRate)}</td><td class="calc-cell money basicPay">${money(r.basicPay)}</td>
+      <td class="calc-cell money overtimePay">${money(r.overtimePay)}</td><td class="calc-cell money holidayPay">${money(r.holidayPay)}</td><td class="calc-cell money lateDeduction">${money(r.lateDeduction)}</td><td class="calc-cell money gross">${money(r.gross)}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
 
   deductionsApp.innerHTML=`<table><thead><tr>
-    <th class="employee-head">Employee</th><th>Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th>
-    <th>Loans / Advances</th><th>Total Deductions</th>
-    <th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th>Net Pay</th>
+    <th class="employee-head">Employee</th><th class="calc-head">Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th><th>Loans / Advances</th>
+    <th class="calc-head">Total Deductions</th><th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th class="calc-head">Net Pay</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
-      <td class="money lateDeduction">${money(r.lateDeduction)}</td>
-      <td>${inputCell(e,'sss',v.sss)}</td><td>${inputCell(e,'phic',v.phic)}</td><td>${inputCell(e,'pagibig',v.pagibig)}</td>
-      <td>${inputCell(e,'tax',v.tax)}</td><td>${inputCell(e,'loan',v.loan)}</td>
-      <td class="money deductionTotal">${money(r.deductions)}</td>
-      <td>${inputCell(e,'employerSss',v.employerSss)}</td><td>${inputCell(e,'employerPhic',v.employerPhic)}</td><td>${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
-      <td class="money net">${money(r.net)}</td>
+      <td class="calc-cell money lateDeduction">${money(r.lateDeduction)}</td>
+      <td class="manual-cell">${inputCell(e,'sss',v.sss)}</td><td class="manual-cell">${inputCell(e,'phic',v.phic)}</td><td class="manual-cell">${inputCell(e,'pagibig',v.pagibig)}</td>
+      <td class="manual-cell">${inputCell(e,'tax',v.tax)}</td><td class="manual-cell">${inputCell(e,'loan',v.loan)}</td>
+      <td class="calc-cell money deductionTotal">${money(r.deductions)}</td>
+      <td class="manual-cell">${inputCell(e,'employerSss',v.employerSss)}</td><td class="manual-cell">${inputCell(e,'employerPhic',v.employerPhic)}</td><td class="manual-cell">${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
+      <td class="calc-cell money net">${money(r.net)}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
 
   document.querySelectorAll('.pay-input').forEach(input=>input.addEventListener('input',()=>{
     const row=input.closest('tr'), id=row.dataset.id, field=input.dataset.field, v=getValues(id);
-    v[field]=num(input.value);
-    state.pendingPayload=null;
-    updateRow(id); updateSummary(); setButtons();
+    v[field]=num(input.value); state.pendingPayload=null; updateRow(id); updateSummary(); setButtons();
   }));
   document.querySelectorAll('.exclude-btn').forEach(btn=>btn.addEventListener('click',()=>excludeEmployee(btn.dataset.exclude)));
   renderExcluded(); updateSummary(); setButtons();
 }
 function renderExcluded(){
   if(!excludedApp)return;
-  if(!state.excludedEmployees.length){excludedApp.innerHTML=''; return;}
+  if(!state.excludedEmployees.length){excludedApp.innerHTML='';return;}
   excludedApp.innerHTML=`<div class="excluded-bar"><span><b>${state.excludedEmployees.length}</b> employee${state.excludedEmployees.length===1?'':'s'} excluded from this payroll.</span><button type="button" id="showExcludedBtn">Show excluded</button></div>`;
   document.getElementById('showExcludedBtn')?.addEventListener('click',showExcludedEmployees);
 }
 function excludeEmployee(id){
-  const index=state.employees.findIndex(e=>String(e.id)===String(id));
-  if(index<0)return;
-  const [employee]=state.employees.splice(index,1);
-  state.excludedEmployees.push(employee);
-  state.pendingPayload=null;
-  render();
-  writeStatus.textContent=`${employee.name} excluded from this payroll.`;
+  const index=state.employees.findIndex(e=>String(e.id)===String(id)); if(index<0)return;
+  const [employee]=state.employees.splice(index,1); state.excludedEmployees.push(employee); state.pendingPayload=null; render(); writeStatus.textContent=`${employee.name} excluded from this payroll.`;
 }
 function showExcludedEmployees(){
   if(!state.excludedEmployees.length)return;
   const names=state.excludedEmployees.map(e=>`<div class="excluded-row"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
-  modalTitle.textContent='Excluded Employees';
-  modalIntro.textContent='These employees are excluded only from the current payroll. Their Manager Employee records are unchanged.';
-  modalBody.innerHTML=`<div class="excluded-list">${names}</div>`;
-  modalBackdrop.style.display='flex';
+  modalTitle.textContent='Excluded Employees'; modalIntro.textContent='These employees are excluded only from the current payroll. Their Manager Employee records are unchanged.';
+  modalBody.innerHTML=`<div class="excluded-list">${names}</div>`; modalBackdrop.style.display='flex';
   document.querySelectorAll('[data-restore]').forEach(btn=>btn.addEventListener('click',()=>restoreEmployee(btn.dataset.restore)));
 }
 function restoreEmployee(id){
-  const index=state.excludedEmployees.findIndex(e=>String(e.id)===String(id));
-  if(index<0)return;
-  const [employee]=state.excludedEmployees.splice(index,1);
-  state.employees.push(employee);
-  state.employees.sort((a,b)=>a.name.localeCompare(b.name));
-  state.pendingPayload=null;
-  modalBackdrop.style.display='none';
-  render();
-  writeStatus.textContent=`${employee.name} restored to this payroll.`;
+  const index=state.excludedEmployees.findIndex(e=>String(e.id)===String(id)); if(index<0)return;
+  const [employee]=state.excludedEmployees.splice(index,1); state.employees.push(employee); state.employees.sort((a,b)=>a.name.localeCompare(b.name)); state.pendingPayload=null; modalBackdrop.style.display='none'; render(); writeStatus.textContent=`${employee.name} restored to this payroll.`;
 }
 
 function updateRow(id){
@@ -290,7 +283,8 @@ async function loadEmployees(){
     status.textContent='Finding Daily Rate custom field…';
     await loadDailyRateField();
     const records=await getAllEmployees((loaded,page)=>status.textContent=`Loading page ${page} · ${loaded.toLocaleString()} records`);
-    state.excludedEmployees=[]; state.employees=records.map(record=>{
+    state.excludedEmployees=[];
+    state.employees=records.map(record=>{
       const item=record?.item||{};
       const decimals=item?.customFields2?.decimals||{};
       const rawRate=state.dailyRateFieldId ? decimals[state.dailyRateFieldId] : null;
@@ -397,10 +391,10 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
-    // Keep the payslip value inside the {key, item:{...}} structure.
-    // This is the structure that Manager renders correctly in the native
-    // Payslip form, including Payslip Item and Description columns.
-    return {key:crypto.randomUUID(),item:{date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false}};
+    // API4 batch POST expects each entry in Values to be the payslip value itself.
+    // The GET response wraps values as {key, item:{...}}, but that GET wrapper
+    // must NOT be sent back to the create endpoint.
+    return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
   });
   return {Values:items};
 }
@@ -426,7 +420,7 @@ async function previewPayslips(){
   const rows=payrollRows();
   modalTitle.textContent='Review Payslips';
   modalIntro.textContent=`${rows.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
-  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Allowances</th><th>Commissions</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.lateDeduction)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is calculated from Late Hours and will be posted using the dedicated <b>Tardiness</b> Payslip Item. The payroll setup includes only the defined earnings, deductions, and employer contribution items.</div>`;
+  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Late</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.lateDeduction)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is calculated from Late Hours and will be posted using the dedicated <b>Tardiness</b> Payslip Item. The payroll setup includes only the defined earnings, deductions, and employer contribution items.</div>`;
   modalBackdrop.style.display='flex';
 }
 async function createPayslips(){
@@ -446,61 +440,54 @@ async function createPayslips(){
 }
 async function findExistingPayslips(payload){
   const data=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
-  const items=unwrapItems(data);
-  const matches=[];
+  const items=unwrapItems(data), matches=[];
   for(const p of payload.Values){
     const pv=p?.item||p||{};
-    const hit=items.find(x=>{const i=x?.item||x||{};return String(i.employee||'')===String(pv.employee||'') && String(i.date||'').slice(0,10)===String(pv.date||'').slice(0,10) && String(i.description||'')===String(pv.description||'');});
-    if(hit)matches.push({employee:p.employee,date:p.date,description:p.description,key:extractKey(hit)});
+    const hit=items.find(x=>{
+      const i=x?.item||x||{};
+      return String(i.employee||'')===String(pv.employee||'') &&
+             String(i.date||'').slice(0,10)===String(pv.date||'').slice(0,10) &&
+             String(i.description||'')===String(pv.description||'');
+    });
+    if(hit)matches.push({employee:pv.employee,date:pv.date,description:pv.description,key:extractKey(hit)});
   }
   return matches;
 }
 async function confirmCreatePayslips(){
-  const missing=validateMappings();
-  if(missing.length)return;
+  const missing=validateMappings(); if(missing.length)return;
   const btn=document.getElementById('confirmCreateBtn'); if(btn)btn.disabled=true;
   try{
-    const payload=state.pendingPayload || (state.pendingPayload=buildBatchPayload());
+    // Always build from the current worksheet/date fields. Never reuse a prior payload.
+    state.pendingPayload=null;
+    const payload=buildBatchPayload();
     const existing=await findExistingPayslips(payload);
     if(existing.length){
       const names=new Map(state.employees.map(e=>[String(e.id),e.name]));
       const list=existing.map(x=>esc(names.get(String(x.employee))||'Employee')).join(', ');
       throw new Error(`Payslip(s) already exist for this payroll date and period: ${list}. No new records were created. Review the Payslips tab before trying again.`);
     }
-    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Creating payslips in Manager…</div>');
-    // POST is the create operation for payslip-batch. PUT is intended for
-    // idempotent updates and may return true without creating new records.
+    modalBody.innerHTML='<div class="notice">Creating payslips in Manager…</div>';
     const response=await postMessageWithResponse({type:'api-request',method:'POST',path:'/api4/payslip-batch',body:payload});
     if(response?.error || response?.errors || response?.success===false){
-      const message=response?.message || response?.error || 'Manager rejected the request.';
-      throw new Error(message);
+      throw new Error(response?.message || response?.error || 'Manager rejected the request.');
     }
-
-    // Some Manager batch responses are simply `true`, so verify that the
-    // client-generated payslip keys can actually be found after the POST.
     modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the request. Verifying created payslips…</div>');
     const verify=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
-    const verifyItems=Array.isArray(verify)?verify:(verify?.items||verify?.data||[]);
+    const verifyItems=unwrapItems(verify);
     const expectedKeys=payload.Values.map(x=>x.key);
     const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.item?.key||x?.item?.id));
     const missingKeys=expectedKeys.filter(k=>!foundKeys.has(k));
-    // Some Manager create responses may assign/return a different server key.
-    // If so, verify by employee + date + description instead of falsely reporting failure.
     const submittedSignatures=new Set(payload.Values.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
-    const foundSignatures=new Set(verifyItems.map(x=>{
-      const i=x?.item||x||{};
-      return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;
-    }));
+    const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
     const missingSignatures=[...submittedSignatures].filter(k=>!foundSignatures.has(k));
     if(missingKeys.length && missingSignatures.length){
       throw new Error(`Manager accepted the POST but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
     }
-
-    state.createdResponse={postResponse:response,verification:verify};
-    writeStatus.textContent=`✓ ${payrollRows().length} payslip(s) created in Manager`;
+    state.createdResponse={postResponse:response,verification:verify}; state.pendingPayload=null;
+    writeStatus.textContent=`✓ ${payload.Values.length} payslip(s) created in Manager`;
     modalTitle.textContent='Payslips Created';
     modalIntro.textContent='Manager accepted the batch and the created payslips were verified through the API. Verify the Payslips tab before paying employees.';
-    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created and verified in Manager.</div><div class="success-actions"><button id="closeSuccessBtn" type="button">Close</button></div>`;
+    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payload.Values.length} payslip(s) were created and verified in Manager.</div><div class="success-actions"><button id="closeSuccessBtn" type="button">Close</button></div>`;
     document.getElementById('closeSuccessBtn')?.addEventListener('click',()=>modalBackdrop.style.display='none');
   }catch(err){
     if(btn)btn.disabled=false;
@@ -512,20 +499,17 @@ function updatePeriodSummary(){
   if(!periodStart.value||!periodEnd.value){periodSummary.className='period-summary';periodSummary.textContent='';return;}
   const a=new Date(periodStart.value+'T00:00:00'),b=new Date(periodEnd.value+'T00:00:00');
   if(Number.isNaN(a.getTime())||Number.isNaN(b.getTime())||b<a){periodSummary.className='period-summary visible warning';periodSummary.textContent='⚠ Payroll period end must be on or after the start date.';return;}
-  const days=Math.floor((b-a)/86400000)+1;
-  const fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  const days=Math.floor((b-a)/86400000)+1,fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
   periodSummary.className='period-summary visible';periodSummary.textContent=`Payroll period: ${fmt(a)} – ${fmt(b)} · ${days} calendar day${days===1?'':'s'}`;
 }
 function clearManualInputs(){
-  state.employees.forEach(e=>{const v=getValues(e.id);Object.assign(v,{actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,sss:0,phic:0,pagibig:0,tax:0,loan:0,employerSss:0,employerPhic:0,employerPagibig:0});});
-  render(); writeStatus.textContent='Manual payroll inputs cleared.';
+  state.employees.forEach(e=>Object.assign(getValues(e.id),{actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,sss:0,phic:0,pagibig:0,tax:0,loan:0,employerSss:0,employerPhic:0,employerPagibig:0}));
+  state.pendingPayload=null; render(); writeStatus.textContent='Manual payroll inputs cleared.';
 }
-function enableNativeDatePicker(el){
-  el.addEventListener('click',()=>{try{if(typeof el.showPicker==='function')el.showPicker();}catch(e){}});
-}
+function enableNativeDatePicker(el){el.addEventListener('click',()=>{try{if(typeof el.showPicker==='function')el.showPicker();}catch(e){}});}
 loadBtn.addEventListener('click',loadEmployees);recalcBtn.addEventListener('click',render);clearBtn.addEventListener('click',clearManualInputs);previewBtn.addEventListener('click',previewPayslips);createBtn.addEventListener('click',createPayslips);closeModal.addEventListener('click',()=>modalBackdrop.style.display='none');
 modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)modalBackdrop.style.display='none';});
-[periodStart,periodEnd,payslipDate].forEach(el=>{enableNativeDatePicker(el);el.addEventListener('change',updatePeriodSummary);});
+[periodStart,periodEnd,payslipDate].forEach(el=>{enableNativeDatePicker(el);el.addEventListener('change',()=>{state.pendingPayload=null;updatePeriodSummary();});});
 const today=new Date(),yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,'0'),dd=String(today.getDate()).padStart(2,'0');
 periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;payslipDate.value=`${yyyy}-${mm}-${dd}`;updatePeriodSummary();
 </script>
@@ -539,7 +523,7 @@ periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;paysl
         'ACTUAL DAYS DUTY','OT HOURS','LATE HOURS',
         'HOLIDAY FACTOR','ALLOWANCES','COMMISSIONS',
         'SSS','PHIC','PAG-IBIG','WITHHOLDING TAX',
-        'LOANS / ADVANCES',
+        'LOANS / ADVANCES','OTHER DEDUCTIONS',
         'EMPLOYER SSS','EMPLOYER PHIC','EMPLOYER PAG-IBIG'
       ]);
       const reference = new Set(['DAILY RATE']);
