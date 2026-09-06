@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Manager Payroll Calculator</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--panel:#161b22;--panel2:#11161d;--border:#30363d;
+    --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--good:#3fb950;--danger:#f85149;
+  }
+  body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px}
+  button,input{font:inherit}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:18px}
+  h1{font-size:20px}
+  .sub{color:var(--muted);font-size:12px;margin-top:3px}
+  .spacer{flex:1}
+  button{border:1px solid var(--border);background:#21262d;color:var(--text);border-radius:7px;padding:9px 14px;cursor:pointer;font-weight:650}
+  button:hover{border-color:#8b949e}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .period{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);padding:14px 16px;border-radius:10px;margin-bottom:18px}
+  label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:12px;font-weight:650}
+  input{background:#0d1117;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:9px 10px;min-height:40px}
+  input:focus{outline:2px solid rgba(88,166,255,.35);border-color:var(--accent)}
+  .summary{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:12px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px}
+  .card .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .card .value{font-size:22px;font-weight:750;margin-top:5px}
+  .table-wrap{overflow-x:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px}
+  table{width:100%;border-collapse:collapse;min-width:980px}
+  th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
+  th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0}
+  td.name{font-weight:650;min-width:170px}
+  td input{width:105px}
+  .money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .net{font-weight:750;color:#7ee787}
+  .empty{padding:35px;text-align:center;color:var(--muted)}
+  .status{color:var(--muted);font-size:12px}
+  .error{color:var(--danger);background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);padding:10px 12px;border-radius:7px;margin-bottom:15px}
+  .note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:12px}
+  @media(max-width:800px){
+    body{padding:12px}
+    .summary{grid-template-columns:repeat(2,minmax(130px,1fr))}
+  }
+  @media(max-width:420px){
+    .summary{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="top">
+  <div>
+    <h1>Payroll Calculator</h1>
+    <div class="sub">Manager.io • first prototype • calculation only</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="status" id="status">Press Load Employees</span>
+  <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
+</div>
+
+<div id="error"></div>
+
+<div class="period">
+  <label>Payroll period start
+    <input id="periodStart" type="date">
+  </label>
+  <label>Payroll period end
+    <input id="periodEnd" type="date">
+  </label>
+  <button id="recalcBtn" type="button">Recalculate</button>
+</div>
+
+<div class="summary">
+  <div class="card"><div class="label">Employees</div><div class="value" id="employeeCount">0</div></div>
+  <div class="card"><div class="label">Gross Payroll</div><div class="value" id="grossTotal">₱0.00</div></div>
+  <div class="card"><div class="label">Other Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
+  <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
+</div>
+
+<div class="table-wrap">
+  <div id="app" class="empty">No employees loaded yet.</div>
+</div>
+
+<div class="note">
+  This prototype intentionally does not calculate Philippine statutory contributions or taxes yet.
+  “Absences” and “Other deductions” are entered as peso amounts. The next version can add
+  SSS, PhilHealth, Pag-IBIG, withholding tax, payroll-item mapping, and Manager payslip creation.
+</div>
+
+<script>
+/* Manager.io API bridge — keep this pattern inside the extension iframe. */
+function postMessageWithResponse(message) {
+  return new Promise((resolve, reject) => {
+    const requestId = crypto.randomUUID();
+    const timer = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      reject(new Error('Timeout — is this running inside Manager.io?'));
+    }, 15000);
+
+    function handler(event) {
+      if (event.data?.type?.endsWith('-response') && event.data?.requestId === requestId) {
+        clearTimeout(timer);
+        window.removeEventListener('message', handler);
+        resolve(event.data.body);
+      }
+    }
+
+    window.addEventListener('message', handler);
+    window.parent.postMessage({ ...message, requestId }, '*');
+  });
+}
+
+const state = { employees: [], values: new Map() };
+const peso = new Intl.NumberFormat(undefined, {
+  style: 'currency', currency: 'PHP', minimumFractionDigits: 2, maximumFractionDigits: 2
+});
+
+function money(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? peso.format(n) : peso.format(0);
+}
+
+function num(value) {
+  const n = Number.parseFloat(value);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function getValues(id) {
+  if (!state.values.has(id)) {
+    state.values.set(id, { basic: 0, overtime: 0, allowance: 0, absence: 0, deduction: 0 });
+  }
+  return state.values.get(id);
+}
+
+function calculate(v) {
+  const gross = Math.max(0, num(v.basic) + num(v.overtime) + num(v.allowance) - num(v.absence));
+  const deductions = num(v.deduction);
+  const net = Math.max(0, gross - deductions);
+  return { gross, deductions, net };
+}
+
+function updateSummary() {
+  let gross = 0, deductions = 0, net = 0;
+  for (const employee of state.employees) {
+    const r = calculate(getValues(employee.id));
+    gross += r.gross; deductions += r.deductions; net += r.net;
+  }
+  document.getElementById('employeeCount').textContent = state.employees.length.toLocaleString();
+  document.getElementById('grossTotal').textContent = money(gross);
+  document.getElementById('deductionTotal').textContent = money(deductions);
+  document.getElementById('netTotal').textContent = money(net);
+}
+
+function render() {
+  const app = document.getElementById('app');
+
+  if (!state.employees.length) {
+    app.className = 'empty';
+    app.textContent = 'No active employees found.';
+    updateSummary();
+    return;
+  }
+
+  app.className = '';
+  app.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Basic Pay</th>
+          <th>Overtime</th>
+          <th>Allowances</th>
+          <th>Absences</th>
+          <th>Gross Pay</th>
+          <th>Other Deductions</th>
+          <th>Net Pay</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${state.employees.map(e => {
+          const v = getValues(e.id);
+          const r = calculate(v);
+          return `
+            <tr data-id="${esc(e.id)}">
+              <td class="name">${esc(e.name)}</td>
+              <td><input class="pay-input" data-field="basic" type="number" min="0" step="0.01" value="${v.basic || ''}" aria-label="${esc(e.name)} basic pay"></td>
+              <td><input class="pay-input" data-field="overtime" type="number" min="0" step="0.01" value="${v.overtime || ''}" aria-label="${esc(e.name)} overtime"></td>
+              <td><input class="pay-input" data-field="allowance" type="number" min="0" step="0.01" value="${v.allowance || ''}" aria-label="${esc(e.name)} allowances"></td>
+              <td><input class="pay-input" data-field="absence" type="number" min="0" step="0.01" value="${v.absence || ''}" aria-label="${esc(e.name)} absences"></td>
+              <td class="money gross">${money(r.gross)}</td>
+              <td><input class="pay-input" data-field="deduction" type="number" min="0" step="0.01" value="${v.deduction || ''}" aria-label="${esc(e.name)} other deductions"></td>
+              <td class="money net">${money(r.net)}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+
+  app.querySelectorAll('.pay-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const row = input.closest('tr');
+      const id = row.dataset.id;
+      const field = input.dataset.field;
+      const v = getValues(id);
+      v[field] = num(input.value);
+      const r = calculate(v);
+      row.querySelector('.gross').textContent = money(r.gross);
+      row.querySelector('.net').textContent = money(r.net);
+      updateSummary();
+    });
+  });
+
+  updateSummary();
+}
+
+async function getAllEmployees(onProgress) {
+  const allItems = [];
+  let nextToken = null;
+  let pageNum = 0;
+
+  do {
+    const path = nextToken
+      ? '/api4/employee-batch?PageSize=99999&next_page_token=' + encodeURIComponent(nextToken)
+      : '/api4/employee-batch?PageSize=99999';
+
+    const data = await postMessageWithResponse({
+      type: 'api-request',
+      method: 'GET',
+      path
+    });
+
+    const page = Array.isArray(data) ? data : (data?.items || data?.data || []);
+    allItems.push(...page);
+
+    nextToken =
+      data?.next_page_token ||
+      data?.nextPageToken ||
+      data?._links?.next?.href ||
+      null;
+
+    pageNum++;
+    if (onProgress) onProgress(allItems.length, pageNum);
+    if (pageNum >= 1000) break;
+  } while (nextToken);
+
+  return allItems;
+}
+
+async function loadEmployees() {
+  const btn = document.getElementById('loadBtn');
+  const status = document.getElementById('status');
+  const error = document.getElementById('error');
+
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  error.innerHTML = '';
+
+  try {
+    const records = await getAllEmployees((loaded, page) => {
+      status.textContent = `Loading page ${page} · ${loaded.toLocaleString()} records`;
+    });
+
+    state.employees = records
+      .map(record => ({
+        id: record?.key,
+        name: record?.item?.name || record?.item?.nameWithCode || 'Unnamed employee',
+        inactive: Boolean(record?.item?.inactive)
+      }))
+      .filter(e => e.id && !e.inactive)
+      .sort((a,b) => a.name.localeCompare(b.name));
+
+    status.textContent = `✓ ${state.employees.length.toLocaleString()} active employees loaded`;
+    btn.textContent = '↻ Reload Employees';
+    render();
+  } catch (err) {
+    status.textContent = 'Could not load employees';
+    error.innerHTML = `<div class="error">⚠ ${esc(err?.message || 'Unknown API error')}<br><small>Make sure the extension is running inside Manager.io.</small></div>`;
+    btn.textContent = '↻ Retry';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('loadBtn').addEventListener('click', loadEmployees);
+document.getElementById('recalcBtn').addEventListener('click', render);
+
+const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, '0');
+const dd = String(today.getDate()).padStart(2, '0');
+document.getElementById('periodStart').value = `${yyyy}-${mm}-01`;
+document.getElementById('periodEnd').value = `${yyyy}-${mm}-${dd}`;
+</script>
+</body>
+</html>
