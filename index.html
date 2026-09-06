@@ -104,6 +104,7 @@ tfoot tr td:last-child, tfoot tr th:last-child {
   <label>Payslip date<input id="payslipDate" type="date"></label>
   <button id="recalcBtn" type="button">Recalculate</button>
   <button id="clearBtn" class="danger" type="button">Clear Inputs</button>
+  <button id="debugBtn" type="button" disabled title="Available after Preview or Create is used">🔍 Debug: View Last JSON</button>
   <div id="periodSummary" class="period-summary"></div>
 </div>
 
@@ -259,12 +260,26 @@ function render(){
     </tr>`;
   }).join('')}</tbody></table>`;
 
-  document.querySelectorAll('.pay-input').forEach(input=>input.addEventListener('input',()=>{
-    const row=input.closest('tr'), id=row.dataset.id, field=input.dataset.field, v=getValues(id);
-    v[field]=num(input.value); state.pendingPayload=null; updateRow(id); updateSummary(); setButtons();
-  }));
+  state.rowRefs=new Map();
+  state.employees.forEach(e=>{
+    state.rowRefs.set(String(e.id),{
+      earningsRow: earningsApp.querySelector(`tr[data-id="${cssId(e.id)}"]`),
+      deductionsRow: deductionsApp.querySelector(`tr[data-id="${cssId(e.id)}"]`)
+    });
+  });
+  document.querySelectorAll('.pay-input').forEach(input=>{
+    const handler=()=>{
+      const row=input.closest('tr'), id=row.dataset.id, field=input.dataset.field, v=getValues(id);
+      v[field]=num(input.value); state.pendingPayload=null; updateRow(id); updateSummary(); setButtons();
+    };
+    input.addEventListener('input',handler);
+    input.addEventListener('change',handler);
+  });
   document.querySelectorAll('.exclude-btn').forEach(btn=>btn.addEventListener('click',()=>excludeEmployee(btn.dataset.exclude)));
   renderExcluded(); updateSummary(); setButtons();
+}
+function cssId(id){
+  try{ return CSS.escape(String(id)); }catch(e){ return String(id).replace(/["\\]/g,'\\$&'); }
 }
 function renderExcluded(){
   if(!excludedApp)return;
@@ -290,12 +305,16 @@ function restoreEmployee(id){
 
 function updateRow(id){
   const r=calculate(getValues(id));
-  document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
-    const fields={
-      '.dailyRate':r.dailyRate,'.hourlyRate':r.hourlyRate,'.basicPay':r.basicPay,
-      '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.tardiness':r.lateDeduction,'.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions,
-      '.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions
-    };
+  const refs=state.rowRefs?.get(String(id));
+  const rows=[refs?.earningsRow,refs?.deductionsRow].filter(Boolean);
+  // Fallback in case rowRefs wasn't populated for this id (e.g. called before a render).
+  const targetRows=rows.length?rows:Array.from(document.querySelectorAll('tr[data-id]')).filter(tr=>tr.dataset.id===String(id));
+  const fields={
+    '.dailyRate':r.dailyRate,'.hourlyRate':r.hourlyRate,'.basicPay':r.basicPay,
+    '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.tardiness':r.lateDeduction,
+    '.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions
+  };
+  targetRows.forEach(row=>{
     Object.entries(fields).forEach(([sel,val])=>{const el=row.querySelector(sel);if(el)el.textContent=money(val);});
   });
 }
@@ -440,8 +459,6 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
     // API4 batch POST expects each entry in Values to be the payslip value itself.
-// IMPORTANT: keep this flat structure. The earlier V7 version used this exact
-// POST + flat Values shape for payslip creation.
     // The GET response wraps values as {key, item:{...}}, but that GET wrapper
     // must NOT be sent back to the create endpoint.
     return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
@@ -468,6 +485,9 @@ function reviewHtml(){
 }
 async function previewPayslips(){
   const rows=payrollRows();
+  try{ if(!Object.values(state.mappings.earnings).some(Boolean)) await loadPayslipItemMappings(); }catch(e){}
+  state.lastDebug={label:'Preview (not sent to Manager)', payloadToSend: buildBatchPayload()};
+  debugBtn.disabled=false;
   modalTitle.textContent='Review Payslips';
   modalIntro.textContent=`${rows.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
   modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is calculated from Late Hours and will be posted using the dedicated <b>Tardiness</b> Payslip Item. The payroll setup includes only the defined earnings, deductions, and employer contribution items.</div>`;
@@ -517,12 +537,15 @@ async function confirmCreatePayslips(){
       throw new Error(`Payslip(s) already exist for this payroll date and period: ${list}. No new records were created. Review the Payslips tab before trying again.`);
     }
     modalBody.innerHTML='<div class="notice">Writing payslips to Manager…</div>';
-    const response=await postMessageWithResponse({type:'api-request',method:'POST',path:'/api4/payslip-batch',body:payload});
+    const response=await postMessageWithResponse({type:'api-request',method:'PUT',path:'/api4/payslip-batch',body:payload});
+    state.lastDebug={label:'Create: sent payload vs Manager\'s raw write response', payloadSent:payload, rawWriteResponse:response};
+    debugBtn.disabled=false;
     if(response?.error || response?.errors || response?.success===false){
       throw new Error(response?.message || response?.error || 'Manager rejected the request.');
     }
-    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the batch. Verifying created payslips and Payslip Items…</div>');
+    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the write. Verifying created payslips and Payslip Items…</div>');
     const verify=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
+    state.lastDebug={label:'Create: sent payload vs Manager\'s stored record (this is the one to check for the blank earnings/description bug)', payloadSent:payload, rawWriteResponse:response, storedAfterWrite:verify};
     const verifyItems=unwrapItems(verify);
     const expectedKeys=payload.Values.map(x=>x.key);
     const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.item?.key||x?.item?.id));
@@ -531,7 +554,7 @@ async function confirmCreatePayslips(){
     const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
     const missingSignatures=[...submittedSignatures].filter(k=>!foundSignatures.has(k));
     if(missingKeys.length && missingSignatures.length){
-      throw new Error(`Manager accepted the POST but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
+      throw new Error(`Manager accepted the write but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
     }
     const itemProblems=[];
     for(const submitted of payload.Values){
@@ -564,6 +587,18 @@ async function confirmCreatePayslips(){
   }
 }
 function setButtons(){previewBtn.disabled=!state.employees.length;createBtn.disabled=!state.employees.length;}
+function showDebugJson(){
+  if(!state.lastDebug){return;}
+  modalTitle.textContent='Debug: Raw JSON';
+  modalIntro.textContent=state.lastDebug.label||'';
+  const parts=[];
+  if(state.lastDebug.payloadToSend) parts.push(['What the extension would send to /api4/payslip-batch', state.lastDebug.payloadToSend]);
+  if(state.lastDebug.payloadSent) parts.push(['What the extension sent (PUT body)', state.lastDebug.payloadSent]);
+  if(state.lastDebug.rawWriteResponse) parts.push(['Manager\'s response to the PUT', state.lastDebug.rawWriteResponse]);
+  if(state.lastDebug.storedAfterWrite) parts.push(['What Manager actually has stored (GET right after write) — compare the earnings[].item / earnings[].description fields here against the "sent" block above', state.lastDebug.storedAfterWrite]);
+  modalBody.innerHTML=parts.map(([label,data])=>`<div style="margin-bottom:14px"><b style="font-size:12px">${esc(label)}</b><pre>${esc(JSON.stringify(data,null,2))}</pre></div>`).join('');
+  modalBackdrop.style.display='flex';
+}
 function updatePeriodSummary(){
   if(!periodStart.value||!periodEnd.value){periodSummary.className='period-summary';periodSummary.textContent='';return;}
   const a=new Date(periodStart.value+'T00:00:00'),b=new Date(periodEnd.value+'T00:00:00');
@@ -576,7 +611,7 @@ function clearManualInputs(){
   state.pendingPayload=null; render(); writeStatus.textContent='Manual payroll inputs cleared.';
 }
 function enableNativeDatePicker(el){el.addEventListener('click',()=>{try{if(typeof el.showPicker==='function')el.showPicker();}catch(e){}});}
-loadBtn.addEventListener('click',loadEmployees);recalcBtn.addEventListener('click',render);clearBtn.addEventListener('click',clearManualInputs);previewBtn.addEventListener('click',previewPayslips);createBtn.addEventListener('click',createPayslips);closeModal.addEventListener('click',()=>modalBackdrop.style.display='none');
+loadBtn.addEventListener('click',loadEmployees);recalcBtn.addEventListener('click',render);clearBtn.addEventListener('click',clearManualInputs);previewBtn.addEventListener('click',previewPayslips);createBtn.addEventListener('click',createPayslips);closeModal.addEventListener('click',()=>modalBackdrop.style.display='none');debugBtn.addEventListener('click',showDebugJson);
 modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)modalBackdrop.style.display='none';});
 [periodStart,periodEnd,payslipDate].forEach(el=>{enableNativeDatePicker(el);el.addEventListener('change',()=>{state.pendingPayload=null;updatePeriodSummary();});});
 const today=new Date(),yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,'0'),dd=String(today.getDate()).padStart(2,'0');
