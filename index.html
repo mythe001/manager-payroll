@@ -53,7 +53,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V4 prototype • review & create payslips</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V5 prototype • review & create payslips</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -84,7 +84,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <b>Calculation model:</b> Daily Rate is read-only from the Employee record's <b>Daily Rate</b> custom field.
   Hourly Rate = Daily Rate ÷ Hours/Day. Basic Pay = Daily Rate × Actual Days Duty.
   OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Factor. Allowances and Commissions are manual earnings.
-  Late Deduction = Hourly Rate × Late Hours. Deductions and employer contributions remain manual.
+  Late Deduction = Hourly Rate × Late Hours. Tardiness is calculated and posted as a deduction using the dedicated Tardiness Payslip Item. SSS, PHIC, Pag-IBIG, withholding tax, and loans/advances remain manual deductions. Employer contributions remain manual.
 </div>
 
 <div class="table-wrap">
@@ -105,8 +105,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 <div class="note">
   Assumptions for this prototype: Daily Rate is read from the Employee custom field named "Daily Rate"; 8 hours/day; overtime uses the regular hourly rate. Holiday Factor is entered per employee
   (for example 1.00 for one additional day or 0.30 for a 30% premium). The Daily Rate is read-only here for verification. These are calculation settings, not
-  a determination of Philippine statutory compliance. Payslip writing remains guarded until the Manager
-  Payslip Item mappings are connected.
+  a determination of Philippine statutory compliance. Payslip writing uses the Payslip Item mappings confirmed in this Manager business.
 </div>
 
 <div class="modal-backdrop" id="modalBackdrop">
@@ -137,8 +136,8 @@ function postMessageWithResponse(message) {
 }
 
 const state = {employees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), payslipItems: {earnings:[],deductions:[],contributions:[]}, createdResponse:null, mappings: {
-  earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null, other:null},
-  deductions: {sss:null, phic:null, pagibig:null, tax:null, loan:null, other:null},
+  earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
+  deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
   contributions: {sss:null, phic:null, pagibig:null}
 }};
 const peso = new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',minimumFractionDigits:2,maximumFractionDigits:2});
@@ -148,7 +147,7 @@ const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
     actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,
-    sss:0,phic:0,pagibig:0,tax:0,loan:0,otherDeduction:0,
+    sss:0,phic:0,pagibig:0,tax:0,loan:0,
     employerSss:0,employerPhic:0,employerPagibig:0
   });
   return state.values.get(id);
@@ -164,7 +163,7 @@ function calculate(v){
   const commission=num(v.commission);
   const lateDeduction=hourlyRate*num(v.lateHours);
   const gross=Math.max(0,basicPay+overtimePay+holidayPay+allowance+commission-lateDeduction);
-  const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan)+num(v.otherDeduction);
+  const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan);
   const net=Math.max(0,gross-deductions);
   const contributions=num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
   return {dailyRate,hourlyRate,basicPay,overtimePay,holidayPay,allowance,commission,lateDeduction,gross,deductions,net,contributions};
@@ -212,15 +211,16 @@ function render(){
   }).join('')}</tbody></table>`;
 
   deductionsApp.innerHTML=`<table><thead><tr>
-    <th>Employee</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th>
-    <th>Loans / Advances</th><th>Other Deductions</th><th>Total Deductions</th>
+    <th>Employee</th><th>Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th>
+    <th>Loans / Advances</th><th>Total Deductions</th>
     <th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th>Net Pay</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name">${esc(e.name)}</td>
+      <td class="money lateDeduction">${money(r.lateDeduction)}</td>
       <td>${inputCell(e,'sss',v.sss)}</td><td>${inputCell(e,'phic',v.phic)}</td><td>${inputCell(e,'pagibig',v.pagibig)}</td>
-      <td>${inputCell(e,'tax',v.tax)}</td><td>${inputCell(e,'loan',v.loan)}</td><td>${inputCell(e,'otherDeduction',v.otherDeduction)}</td>
+      <td>${inputCell(e,'tax',v.tax)}</td><td>${inputCell(e,'loan',v.loan)}</td>
       <td class="money deductionTotal">${money(r.deductions)}</td>
       <td>${inputCell(e,'employerSss',v.employerSss)}</td><td>${inputCell(e,'employerPhic',v.employerPhic)}</td><td>${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
       <td class="money net">${money(r.net)}</td>
@@ -309,51 +309,38 @@ function extractKey(x){
 function extractName(x){
   return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
 }
-async function getLegacyList(candidates){
-  let lastErr=null;
-  for(const path of candidates){
-    try{
-      const data=await postMessageWithResponse({type:'api-request',method:'GET',path});
-      const items=unwrapItems(data).map(x=>({key:extractKey(x),name:extractName(x),raw:x})).filter(x=>x.key&&x.name);
-      if(items.length) return items;
-    }catch(err){ lastErr=err; }
-  }
-  if(lastErr) throw lastErr;
-  return [];
-}
 async function loadPayslipItemMappings(){
-  const [earnings,deductions,contributions]=await Promise.all([
-    getLegacyList(['/api/PayslipEarningsItem','/api/payslip-earnings-item','/api/payslip-earnings-items']),
-    getLegacyList(['/api/PayslipDeductionItem','/api/payslip-deduction-item','/api/payslip-deduction-items']),
-    getLegacyList(['/api/PayslipContributionItem','/api/payslip-contribution-item','/api/payslip-contribution-items'])
-  ]);
-  const pick=(list,patterns)=>{
-    const exact=list.find(x=>patterns.some(p=>normalizeName(x.name)===normalizeName(p)));
-    if(exact) return exact;
-    return list.find(x=>patterns.some(p=>normalizeName(x.name).includes(normalizeName(p))))||null;
+  // Payslip Item UUIDs confirmed from the test payslip in this Manager business.
+  // These explicit mappings make the first working version deterministic. A later
+  // version can replace them with a user-configurable mapping screen for other businesses.
+  state.mappings={
+    earnings:{
+      basic:{key:'01a073de-2e72-7fd1-8a67-16b81d70d547',name:'Basic Salaries'},
+      holiday:{key:'01a07471-d31b-721d-b077-64c5a7f43de7',name:'Holiday Pay'},
+      overtime:{key:'01a07471-50d6-74ef-a4da-506ce14307e0',name:'Overtime'},
+      allowance:{key:'01a07471-7a23-7f00-be93-f669d373deee',name:'Allowances'},
+      commission:{key:'01a07471-9669-7d49-989a-d9c6c8a4fc8d',name:'Commissions'}
+    },
+    deductions:{
+      tardiness:{key:'01a07680-64c4-75d2-992a-9069ced25608',name:'Tardiness'},
+      sss:{key:'01a073df-4565-7418-a1b1-d2da27f170e6',name:'SSS Contributions'},
+      phic:{key:'01a07472-d592-7d9b-ac7b-f41f073bdb80',name:'PHIC Contributions'},
+      pagibig:{key:'01a07472-fe7f-7a0a-b7ca-de940e5cc1cb',name:'Pag-IBIG Contributions'},
+      tax:{key:'01a07473-637c-7ac5-8c8f-dfb1631dc20a',name:'Withholding Tax'},
+      loan:{key:'01a07473-c1b4-7033-ac28-5035ae4812fc',name:'Employee Cash Advances/Loans'}
+    },
+    contributions:{
+      sss:{key:'01a073e0-505b-7337-9c5c-ce07e744f3d8',name:'SSS Employer'},
+      phic:{key:'01a07474-9699-7e04-8a40-23fce7fb16fc',name:'PHIC Employer'},
+      pagibig:{key:'01a07474-cbe9-702b-8287-9438ecbecdac',name:'Pag-IBIG Employer'}
+    }
   };
-  state.payslipItems={earnings,deductions,contributions};
-  state.mappings.earnings.basic=pick(earnings,['Basic Salaries','Basic Salary','Regular Salaries','Regular Salary']);
-  state.mappings.earnings.holiday=pick(earnings,['Holiday Pay','Holiday']);
-  state.mappings.earnings.overtime=pick(earnings,['Overtime','Overtime Pay']);
-  state.mappings.earnings.allowance=pick(earnings,['Allowances','Allowance']);
-  state.mappings.earnings.commission=pick(earnings,['Commissions','Commission']);
-  state.mappings.earnings.other=pick(earnings,['Others','Other']);
-  state.mappings.deductions.sss=pick(deductions,['SSS Contributions','SSS Contribution','SSS']);
-  state.mappings.deductions.phic=pick(deductions,['PHIC Contributions','PHIC Contribution','PhilHealth Contributions','PhilHealth Contribution','PHIC']);
-  state.mappings.deductions.pagibig=pick(deductions,['Pag-IBIG Contributions','Pag-IBIG Contribution','Pag IBIG Contributions','Pag IBIG Contribution','Pag-IBIG']);
-  state.mappings.deductions.tax=pick(deductions,['Withholding Tax','Withholding']);
-  state.mappings.deductions.loan=pick(deductions,['Employee Cash Advances/Loans','Employee Cash Advances / Loans','Cash Advances/Loans','Loans / Advances','Loans','Advances']);
-  state.mappings.deductions.other=pick(deductions,['Other Deductions','Other Deduction']);
-  state.mappings.contributions.sss=pick(contributions,['SSS Employer','Employer SSS','SSS Employer Contribution','SSS']);
-  state.mappings.contributions.phic=pick(contributions,['PHIC Employer','Employer PHIC','Employer PHIC Contribution','PhilHealth Employer','PHIC']);
-  state.mappings.contributions.pagibig=pick(contributions,['Pag-IBIG Employer','Employer Pag-IBIG','Employer Pag IBIG','Pag-IBIG Employer Contribution','Pag-IBIG']);
   return state.mappings;
 }
 function mappingRows(){
   const groups=[
     ['Earnings','earnings',[['Basic Pay','basic'],['Holiday Pay','holiday'],['OT Pay','overtime'],['Allowances','allowance'],['Commissions','commission']]],
-    ['Deductions','deductions',[['SSS','sss'],['PHIC','phic'],['Pag-IBIG','pagibig'],['Withholding Tax','tax'],['Loans / Advances','loan'],['Late / Other Deductions','other']]],
+    ['Deductions','deductions',[['Tardiness','tardiness'],['SSS','sss'],['PHIC','phic'],['Pag-IBIG','pagibig'],['Withholding Tax','tax'],['Loans / Advances','loan']]],
     ['Employer Contributions','contributions',[['Employer SSS','sss'],['Employer PHIC','phic'],['Employer Pag-IBIG','pagibig']]]
   ];
   return groups.map(([title,group,rows])=>`<div class="box"><b>${title}</b>${rows.map(([label,key])=>{
@@ -387,15 +374,12 @@ function buildBatchPayload(){
     add(buildLine(state.mappings.earnings.allowance,'Allowances',1,num(v.allowance)));
     add(buildLine(state.mappings.earnings.commission,'Commissions',1,num(v.commission)));
     const addD=(a)=>a&&deductions.push(a);
+    addD(buildDeduction(state.mappings.deductions.tardiness,'Tardiness',r.lateDeduction));
     addD(buildDeduction(state.mappings.deductions.sss,'SSS',v.sss));
     addD(buildDeduction(state.mappings.deductions.phic,'PHIC',v.phic));
     addD(buildDeduction(state.mappings.deductions.pagibig,'Pag-IBIG',v.pagibig));
     addD(buildDeduction(state.mappings.deductions.tax,'Withholding Tax',v.tax));
     addD(buildDeduction(state.mappings.deductions.loan,'Loans / Advances',v.loan));
-    // Tardiness is treated as a payroll deduction in the Manager payslip so the
-    // payslip net matches the worksheet. It uses the same Other Deductions item.
-    addD(buildDeduction(state.mappings.deductions.other,'Late / Tardiness',r.lateDeduction));
-    addD(buildDeduction(state.mappings.deductions.other,'Other Deductions',v.otherDeduction));
     const addC=(a)=>a&&contributions.push(a);
     addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
@@ -407,7 +391,7 @@ function buildBatchPayload(){
 function validateMappings(){
   const required=[
     ['Basic Salaries','earnings','basic'],['Holiday Pay','earnings','holiday'],['Overtime','earnings','overtime'],['Allowances','earnings','allowance'],['Commissions','earnings','commission'],
-    ['SSS Contributions','deductions','sss'],['PHIC Contributions','deductions','phic'],['Pag-IBIG Contributions','deductions','pagibig'],['Withholding Tax','deductions','tax'],['Employee Cash Advances/Loans','deductions','loan'],['Other Deductions','deductions','other'],
+    ['Tardiness','deductions','tardiness'],['SSS Contributions','deductions','sss'],['PHIC Contributions','deductions','phic'],['Pag-IBIG Contributions','deductions','pagibig'],['Withholding Tax','deductions','tax'],['Employee Cash Advances/Loans','deductions','loan'],
     ['SSS Employer','contributions','sss'],['PHIC Employer','contributions','phic'],['Pag-IBIG Employer','contributions','pagibig']
   ];
   return required.filter(x=>!state.mappings[x[1]]?.[x[2]]);
@@ -426,13 +410,13 @@ async function previewPayslips(){
   const rows=payrollRows();
   modalTitle.textContent='Review Payslips';
   modalIntro.textContent=`${rows.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
-  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Late</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.lateDeduction)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is shown separately here but will be posted as a deduction using the mapped <b>Other Deductions</b> Payslip Item so the Manager payslip net matches the worksheet.</div>`;
+  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Late</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.lateDeduction)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is calculated from Late Hours and will be posted using the dedicated <b>Tardiness</b> Payslip Item. Other Income and Other Deductions are not included in this payroll setup.</div>`;
   modalBackdrop.style.display='flex';
 }
 async function createPayslips(){
   const rows=payrollRows(); if(!rows.length)return;
   modalTitle.textContent='Review & Create Payslips';
-  modalIntro.textContent='First, the extension will identify your Manager Payslip Items by name. No records are written until you click Confirm & Create.';
+  modalIntro.textContent='The extension will use the Payslip Items confirmed in your Manager business. No records are written until you click Confirm & Create.';
   modalBody.innerHTML='<div class="notice">Reading Payslip Item definitions from Manager…</div>';
   modalBackdrop.style.display='flex';
   try{
@@ -441,7 +425,7 @@ async function createPayslips(){
     const btn=document.getElementById('confirmCreateBtn');
     if(btn) btn.addEventListener('click',confirmCreatePayslips);
   }catch(err){
-    modalBody.innerHTML=`<div class="error"><b>Could not read Payslip Items.</b><br>${esc(err?.message||'Unknown API error')}</div><p>Manager's current API does not expose Payslip Item settings through API4. The extension tried the legacy item endpoints as a compatibility bridge. If your Manager version blocks those endpoints, we will need to use a one-time mapping approach instead.</p>`;
+    modalBody.innerHTML=`<div class="error"><b>Could not prepare Payslip Items.</b><br>${esc(err?.message||'Unknown error')}</div><p>The extension uses the Payslip Item mappings confirmed in this Manager business. No records were written.</p>`;
   }
 }
 async function confirmCreatePayslips(){
