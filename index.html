@@ -28,6 +28,8 @@ input:focus,select:focus{outline:2px solid rgba(88,166,255,.35);border-color:var
 .calc-cell{background:rgba(255,255,255,.025) !important;color:#d5dbe1}
 .manual-cell input{background:#102638 !important;border-color:#3978a9 !important}
 .calc-cell .money,.calc-cell .rate{font-weight:650}
+.reference-head{background:#3a2f12 !important;color:#ffe8a3 !important}
+.reference-cell{background:rgba(210,153,34,.10) !important;color:#ffe8a3}
 
 table{width:100%;border-collapse:collapse;min-width:2200px}
 th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
@@ -73,12 +75,13 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 <div class="legend" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--muted)">
   <span style="padding:7px 10px;border-radius:6px;background:#12304a;color:#d9ecff;border:1px solid #3978a9">MANUAL INPUT</span>
   <span style="padding:7px 10px;border-radius:6px;background:#242a31;color:#d5dbe1;border:1px solid var(--border)">CALCULATED</span>
+  <span style="padding:7px 10px;border-radius:6px;background:#3a2f12;color:#ffe8a3;border:1px solid #8b6f25">REFERENCE</span>
 </div>
 <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
 </div>
 
 <div class="notice">
-  <b>Calculation model:</b> Daily Rate is entered by staff.
+  <b>Calculation model:</b> Daily Rate is read-only from the Employee record's <b>Daily Rate</b> custom field.
   Hourly Rate = Daily Rate ÷ Hours/Day. Basic Pay = Daily Rate × Actual Days Duty.
   OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Factor. Allowances and Commissions are manual earnings.
   Late Deduction = Hourly Rate × Late Hours. Deductions and employer contributions remain manual.
@@ -100,8 +103,8 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <span class="status" id="writeStatus">No payslips created yet.</span>
 </div>
 <div class="note">
-  Assumptions for this prototype: 8 hours/day and overtime uses the regular hourly rate. Holiday Factor is entered per employee
-  (for example 1.00 for one additional day or 0.30 for a 30% premium). These are calculation settings, not
+  Assumptions for this prototype: Daily Rate is read from the Employee custom field named "Daily Rate"; 8 hours/day; overtime uses the regular hourly rate. Holiday Factor is entered per employee
+  (for example 1.00 for one additional day or 0.30 for a 30% premium). The Daily Rate is read-only here for verification. These are calculation settings, not
   a determination of Philippine statutory compliance. Payslip writing remains guarded until the Manager
   Payslip Item mappings are connected.
 </div>
@@ -133,7 +136,7 @@ function postMessageWithResponse(message) {
   });
 }
 
-const state = {employees: [], values: new Map(), mappings: {
+const state = {employees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), mappings: {
   earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null, other:null},
   deductions: {sss:null, phic:null, pagibig:null, tax:null, loan:null, other:null},
   contributions: {sss:null, phic:null, pagibig:null}
@@ -144,7 +147,7 @@ const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.m
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
-    dailyRate:0,actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,
+    actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,
     sss:0,phic:0,pagibig:0,tax:0,loan:0,otherDeduction:0,
     employerSss:0,employerPhic:0,employerPagibig:0
   });
@@ -191,7 +194,7 @@ function render(){
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name">${esc(e.name)}</td>
-      <td>${inputCell(e,'dailyRate',v.dailyRate)}</td>
+      <td class="reference-cell money">${e.dailyRate==null?'⚠ Not set':money(e.dailyRate)}</td>
       <td>${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
       <td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
       <td>${inputCell(e,'lateHours',v.lateHours)}</td>
@@ -252,11 +255,40 @@ async function getAllEmployees(onProgress){
     if(onProgress)onProgress(allItems.length,pageNum); if(pageNum>=1000)break;
   }while(nextToken); return allItems;
 }
+
+async function loadDailyRateField(){
+  const data = await postMessageWithResponse({
+    type:'api-request',
+    method:'GET',
+    path:'/api4/number-custom-field-batch?PageSize=99999'
+  });
+  const items=Array.isArray(data)?data:(data?.items||data?.data||[]);
+  const matches=items.filter(x=>String(x?.item?.name||'').trim().toLowerCase()==='daily rate');
+  if(!matches.length) throw new Error('Daily Rate custom field was not found. Create a Number Custom Field named "Daily Rate" and place it on Employees.');
+  if(matches.length>1) throw new Error('More than one Number Custom Field named "Daily Rate" was found. Keep only one Daily Rate field for the payroll extension.');
+  state.dailyRateFieldId=matches[0]?.key||matches[0]?.item?.key||matches[0]?.item?.id||null;
+  state.dailyRateFieldName=matches[0]?.item?.name||'Daily Rate';
+  if(!state.dailyRateFieldId) throw new Error('Daily Rate custom field was found, but its ID could not be read from Manager.');
+  return state.dailyRateFieldId;
+}
 async function loadEmployees(){
   loadBtn.disabled=true;loadBtn.textContent='Loading…';error.innerHTML='';
   try{
+    status.textContent='Finding Daily Rate custom field…';
+    await loadDailyRateField();
     const records=await getAllEmployees((loaded,page)=>status.textContent=`Loading page ${page} · ${loaded.toLocaleString()} records`);
-    state.employees=records.map(record=>({id:record?.key,name:record?.item?.name||record?.item?.nameWithCode||'Unnamed employee',inactive:Boolean(record?.item?.inactive)})).filter(e=>e.id&&!e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
+    state.employees=records.map(record=>{
+      const item=record?.item||{};
+      const decimals=item?.customFields2?.decimals||{};
+      const rawRate=state.dailyRateFieldId ? decimals[state.dailyRateFieldId] : null;
+      return {
+        id:record?.key,
+        name:item?.name||item?.nameWithCode||'Unnamed employee',
+        inactive:Boolean(item?.inactive),
+        dailyRate:Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
+      };
+    }).filter(e=>e.id&&!e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
+    state.employees.forEach(e=>getValues(e.id).dailyRate=e.dailyRate??0);
     status.textContent=`✓ ${state.employees.length.toLocaleString()} active employees loaded`;loadBtn.textContent='↻ Reload Employees';render();
   }catch(err){status.textContent='Could not load employees';error.innerHTML=`<div class="error">⚠ ${esc(err?.message||'Unknown API error')}<br><small>Make sure the extension is running inside Manager.io.</small></div>`;loadBtn.textContent='↻ Retry';}
   finally{loadBtn.disabled=false;}
@@ -318,24 +350,26 @@ periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;paysl
     document.querySelectorAll('table').forEach(function(table){
       const headers = Array.from(table.querySelectorAll('thead th'));
       const manual = new Set([
-        'DAILY RATE','ACTUAL DAYS DUTY','OT HOURS','LATE HOURS',
+        'ACTUAL DAYS DUTY','OT HOURS','LATE HOURS',
         'HOLIDAY FACTOR','ALLOWANCES','COMMISSIONS',
         'SSS','PHIC','PAG-IBIG','WITHHOLDING TAX',
         'LOANS / ADVANCES','OTHER DEDUCTIONS',
         'EMPLOYER SSS','EMPLOYER PHIC','EMPLOYER PAG-IBIG'
       ]);
+      const reference = new Set(['DAILY RATE']);
       const calculated = new Set([
         'HOURLY RATE','BASIC PAY','OT PAY','HOLIDAY PAY',
         'LATE DEDUCTION','GROSS','TOTAL DEDUCTIONS','NET PAY'
       ]);
       headers.forEach(function(th, i){
         const label = th.textContent.trim().toUpperCase();
-        const cls = manual.has(label) ? 'manual-head' : (calculated.has(label) ? 'calc-head' : '');
+        const cls = manual.has(label) ? 'manual-head' : (reference.has(label) ? 'reference-head' : (calculated.has(label) ? 'calc-head' : ''));
         if(cls) th.classList.add(cls);
         Array.from(table.rows).slice(1).forEach(function(row){
           const cell = row.cells[i];
           if(!cell) return;
           if(manual.has(label)) cell.classList.add('manual-cell');
+          if(reference.has(label)) cell.classList.add('reference-cell');
           if(calculated.has(label)) cell.classList.add('calc-cell');
         });
       });
