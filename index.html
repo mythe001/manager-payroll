@@ -66,9 +66,9 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 </div>
 
 <div class="notice">
-  <b>Calculation model:</b> Daily Rate = Monthly Basic Salary ÷ Days Duty/Month.
+  <b>Calculation model:</b> Daily Rate is entered by staff.
   Hourly Rate = Daily Rate ÷ Hours/Day. Basic Pay = Daily Rate × Actual Days Duty.
-  OT Pay = Hourly Rate × OT Hours × OT Multiplier. Holiday Pay = Daily Rate × Holiday Days × Holiday Multiplier.
+  OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Days × Holiday Multiplier.
   Late Deduction = Hourly Rate × Late Hours. Deductions and employer contributions remain manual.
 </div>
 
@@ -88,7 +88,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <span class="status" id="writeStatus">No payslips created yet.</span>
 </div>
 <div class="note">
-  Assumptions for this prototype: 8 hours/day and 1.25× overtime. Holiday multiplier is entered per employee
+  Assumptions for this prototype: 8 hours/day and overtime uses the regular hourly rate. Holiday multiplier is entered per employee
   (for example 1.00 for one additional day or 0.30 for a 30% premium). These are calculation settings, not
   a determination of Philippine statutory compliance. Payslip writing remains guarded until the Manager
   Payslip Item mappings are connected.
@@ -132,21 +132,18 @@ const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.m
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
-    daysPerMonth:0,basicSalary:0,actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayDays:0,holidayMultiplier:1,
+    dailyRate:0,actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayDays:0,holidayMultiplier:1,
     sss:0,phic:0,pagibig:0,tax:0,loan:0,otherDeduction:0,
     employerSss:0,employerPhic:0,employerPagibig:0
   });
   return state.values.get(id);
 }
 const HOURS_PER_DAY = 8;
-const OT_MULTIPLIER = 1.25;
 function calculate(v){
-  const daysPerMonth=num(v.daysPerMonth);
-  const basicSalary=num(v.basicSalary);
-  const dailyRate=daysPerMonth>0 ? basicSalary/daysPerMonth : 0;
+  const dailyRate=num(v.dailyRate);
   const hourlyRate=dailyRate/HOURS_PER_DAY;
   const basicPay=dailyRate*num(v.actualDaysDuty);
-  const overtimePay=hourlyRate*num(v.overtimeHours)*OT_MULTIPLIER;
+  const overtimePay=hourlyRate*num(v.overtimeHours);
   const holidayPay=dailyRate*num(v.holidayDays)*num(v.holidayMultiplier);
   const lateDeduction=hourlyRate*num(v.lateHours);
   const gross=Math.max(0,basicPay+overtimePay+holidayPay-lateDeduction);
@@ -173,15 +170,14 @@ function render(){
   }
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
-    <th>Employee</th><th>Days Duty / Month</th><th>Monthly Basic Salary</th><th>Actual Days Duty</th>
+    <th>Employee</th><th>Daily Rate</th><th>Actual Days Duty</th>
     <th>OT Hours</th><th>Late Hours</th><th>Holiday Days</th><th>Holiday Multiplier</th>
     <th>Daily Rate</th><th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
       <td class="name">${esc(e.name)}</td>
-      <td>${inputCell(e,'daysPerMonth',v.daysPerMonth)}</td>
-      <td>${inputCell(e,'basicSalary',v.basicSalary)}</td>
+      <td>${inputCell(e,'dailyRate',v.dailyRate)}</td>
       <td>${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
       <td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
       <td>${inputCell(e,'lateHours',v.lateHours)}</td>
