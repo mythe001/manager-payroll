@@ -440,6 +440,8 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
     // API4 batch POST expects each entry in Values to be the payslip value itself.
+// IMPORTANT: keep this flat structure. The earlier V7 version used this exact
+// POST + flat Values shape for payslip creation.
     // The GET response wraps values as {key, item:{...}}, but that GET wrapper
     // must NOT be sent back to the create endpoint.
     return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
@@ -515,11 +517,11 @@ async function confirmCreatePayslips(){
       throw new Error(`Payslip(s) already exist for this payroll date and period: ${list}. No new records were created. Review the Payslips tab before trying again.`);
     }
     modalBody.innerHTML='<div class="notice">Writing payslips to Manager…</div>';
-    const response=await postMessageWithResponse({type:'api-request',method:'PUT',path:'/api4/payslip-batch',body:payload});
+    const response=await postMessageWithResponse({type:'api-request',method:'POST',path:'/api4/payslip-batch',body:payload});
     if(response?.error || response?.errors || response?.success===false){
       throw new Error(response?.message || response?.error || 'Manager rejected the request.');
     }
-    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the write. Verifying created payslips and Payslip Items…</div>');
+    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the batch. Verifying created payslips and Payslip Items…</div>');
     const verify=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
     const verifyItems=unwrapItems(verify);
     const expectedKeys=payload.Values.map(x=>x.key);
@@ -529,7 +531,7 @@ async function confirmCreatePayslips(){
     const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
     const missingSignatures=[...submittedSignatures].filter(k=>!foundSignatures.has(k));
     if(missingKeys.length && missingSignatures.length){
-      throw new Error(`Manager accepted the write but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
+      throw new Error(`Manager accepted the POST but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
     }
     const itemProblems=[];
     for(const submitted of payload.Values){
