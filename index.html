@@ -35,60 +35,12 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
 .note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
-.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)
+.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
 .modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
-.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
-
-<style id="v10-ui-final">
-/* V1.0 visual hierarchy */
-.review-total-row td,
-.review-total-row th,
-.total-row td,
-.total-row th {
-  font-size: 1.08em !important;
-  font-weight: 700 !important;
-  color: #1f2937 !important;
-  border-top: 2px solid #cbd5e1 !important;
-  border-bottom: 1px solid #cbd5e1 !important;
-}
-.review-total-row td:last-child,
-.total-row td:last-child {
-  font-size: 1.16em !important;
-  font-weight: 800 !important;
-  color: #1f2937 !important;
-}
-.net-pay,
-.net-total {
-  color: #1f2937 !important;
-}
-.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
-
-
-<style id="v1-final-total-style">
-.review-total-row td, .review-total-row th,
-tfoot tr td, tfoot tr th {
-  font-size: 1.08em !important;
-  font-weight: 700 !important;
-  color: #1f2937 !important;
-  border-top: 2px solid #cbd5e1 !important;
-}
-tfoot tr td:last-child, tfoot tr th:last-child {
-  font-size: 1.16em !important;
-  font-weight: 800 !important;
-  color: #1f2937 !important;
-}
-.net, .net-pay, .net-total { color: #1f2937 !important; }
-.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
-
-<style id="v1-deductions-alignment">
-.deductions-table th, .deductions-table td { vertical-align: middle; }
-.deductions-table .calc-cell,
-.deductions-table .calc-head { text-align: right; }
-.deductions-table .manual-cell { text-align: center; }
-.review-total-row{background:#f0f0f0!important;font-weight:800!important;font-size:14px!important}.review-total-row th,.review-total-row td{font-size:14px!important;font-weight:800!important;color:#222!important;padding-top:12px!important;padding-bottom:12px!important}.review-total-row .net{color:#222!important;font-size:15px!important}</style>
+</style>
 </head>
 <body>
 <div class="top">
@@ -104,7 +56,6 @@ tfoot tr td:last-child, tfoot tr th:last-child {
   <label>Payslip date<input id="payslipDate" type="date"></label>
   <button id="recalcBtn" type="button">Recalculate</button>
   <button id="clearBtn" class="danger" type="button">Clear Inputs</button>
-  <button id="debugBtn" type="button" disabled title="Available after Preview or Create is used">🔍 Debug: View Last JSON</button>
   <div id="periodSummary" class="period-summary"></div>
 </div>
 
@@ -113,21 +64,7 @@ tfoot tr td:last-child, tfoot tr th:last-child {
   <div class="card"><div class="label">Gross Earnings</div><div class="value" id="grossTotal">₱0.00</div></div>
   <div class="card"><div class="label">Total Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
   <div class="card"><div class="label">Employer Contributions</div><div class="value" id="contributionTotal">₱0.00</div></div>
-  
-<div class="legend" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--muted)">
-  <span style="padding:7px 10px;border-radius:6px;background:#12304a;color:#d9ecff;border:1px solid #3978a9">MANUAL INPUT</span>
-  <span style="padding:7px 10px;border-radius:6px;background:#242a31;color:#d5dbe1;border:1px solid var(--border)">CALCULATED</span>
-  <span style="padding:7px 10px;border-radius:6px;background:#3a2f12;color:#ffe8a3;border:1px solid #8b6f25">REFERENCE</span>
-</div>
-<div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
-</div>
-<div class="legend" style="margin:-4px 0 14px"><span class="manual-legend">MANUAL INPUT</span><span class="calc-legend">CALCULATED</span><span class="reference-legend">REFERENCE</span></div>
-
-<div class="notice">
-  <b>Calculation model:</b> Daily Rate is read-only from the Employee record's <b>Daily Rate</b> custom field.
-  Hourly Rate = Daily Rate ÷ Hours/Day. Basic Pay = Daily Rate × Actual Days Duty.
-  OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Factor. Allowances and Commissions are manual earnings.
-  Late Deduction = Hourly Rate × Late Hours. Tardiness is calculated and posted as a deduction using the dedicated Tardiness Payslip Item. SSS, PHIC, Pag-IBIG, withholding tax, and loans/advances remain manual deductions. Employer contributions remain manual.
+  <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
 </div>
 
 <div class="table-wrap">
@@ -146,11 +83,6 @@ tfoot tr td:last-child, tfoot tr th:last-child {
   <button class="primary" id="previewBtn" type="button" disabled>Preview Payslips</button>
   <button class="good" id="createBtn" type="button" disabled>Create Payslips in Manager</button>
   <span class="status" id="writeStatus">No payslips created yet.</span>
-</div>
-<div class="note">
-  Assumptions for this prototype: Daily Rate is read from the Employee custom field named "Daily Rate"; 8 hours/day; overtime uses the regular hourly rate. Holiday Factor is entered per employee
-  (for example 1.00 for one additional day or 0.30 for a 30% premium). The Daily Rate is read-only here for verification. These are calculation settings, not
-  a determination of Philippine statutory compliance. Payslip writing uses the Payslip Item mappings confirmed in this Manager business.
 </div>
 
 <div class="modal-backdrop" id="modalBackdrop">
@@ -180,15 +112,19 @@ function postMessageWithResponse(message) {
   });
 }
 
-const state = {employees: [], excludedEmployees: [], dailyRateFieldId: null, dailyRateFieldName: null, values: new Map(), payslipItems: {earnings:[],deductions:[],contributions:[]}, createdResponse:null, pendingPayload:null, mappings: {
-  earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
-  deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
-  contributions: {sss:null, phic:null, pagibig:null}
-}};
+const state = {
+  employees: [], excludedEmployees: [], dailyRateFieldKeys: [], values: new Map(),
+  mappings: {
+    earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
+    deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
+    contributions: {sss:null, phic:null, pagibig:null}
+  }
+};
 const peso = new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',minimumFractionDigits:2,maximumFractionDigits:2});
 const money = v => peso.format(Number.isFinite(Number(v)) ? Number(v) : 0);
 const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.max(0,n):0;};
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
     actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,
@@ -197,50 +133,68 @@ function getValues(id){
   });
   return state.values.get(id);
 }
+
 const HOURS_PER_DAY = 8;
-function calculate(v){
-  const dailyRate=num(v.dailyRate);
-  const hourlyRate=dailyRate/HOURS_PER_DAY;
-  const basicPay=dailyRate*num(v.actualDaysDuty);
-  const overtimePay=hourlyRate*num(v.overtimeHours);
-  const holidayPay=dailyRate*num(v.holidayFactor);
-  const allowance=num(v.allowance);
-  const commission=num(v.commission);
-  const lateDeduction=hourlyRate*num(v.lateHours);
-  const gross=Math.max(0,basicPay+overtimePay+holidayPay+allowance+commission);
-  const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan);
-  const net=Math.max(0,gross-deductions);
-  const contributions=num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
-  return {dailyRate,hourlyRate,basicPay,overtimePay,holidayPay,allowance,commission,lateDeduction,gross,deductions,net,contributions};
+
+function calculate(e, v){
+  const dailyRate = num(e?.dailyRate);
+  const hourlyRate = dailyRate / HOURS_PER_DAY;
+  const basicPay = dailyRate * num(v.actualDaysDuty);
+  const overtimePay = hourlyRate * num(v.overtimeHours);
+  const holidayPay = dailyRate * num(v.holidayFactor);
+  const allowance = num(v.allowance);
+  const commission = num(v.commission);
+  const lateDeduction = hourlyRate * num(v.lateHours);
+  const gross = Math.max(0, basicPay + overtimePay + holidayPay + allowance + commission);
+  const deductions = lateDeduction + num(v.sss) + num(v.phic) + num(v.pagibig) + num(v.tax) + num(v.loan);
+  const net = Math.max(0, gross - deductions);
+  const contributions = num(v.employerSss) + num(v.employerPhic) + num(v.employerPagibig);
+  return {dailyRate, hourlyRate, basicPay, overtimePay, holidayPay, allowance, commission, lateDeduction, gross, deductions, net, contributions};
 }
+
 function updateSummary(){
-  let g=0,d=0,n=0,c=0;
-  for(const e of state.employees){const r=calculate(getValues(e.id));g+=r.gross;d+=r.deductions;n+=r.net;c+=r.contributions;}
-  employeeCount.textContent=state.employees.length.toLocaleString();
-  grossTotal.textContent=money(g); deductionTotal.textContent=money(d); netTotal.textContent=money(n); contributionTotal.textContent=money(c);
+  let g=0, d=0, n=0, c=0;
+  for(const e of state.employees){
+    const r = calculate(e, getValues(e.id));
+    g += r.gross; d += r.deductions; n += r.net; c += r.contributions;
+  }
+  employeeCount.textContent = state.employees.length.toLocaleString();
+  grossTotal.textContent = money(g);
+  deductionTotal.textContent = money(d);
+  netTotal.textContent = money(n);
+  contributionTotal.textContent = money(c);
 }
-function inputCell(e,field,value){
-  const display=value;
-  return `<input class="pay-input" data-field="${field}" type="number" min="0" step="0.01" value="${display||''}" aria-label="${esc(e.name)} ${field}">`;
+
+function inputCell(e, field, value){
+  return `<input class="pay-input" data-field="${field}" type="number" min="0" step="0.01" value="${value||''}" aria-label="${esc(e.name)} ${field}">`;
 }
+
 function render(){
   if(!state.employees.length){
-    earningsApp.className='empty'; earningsApp.textContent='No active employees included in this payroll.';
-    deductionsApp.className='empty'; deductionsApp.textContent='No active employees included in this payroll.';
-    renderExcluded(); updateSummary(); setButtons(); return;
+    earningsApp.className='empty'; earningsApp.textContent='No active employees loaded.';
+    deductionsApp.className='empty'; deductionsApp.textContent='No active employees loaded.';
+    updateSummary(); setButtons(); return;
   }
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
     <th class="employee-head">Employee</th><th>Actual Days Duty</th><th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
     <th class="reference-head">Daily Rate</th><th class="calc-head">Hourly Rate</th><th class="calc-head">Basic Pay</th><th class="calc-head">OT Pay</th><th class="calc-head">Holiday Pay</th><th class="calc-head">Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
-    const v=getValues(e.id),r=calculate(v);
+    const v = getValues(e.id), r = calculate(e, v);
     return `<tr data-id="${esc(e.id)}">
-      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
-      <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td><td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td><td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
-      <td class="manual-cell">${inputCell(e,'holidayFactor',v.holidayFactor)}</td><td class="manual-cell">${inputCell(e,'allowance',v.allowance)}</td><td class="manual-cell">${inputCell(e,'commission',v.commission)}</td>
-      <td class="reference-cell money dailyRate">${e.dailyRate==null?'⚠ Not set':money(e.dailyRate)}</td><td class="calc-cell money hourlyRate">${money(r.hourlyRate)}</td><td class="calc-cell money basicPay">${money(r.basicPay)}</td>
-      <td class="calc-cell money overtimePay">${money(r.overtimePay)}</td><td class="calc-cell money holidayPay">${money(r.holidayPay)}</td><td class="calc-cell money gross">${money(r.gross)}</td>
+      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}">×</button><span>${esc(e.name)}</span></td>
+      <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
+      <td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
+      <td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
+      <td class="manual-cell">${inputCell(e,'holidayFactor',v.holidayFactor)}</td>
+      <td class="manual-cell">${inputCell(e,'allowance',v.allowance)}</td>
+      <td class="manual-cell">${inputCell(e,'commission',v.commission)}</td>
+      <td class="reference-cell money dailyRate">${e.dailyRate==null?'⚠ Not set':money(e.dailyRate)}</td>
+      <td class="calc-cell money hourlyRate">${money(r.hourlyRate)}</td>
+      <td class="calc-cell money basicPay">${money(r.basicPay)}</td>
+      <td class="calc-cell money overtimePay">${money(r.overtimePay)}</td>
+      <td class="calc-cell money holidayPay">${money(r.holidayPay)}</td>
+      <td class="calc-cell money gross">${money(r.gross)}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
 
@@ -248,145 +202,95 @@ function render(){
     <th class="employee-head">Employee</th><th class="calc-head">Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th><th>Loans / Advances</th>
     <th class="calc-head">Total Deductions</th><th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th class="calc-head">Net Pay</th>
   </tr></thead><tbody>${state.employees.map(e=>{
-    const v=getValues(e.id),r=calculate(v);
+    const v = getValues(e.id), r = calculate(e, v);
     return `<tr data-id="${esc(e.id)}">
-      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)} from this payroll" aria-label="Exclude ${esc(e.name)} from this payroll">×</button><span>${esc(e.name)}</span></td>
+      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}">×</button><span>${esc(e.name)}</span></td>
       <td class="calc-cell money tardiness">${money(r.lateDeduction)}</td>
-      <td class="manual-cell">${inputCell(e,'sss',v.sss)}</td><td class="manual-cell">${inputCell(e,'phic',v.phic)}</td><td class="manual-cell">${inputCell(e,'pagibig',v.pagibig)}</td>
-      <td class="manual-cell">${inputCell(e,'tax',v.tax)}</td><td class="manual-cell">${inputCell(e,'loan',v.loan)}</td>
+      <td class="manual-cell">${inputCell(e,'sss',v.sss)}</td>
+      <td class="manual-cell">${inputCell(e,'phic',v.phic)}</td>
+      <td class="manual-cell">${inputCell(e,'pagibig',v.pagibig)}</td>
+      <td class="manual-cell">${inputCell(e,'tax',v.tax)}</td>
+      <td class="manual-cell">${inputCell(e,'loan',v.loan)}</td>
       <td class="calc-cell money deductionTotal">${money(r.deductions)}</td>
-      <td class="manual-cell">${inputCell(e,'employerSss',v.employerSss)}</td><td class="manual-cell">${inputCell(e,'employerPhic',v.employerPhic)}</td><td class="manual-cell">${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
+      <td class="manual-cell">${inputCell(e,'employerSss',v.employerSss)}</td>
+      <td class="manual-cell">${inputCell(e,'employerPhic',v.employerPhic)}</td>
+      <td class="manual-cell">${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
       <td class="calc-cell money net">${money(r.net)}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
 
-  state.rowRefs=new Map();
-  state.employees.forEach(e=>{
-    state.rowRefs.set(String(e.id),{
-      earningsRow: earningsApp.querySelector(`tr[data-id="${cssId(e.id)}"]`),
-      deductionsRow: deductionsApp.querySelector(`tr[data-id="${cssId(e.id)}"]`)
-    });
-  });
-  document.querySelectorAll('.pay-input').forEach(input=>{
-    const handler=()=>{
-      const row=input.closest('tr'), id=row.dataset.id, field=input.dataset.field, v=getValues(id);
-      v[field]=num(input.value); state.pendingPayload=null; updateRow(id); updateSummary(); setButtons();
-    };
-    input.addEventListener('input',handler);
-    input.addEventListener('change',handler);
-  });
-  document.querySelectorAll('.exclude-btn').forEach(btn=>btn.addEventListener('click',()=>excludeEmployee(btn.dataset.exclude)));
-  renderExcluded(); updateSummary(); setButtons();
-}
-function cssId(id){
-  try{ return CSS.escape(String(id)); }catch(e){ return String(id).replace(/["\\]/g,'\\$&'); }
-}
-function renderExcluded(){
-  if(!excludedApp)return;
-  if(!state.excludedEmployees.length){excludedApp.innerHTML='';return;}
-  excludedApp.innerHTML=`<div class="excluded-bar"><span><b>${state.excludedEmployees.length}</b> employee${state.excludedEmployees.length===1?'':'s'} excluded from this payroll.</span><button type="button" id="showExcludedBtn">Show excluded</button></div>`;
-  document.getElementById('showExcludedBtn')?.addEventListener('click',showExcludedEmployees);
-}
-function excludeEmployee(id){
-  const index=state.employees.findIndex(e=>String(e.id)===String(id)); if(index<0)return;
-  const [employee]=state.employees.splice(index,1); state.excludedEmployees.push(employee); state.pendingPayload=null; render(); writeStatus.textContent=`${employee.name} excluded from this payroll.`;
-}
-function showExcludedEmployees(){
-  if(!state.excludedEmployees.length)return;
-  const names=state.excludedEmployees.map(e=>`<div class="excluded-row"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
-  modalTitle.textContent='Excluded Employees'; modalIntro.textContent='These employees are excluded only from the current payroll. Their Manager Employee records are unchanged.';
-  modalBody.innerHTML=`<div class="excluded-list">${names}</div>`; modalBackdrop.style.display='flex';
-  document.querySelectorAll('[data-restore]').forEach(btn=>btn.addEventListener('click',()=>restoreEmployee(btn.dataset.restore)));
-}
-function restoreEmployee(id){
-  const index=state.excludedEmployees.findIndex(e=>String(e.id)===String(id)); if(index<0)return;
-  const [employee]=state.excludedEmployees.splice(index,1); state.employees.push(employee); state.employees.sort((a,b)=>a.name.localeCompare(b.name)); state.pendingPayload=null; modalBackdrop.style.display='none'; render(); writeStatus.textContent=`${employee.name} restored to this payroll.`;
+  document.querySelectorAll('.pay-input').forEach(input=>input.addEventListener('input',()=>{
+    const row = input.closest('tr'), id = row.dataset.id, field = input.dataset.field, v = getValues(id);
+    v[field] = num(input.value);
+    updateRow(id);
+    updateSummary();
+    setButtons();
+  }));
+
+  updateSummary();
+  setButtons();
 }
 
 function updateRow(id){
-  const r=calculate(getValues(id));
-  const refs=state.rowRefs?.get(String(id));
-  const rows=[refs?.earningsRow,refs?.deductionsRow].filter(Boolean);
-  // Fallback in case rowRefs wasn't populated for this id (e.g. called before a render).
-  const targetRows=rows.length?rows:Array.from(document.querySelectorAll('tr[data-id]')).filter(tr=>tr.dataset.id===String(id));
-  const fields={
-    '.dailyRate':r.dailyRate,'.hourlyRate':r.hourlyRate,'.basicPay':r.basicPay,
-    '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.tardiness':r.lateDeduction,
-    '.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions
-  };
-  targetRows.forEach(row=>{
-    Object.entries(fields).forEach(([sel,val])=>{const el=row.querySelector(sel);if(el)el.textContent=money(val);});
+  const e = state.employees.find(x=>String(x.id)===String(id));
+  if(!e) return;
+  const r = calculate(e, getValues(id));
+  document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
+    const fields={
+      '.dailyRate':r.dailyRate, '.hourlyRate':r.hourlyRate, '.basicPay':r.basicPay,
+      '.overtimePay':r.overtimePay, '.holidayPay':r.holidayPay, '.allowance':r.allowance,
+      '.commission':r.commission, '.tardiness':r.lateDeduction, '.lateDeduction':r.lateDeduction,
+      '.gross':r.gross, '.net':r.net, '.deductionTotal':r.deductions
+    };
+    Object.entries(fields).forEach(([sel,val])=>{
+      const el = row.querySelector(sel);
+      if(el) el.textContent = money(val);
+    });
   });
-}
-async function getAllEmployees(onProgress){
-  const allItems=[]; let nextToken=null,pageNum=0;
-  do{
-    const path=nextToken?'/api4/employee-batch?PageSize=99999&next_page_token='+encodeURIComponent(nextToken):'/api4/employee-batch?PageSize=99999';
-    const data=await postMessageWithResponse({type:'api-request',method:'GET',path});
-    const page=Array.isArray(data)?data:(data?.items||data?.data||[]); allItems.push(...page);
-    nextToken=data?.next_page_token||data?.nextPageToken||data?._links?.next?.href||null; pageNum++;
-    if(onProgress)onProgress(allItems.length,pageNum); if(pageNum>=1000)break;
-  }while(nextToken); return allItems;
 }
 
 async function loadDailyRateField(){
-  const data = await postMessageWithResponse({
-    type:'api-request',
-    method:'GET',
-    path:'/api4/number-custom-field-batch?PageSize=99999'
-  });
-  const items=Array.isArray(data)?data:(data?.items||data?.data||[]);
-  const matches=items.filter(x=>String(x?.item?.name||'').trim().toLowerCase()==='daily rate');
-  if(!matches.length) throw new Error('Daily Rate custom field was not found. Create a Number Custom Field named "Daily Rate" and place it on Employees.');
-  if(matches.length>1) throw new Error('More than one Number Custom Field named "Daily Rate" was found. Keep only one Daily Rate field for the payroll extension.');
-  state.dailyRateFieldId=matches[0]?.key||matches[0]?.item?.key||matches[0]?.item?.id||null;
-  state.dailyRateFieldName=matches[0]?.item?.name||'Daily Rate';
-  if(!state.dailyRateFieldId) throw new Error('Daily Rate custom field was found, but its ID could not be read from Manager.');
-  return state.dailyRateFieldId;
+  const data = await postMessageWithResponse({type:'api-request', method:'GET', path:'/api4/number-custom-field-batch?PageSize=99999'});
+  const items = Array.isArray(data)?data:(data?.items||data?.data||[]);
+  const matches = items.filter(x=>String(x?.item?.name||'').trim().toLowerCase()==='daily rate');
+  if(!matches.length) throw new Error('Daily Rate custom field was not found.');
+  state.dailyRateFieldKeys = matches.map(m => m?.key || m?.item?.key || m?.item?.id).filter(Boolean);
+  return state.dailyRateFieldKeys;
 }
+
 async function loadEmployees(){
-  loadBtn.disabled=true;loadBtn.textContent='Loading…';error.innerHTML='';
+  loadBtn.disabled = true; loadBtn.textContent = 'Loading…';
   try{
-    status.textContent='Finding Daily Rate custom field…';
     await loadDailyRateField();
-    const records=await getAllEmployees((loaded,page)=>status.textContent=`Loading page ${page} · ${loaded.toLocaleString()} records`);
-    state.excludedEmployees=[];
-    state.employees=records.map(record=>{
-      const item=record?.item||{};
-      const decimals=item?.customFields2?.decimals||{};
-      const rawRate=state.dailyRateFieldId ? decimals[state.dailyRateFieldId] : null;
+    const data = await postMessageWithResponse({type:'api-request', method:'GET', path:'/api4/employee-batch?PageSize=99999'});
+    const records = Array.isArray(data)?data:(data?.items||data?.data||[]);
+    
+    state.employees = records.map(record => {
+      const item = record?.item || {};
+      const decimals = item?.customFields2?.decimals || item?.customFields?.decimals || {};
+      let rawRate = null;
+      for (const k of state.dailyRateFieldKeys) {
+        if (decimals[k] !== undefined && decimals[k] !== null) { rawRate = decimals[k]; break; }
+      }
       return {
-        id:record?.key,
-        name:item?.name||item?.nameWithCode||'Unnamed employee',
-        inactive:Boolean(item?.inactive),
-        dailyRate:Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
+        id: record?.key,
+        name: item?.name || 'Unnamed employee',
+        inactive: Boolean(item?.inactive),
+        dailyRate: Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
       };
-    }).filter(e=>e.id&&!e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
-    state.employees.forEach(e=>getValues(e.id).dailyRate=e.dailyRate??0);
-    status.textContent=`✓ ${state.employees.length.toLocaleString()} active employees loaded`;loadBtn.textContent='↻ Reload Employees';render();
-  }catch(err){status.textContent='Could not load employees';error.innerHTML=`<div class="error">⚠ ${esc(err?.message||'Unknown API error')}<br><small>Make sure the extension is running inside Manager.io.</small></div>`;loadBtn.textContent='↻ Retry';}
-  finally{loadBtn.disabled=false;}
+    }).filter(e => e.id && !e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
+
+    status.textContent = `✓ ${state.employees.length} employees loaded`;
+    loadBtn.textContent = '↻ Reload Employees';
+    render();
+  }catch(err){
+    status.textContent = 'Failed to load employees';
+    error.innerHTML = `<div class="error">⚠ ${esc(err?.message)}</div>`;
+    loadBtn.textContent = '↻ Retry';
+  }finally{ loadBtn.disabled = false; }
 }
-function payrollRows(){
-  return state.employees.map(e=>({employee:e,values:getValues(e.id),calc:calculate(getValues(e.id))}));
-}
-function normalizeName(s){
-  return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-}
-function unwrapItems(data){
-  const arr=Array.isArray(data)?data:(data?.items||data?.data||data?.results||[]);
-  return Array.isArray(arr)?arr:[];
-}
-function extractKey(x){
-  return x?.key||x?.Key||x?.id||x?.Id||x?.item?.key||x?.item?.id||x?.item?.Key||x?.item?.Id||null;
-}
-function extractName(x){
-  return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
-}
+
 async function loadPayslipItemMappings(){
-  // Payslip Item UUIDs confirmed from the test payslip in this Manager business.
-  // These explicit mappings make the first working version deterministic. A later
-  // version can replace them with a user-configurable mapping screen for other businesses.
   state.mappings={
     earnings:{
       basic:{key:'01a073de-2e72-7fd1-8a67-16b81d70d547',name:'Basic Salaries'},
@@ -411,290 +315,97 @@ async function loadPayslipItemMappings(){
   };
   return state.mappings;
 }
-function mappingRows(){
-  const groups=[
-    ['Earnings','earnings',[['Basic Pay','basic'],['Holiday Pay','holiday'],['OT Pay','overtime'],['Allowances','allowance'],['Commissions','commission']]],
-    ['Deductions','deductions',[['Tardiness','tardiness'],['SSS','sss'],['PHIC','phic'],['Pag-IBIG','pagibig'],['Withholding Tax','tax'],['Loans / Advances','loan']]],
-    ['Employer Contributions','contributions',[['Employer SSS','sss'],['Employer PHIC','phic'],['Employer Pag-IBIG','pagibig']]]
-  ];
-  return groups.map(([title,group,rows])=>`<div class="box"><b>${title}</b>${rows.map(([label,key])=>{
-    const m=state.mappings[group]?.[key];
-    return `<div style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--border);font-size:12px"><span>${esc(label)}</span><span>${m?`<span style="color:#1f2937">✓ ${esc(m.name)}</span>`:`<span style="color:#ffb4b0">⚠ Not mapped</span>`}</span></div>`;
-  }).join('')}</div>`).join('');
-}
+
 function buildLine(item, description, units, unitPrice){
   if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
-  const u=Number(units)||0, p=Number(unitPrice)||0;
-  return {item:item.key,description,units:u,unitPrice:p};
+  const u = Number(units)||0, p = Number(unitPrice)||0;
+  return {
+    Item: item.key, Description: description, Units: u, UnitPrice: p, Amount: u * p,
+    item: item.key, description: description, units: u, unitPrice: p, earningsAmount: u * p
+  };
 }
+
 function buildDeduction(item, description, amount){
-  const a=Number(amount)||0;
+  const a = Number(amount)||0;
   if(!item || a<=0) return null;
-  return {item:item.key,description,deductionAmount:a};
+  return {
+    Item: item.key, Description: description, Amount: a, DeductionAmount: a,
+    item: item.key, description: description, amount: a, deductionAmount: a
+  };
 }
+
 function buildContribution(item, description, amount){
-  const a=Number(amount)||0;
+  const a = Number(amount)||0;
   if(!item || a<=0) return null;
-  return {item:item.key,description,contributionAmount:a};
+  return {
+    Item: item.key, Description: description, Amount: a, ContributionAmount: a,
+    item: item.key, description: description, amount: a, contributionAmount: a
+  };
 }
+
 function buildBatchPayload(){
-  const items=payrollRows().map(x=>{
-    const v=x.values,r=x.calc;
-    const earnings=[]; const deductions=[]; const contributions=[];
-    const add=(a)=>a&&earnings.push(a);
-    add(buildLine(state.mappings.earnings.basic,'Basic Pay',num(v.actualDaysDuty),r.dailyRate));
-    add(buildLine(state.mappings.earnings.holiday,'Holiday Pay',num(v.holidayFactor),r.dailyRate));
-    add(buildLine(state.mappings.earnings.overtime,'Overtime',num(v.overtimeHours),r.hourlyRate));
-    add(buildLine(state.mappings.earnings.allowance,'Allowances',1,num(v.allowance)));
-    add(buildLine(state.mappings.earnings.commission,'Commissions',1,num(v.commission)));
-    const addD=(a)=>a&&deductions.push(a);
-    addD(buildDeduction(state.mappings.deductions.tardiness,'Tardiness',r.lateDeduction));
-    addD(buildDeduction(state.mappings.deductions.sss,'SSS',v.sss));
-    addD(buildDeduction(state.mappings.deductions.phic,'PHIC',v.phic));
-    addD(buildDeduction(state.mappings.deductions.pagibig,'Pag-IBIG',v.pagibig));
-    addD(buildDeduction(state.mappings.deductions.tax,'Withholding Tax',v.tax));
-    addD(buildDeduction(state.mappings.deductions.loan,'Loans / Advances',v.loan));
-    const addC=(a)=>a&&contributions.push(a);
-    addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
-    addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
-    addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
-    // API4 batch POST expects each entry in Values to be the payslip value itself.
-    // The GET response wraps values as {key, item:{...}}, but that GET wrapper
-    // must NOT be sent back to the create endpoint.
-    return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
+  const items = state.employees.map(e=>{
+    const v = getValues(e.id), r = calculate(e, v);
+    const earnings = [], deductions = [], contributions = [];
+    
+    const add = a => a && earnings.push(a);
+    add(buildLine(state.mappings.earnings.basic, 'Basic Pay', num(v.actualDaysDuty), r.dailyRate));
+    add(buildLine(state.mappings.earnings.holiday, 'Holiday Pay', num(v.holidayFactor), r.dailyRate));
+    add(buildLine(state.mappings.earnings.overtime, 'Overtime', num(v.overtimeHours), r.hourlyRate));
+    add(buildLine(state.mappings.earnings.allowance, 'Allowances', 1, num(v.allowance)));
+    add(buildLine(state.mappings.earnings.commission, 'Commissions', 1, num(v.commission)));
+
+    const addD = a => a && deductions.push(a);
+    addD(buildDeduction(state.mappings.deductions.tardiness, 'Tardiness', r.lateDeduction));
+    addD(buildDeduction(state.mappings.deductions.sss, 'SSS', v.sss));
+    addD(buildDeduction(state.mappings.deductions.phic, 'PHIC', v.phic));
+    addD(buildDeduction(state.mappings.deductions.pagibig, 'Pag-IBIG', v.pagibig));
+    addD(buildDeduction(state.mappings.deductions.tax, 'Withholding Tax', v.tax));
+    addD(buildDeduction(state.mappings.deductions.loan, 'Loans / Advances', v.loan));
+
+    const addC = a => a && contributions.push(a);
+    addC(buildContribution(state.mappings.contributions.sss, 'Employer SSS', v.employerSss));
+    addC(buildContribution(state.mappings.contributions.phic, 'Employer PHIC', v.employerPhic));
+    addC(buildContribution(state.mappings.contributions.pagibig, 'Employer Pag-IBIG', v.employerPagibig));
+
+    const uid = crypto.randomUUID();
+    return {
+      Key: uid, Date: payslipDate.value, Employee: e.id, Description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
+      Earnings: earnings, Deductions: deductions, Contributions: contributions,
+      key: uid, date: payslipDate.value, employee: e.id, description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
+      earnings: earnings, deductions: deductions, contributions: contributions
+    };
   });
-  return {Values:items};
+  return {Values: items};
 }
-function validateMappings(){
-  const required=[
-    ['Basic Salaries','earnings','basic'],['Holiday Pay','earnings','holiday'],['Overtime','earnings','overtime'],['Allowances','earnings','allowance'],['Commissions','earnings','commission'],
-    ['Tardiness','deductions','tardiness'],['SSS Contributions','deductions','sss'],['PHIC Contributions','deductions','phic'],['Pag-IBIG Contributions','deductions','pagibig'],['Withholding Tax','deductions','tax'],['Employee Cash Advances/Loans','deductions','loan'],
-    ['SSS Employer','contributions','sss'],['PHIC Employer','contributions','phic'],['Pag-IBIG Employer','contributions','pagibig']
-  ];
-  return required.filter(x=>!state.mappings[x[1]]?.[x[2]]);
-}
-function reviewHtml(){
-  const rows=payrollRows();
-  const missing=validateMappings();
-  const payload=buildBatchPayload();
-  const totals=rows.reduce((a,x)=>({gross:a.gross+x.calc.gross,ded:a.ded+x.calc.deductions,net:a.net+x.calc.net,con:a.con+x.calc.contributions}),{gross:0,ded:0,net:0,con:0});
-  return `<div class="mapping">${mappingRows()}</div>
-    ${missing.length?`<div class="error" style="margin-top:12px"><b>Cannot create yet.</b> Missing mappings: ${missing.map(x=>esc(x[0])).join(', ')}.</div>`:`<div class="notice" style="margin-top:12px"><b>All required Payslip Items are mapped.</b> Review the payroll totals below before writing to Manager.</div>`}
-    <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th>Gross</th><th>Deductions</th><th>Employer Contributions</th><th>Net Pay</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money">${money(x.calc.contributions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody><tfoot><tr><th>Total</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
-    <div class="actions" style="margin-top:12px"><button class="good" id="confirmCreateBtn" type="button" ${missing.length?'disabled':''}>✓ Confirm & Create ${rows.length} Payslip${rows.length===1?'':'s'}</button></div>`;
-}
-async function previewPayslips(){
-  const rows=payrollRows();
-  try{ if(!Object.values(state.mappings.earnings).some(Boolean)) await loadPayslipItemMappings(); }catch(e){}
-  state.lastDebug={label:'Preview (not sent to Manager)', payloadToSend: buildBatchPayload()};
-  debugBtn.disabled=false;
-  modalTitle.textContent='Review Payslips';
-  modalIntro.textContent=`${rows.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
-  modalBody.innerHTML=`<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th>Daily Rate</th><th>Basic</th><th>OT</th><th>Holiday</th><th>Allowances</th><th>Commission</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.employee.name)}</td><td class="money">${money(x.calc.dailyRate)}</td><td class="money">${money(x.calc.basicPay)}</td><td class="money">${money(x.calc.overtimePay)}</td><td class="money">${money(x.calc.holidayPay)}</td><td class="money">${money(x.calc.allowance)}</td><td class="money">${money(x.calc.commission)}</td><td class="money">${money(x.calc.gross)}</td><td class="money">${money(x.calc.deductions)}</td><td class="money net">${money(x.calc.net)}</td></tr>`).join('')}</tbody></table></div><div class="note">Tardiness is calculated from Late Hours and will be posted using the dedicated <b>Tardiness</b> Payslip Item. The payroll setup includes only the defined earnings, deductions, and employer contribution items.</div>`;
-  modalBackdrop.style.display='flex';
-}
+
 async function createPayslips(){
-  const rows=payrollRows(); if(!rows.length)return;
-  modalTitle.textContent='Review & Create Payslips';
-  modalIntro.textContent='The extension will use the Payslip Items confirmed in your Manager business. No records are written until you click Confirm & Create.';
-  modalBody.innerHTML='<div class="notice">Reading Payslip Item definitions from Manager…</div>';
-  modalBackdrop.style.display='flex';
   try{
     await loadPayslipItemMappings();
-    modalBody.innerHTML=reviewHtml();
-    const btn=document.getElementById('confirmCreateBtn');
-    if(btn) btn.addEventListener('click',confirmCreatePayslips);
+    const payload = buildBatchPayload();
+    modalTitle.textContent = 'Create Payslips';
+    modalIntro.textContent = 'Creating payslips in Manager.io...';
+    modalBackdrop.style.display = 'flex';
+    
+    const response = await postMessageWithResponse({type:'api-request', method:'POST', path:'/api4/payslip-batch', body: payload});
+    if(response?.error || response?.errors) throw new Error(response?.message || 'Error writing to Manager.');
+    
+    modalBody.innerHTML = `<div class="notice"><b>Success!</b> ${payload.Values.length} Payslip(s) generated.</div>`;
+    writeStatus.textContent = `✓ Created ${payload.Values.length} payslip(s)`;
   }catch(err){
-    modalBody.innerHTML=`<div class="error"><b>Could not prepare Payslip Items.</b><br>${esc(err?.message||'Unknown error')}</div><p>The extension uses the Payslip Item mappings confirmed in this Manager business. No records were written.</p>`;
+    modalBody.innerHTML = `<div class="error"><b>Error:</b> ${esc(err.message)}</div>`;
   }
 }
-async function findExistingPayslips(payload){
-  const data=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
-  const items=unwrapItems(data), matches=[];
-  for(const p of payload.Values){
-    const pv=p?.item||p||{};
-    const hit=items.find(x=>{
-      const i=x?.item||x||{};
-      return String(i.employee||'')===String(pv.employee||'') &&
-             String(i.date||'').slice(0,10)===String(pv.date||'').slice(0,10) &&
-             String(i.description||'')===String(pv.description||'');
-    });
-    if(hit)matches.push({employee:pv.employee,date:pv.date,description:pv.description,key:extractKey(hit)});
-  }
-  return matches;
-}
-async function confirmCreatePayslips(){
-  const missing=validateMappings(); if(missing.length)return;
-  const btn=document.getElementById('confirmCreateBtn'); if(btn)btn.disabled=true;
-  try{
-    // Always build from the current worksheet/date fields. Never reuse a prior payload.
-    state.pendingPayload=null;
-    const payload=buildBatchPayload();
-    const existing=await findExistingPayslips(payload);
-    if(existing.length){
-      const names=new Map(state.employees.map(e=>[String(e.id),e.name]));
-      const list=existing.map(x=>esc(names.get(String(x.employee))||'Employee')).join(', ');
-      throw new Error(`Payslip(s) already exist for this payroll date and period: ${list}. No new records were created. Review the Payslips tab before trying again.`);
-    }
-    modalBody.innerHTML='<div class="notice">Writing payslips to Manager…</div>';
-    const response=await postMessageWithResponse({type:'api-request',method:'PUT',path:'/api4/payslip-batch',body:payload});
-    state.lastDebug={label:'Create: sent payload vs Manager\'s raw write response', payloadSent:payload, rawWriteResponse:response};
-    debugBtn.disabled=false;
-    if(response?.error || response?.errors || response?.success===false){
-      throw new Error(response?.message || response?.error || 'Manager rejected the request.');
-    }
-    modalBody.insertAdjacentHTML('afterbegin','<div class="notice">Manager accepted the write. Verifying created payslips and Payslip Items…</div>');
-    const verify=await postMessageWithResponse({type:'api-request',method:'GET',path:'/api4/payslip-batch?PageSize=99999'});
-    state.lastDebug={label:'Create: sent payload vs Manager\'s stored record (this is the one to check for the blank earnings/description bug)', payloadSent:payload, rawWriteResponse:response, storedAfterWrite:verify};
-    const verifyItems=unwrapItems(verify);
-    const expectedKeys=payload.Values.map(x=>x.key);
-    const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.item?.key||x?.item?.id));
-    const missingKeys=expectedKeys.filter(k=>!foundKeys.has(k));
-    const submittedSignatures=new Set(payload.Values.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
-    const foundSignatures=new Set(verifyItems.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
-    const missingSignatures=[...submittedSignatures].filter(k=>!foundSignatures.has(k));
-    if(missingKeys.length && missingSignatures.length){
-      throw new Error(`Manager accepted the write but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
-    }
-    const itemProblems=[];
-    for(const submitted of payload.Values){
-      const created=verifyItems.find(x=>extractKey(x)===submitted.key || extractKey(x?.item)===submitted.key);
-      const actual=created?.item||created||{};
-      for(const line of (submitted.earnings||[])){
-        const ok=(actual.earnings||[]).some(a=>String(a?.item||'')===String(line.item||'') && String(a?.description||'')===String(line.description||''));
-        if(!ok) itemProblems.push(`${actual.description||'Payslip'}: ${line.description}`);
-      }
-      for(const line of (submitted.deductions||[])){
-        const ok=(actual.deductions||[]).some(a=>String(a?.item||'')===String(line.item||'') && String(a?.description||'')===String(line.description||''));
-        if(!ok) itemProblems.push(`${actual.description||'Payslip'}: ${line.description}`);
-      }
-      for(const line of (submitted.contributions||[])){
-        const ok=(actual.contributions||[]).some(a=>String(a?.item||'')===String(line.item||'') && String(a?.description||'')===String(line.description||''));
-        if(!ok) itemProblems.push(`${actual.description||'Payslip'}: ${line.description}`);
-      }
-    }
-    if(itemProblems.length){
-      throw new Error(`Manager saved the payslip amounts, but the Payslip Item/Description fields were not preserved for: ${itemProblems.slice(0,5).join(', ')}. The extension stopped before showing success so the issue is visible instead of silently creating incomplete payslips.`);
-    }
-    state.createdResponse={postResponse:response,verification:verify}; state.pendingPayload=null;
-    writeStatus.textContent=`✓ ${payload.Values.length} payslip(s) created in Manager`;
-    modalTitle.textContent='Payslips Created';
-    modalIntro.textContent='Manager accepted the batch and the created payslips were verified through the API. Verify the Payslips tab before paying employees.';
-    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payload.Values.length} payslip(s) were created and verified in Manager, including the mapped Payslip Items and line descriptions.</div>`;
-  }catch(err){
-    if(btn)btn.disabled=false;
-    modalBody.insertAdjacentHTML('afterbegin',`<div class="error"><b>Manager did not complete the payroll write.</b><br>${esc(err?.message||'Unknown API error')}</div>`);
-  }
-}
-function setButtons(){previewBtn.disabled=!state.employees.length;createBtn.disabled=!state.employees.length;}
-function showDebugJson(){
-  if(!state.lastDebug){return;}
-  modalTitle.textContent='Debug: Raw JSON';
-  modalIntro.textContent=state.lastDebug.label||'';
-  const parts=[];
-  if(state.lastDebug.payloadToSend) parts.push(['What the extension would send to /api4/payslip-batch', state.lastDebug.payloadToSend]);
-  if(state.lastDebug.payloadSent) parts.push(['What the extension sent (PUT body)', state.lastDebug.payloadSent]);
-  if(state.lastDebug.rawWriteResponse) parts.push(['Manager\'s response to the PUT', state.lastDebug.rawWriteResponse]);
-  if(state.lastDebug.storedAfterWrite) parts.push(['What Manager actually has stored (GET right after write) — compare the earnings[].item / earnings[].description fields here against the "sent" block above', state.lastDebug.storedAfterWrite]);
-  modalBody.innerHTML=parts.map(([label,data])=>`<div style="margin-bottom:14px"><b style="font-size:12px">${esc(label)}</b><pre>${esc(JSON.stringify(data,null,2))}</pre></div>`).join('');
-  modalBackdrop.style.display='flex';
-}
-function updatePeriodSummary(){
-  if(!periodStart.value||!periodEnd.value){periodSummary.className='period-summary';periodSummary.textContent='';return;}
-  const a=new Date(periodStart.value+'T00:00:00'),b=new Date(periodEnd.value+'T00:00:00');
-  if(Number.isNaN(a.getTime())||Number.isNaN(b.getTime())||b<a){periodSummary.className='period-summary visible warning';periodSummary.textContent='⚠ Payroll period end must be on or after the start date.';return;}
-  const days=Math.floor((b-a)/86400000)+1,fmt=d=>d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
-  periodSummary.className='period-summary visible';periodSummary.textContent=`Payroll period: ${fmt(a)} – ${fmt(b)} · ${days} calendar day${days===1?'':'s'}`;
-}
-function clearManualInputs(){
-  state.employees.forEach(e=>Object.assign(getValues(e.id),{actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,sss:0,phic:0,pagibig:0,tax:0,loan:0,employerSss:0,employerPhic:0,employerPagibig:0}));
-  state.pendingPayload=null; render(); writeStatus.textContent='Manual payroll inputs cleared.';
-}
-function enableNativeDatePicker(el){el.addEventListener('click',()=>{try{if(typeof el.showPicker==='function')el.showPicker();}catch(e){}});}
-loadBtn.addEventListener('click',loadEmployees);recalcBtn.addEventListener('click',render);clearBtn.addEventListener('click',clearManualInputs);previewBtn.addEventListener('click',previewPayslips);createBtn.addEventListener('click',createPayslips);closeModal.addEventListener('click',()=>modalBackdrop.style.display='none');debugBtn.addEventListener('click',showDebugJson);
-modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)modalBackdrop.style.display='none';});
-[periodStart,periodEnd,payslipDate].forEach(el=>{enableNativeDatePicker(el);el.addEventListener('change',()=>{state.pendingPayload=null;updatePeriodSummary();});});
-const today=new Date(),yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,'0'),dd=String(today.getDate()).padStart(2,'0');
-periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;payslipDate.value=`${yyyy}-${mm}-${dd}`;updatePeriodSummary();
+
+function setButtons(){ previewBtn.disabled = !state.employees.length; createBtn.disabled = !state.employees.length; }
+
+loadBtn.addEventListener('click', loadEmployees);
+recalcBtn.addEventListener('click', render);
+createBtn.addEventListener('click', createPayslips);
+closeModal.addEventListener('click', ()=> modalBackdrop.style.display='none');
+
+const today = new Date(), yyyy = today.getFullYear(), mm = String(today.getMonth()+1).padStart(2,'0'), dd = String(today.getDate()).padStart(2,'0');
+periodStart.value = `${yyyy}-${mm}-01`; periodEnd.value = `${yyyy}-${mm}-${dd}`; payslipDate.value = `${yyyy}-${mm}-${dd}`;
 </script>
-
-<script>
-(function(){
-  function markPayrollColumns(){
-    document.querySelectorAll('table').forEach(function(table){
-      const headers = Array.from(table.querySelectorAll('thead th'));
-      const manual = new Set([
-        'ACTUAL DAYS DUTY','OT HOURS','LATE HOURS',
-        'HOLIDAY FACTOR','ALLOWANCES','COMMISSIONS',
-        'SSS','PHIC','PAG-IBIG','WITHHOLDING TAX',
-        'LOANS / ADVANCES','OTHER DEDUCTIONS',
-        'EMPLOYER SSS','EMPLOYER PHIC','EMPLOYER PAG-IBIG'
-      ]);
-      const reference = new Set(['DAILY RATE']);
-      const calculated = new Set([
-        'HOURLY RATE','BASIC PAY','OT PAY','HOLIDAY PAY',
-        'GROSS','TOTAL DEDUCTIONS','NET PAY'
-      ]);
-      headers.forEach(function(th, i){
-        const label = th.textContent.trim().toUpperCase();
-        const cls = manual.has(label) ? 'manual-head' : (reference.has(label) ? 'reference-head' : (calculated.has(label) ? 'calc-head' : ''));
-        if(cls) th.classList.add(cls);
-        Array.from(table.rows).slice(1).forEach(function(row){
-          const cell = row.cells[i];
-          if(!cell) return;
-          if(manual.has(label)) cell.classList.add('manual-cell');
-          if(reference.has(label)) cell.classList.add('reference-cell');
-          if(calculated.has(label)) cell.classList.add('calc-cell');
-        });
-      });
-    });
-  }
-  new MutationObserver(markPayrollColumns).observe(document.body,{childList:true,subtree:true});
-  document.addEventListener('DOMContentLoaded',markPayrollColumns);
-  setTimeout(markPayrollColumns,500);
-  setTimeout(markPayrollColumns,1500);
-})();
-</script>
-
-
-<script id="v10-final-ui">
-(function () {
-  function markTotalRows() {
-    document.querySelectorAll('tr').forEach(function (tr) {
-      var text = (tr.textContent || '').trim().toUpperCase();
-      if (text.startsWith('TOTAL')) tr.classList.add('review-total-row');
-    });
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', markTotalRows);
-  } else {
-    markTotalRows();
-  }
-  new MutationObserver(markTotalRows).observe(document.documentElement, {
-    childList: true, subtree: true
-  });
-})();
-</script>
-
-
-<script id="v10-close-cleanup">
-(function () {
-  function cleanupCloseButtons() {
-    document.querySelectorAll('[role="dialog"], .modal, .dialog').forEach(function (modal) {
-      var buttons = Array.from(modal.querySelectorAll('button')).filter(function (b) {
-        return (b.textContent || '').trim().toLowerCase() === 'close';
-      });
-      if (buttons.length > 1) {
-        buttons.slice(1).forEach(function (b) { b.remove(); });
-      }
-    });
-  }
-  new MutationObserver(cleanupCloseButtons).observe(document.documentElement, {
-    childList: true, subtree: true
-  });
-  cleanupCloseButtons();
-})();
-</script>
-
 </body>
 </html>
