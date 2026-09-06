@@ -22,6 +22,13 @@ input:focus,select:focus{outline:2px solid rgba(88,166,255,.35);border-color:var
 .summary{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:14px}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.card .value{font-size:19px;font-weight:750;margin-top:4px}
 .table-wrap{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:10px}
+.manual-head{background:#12304a !important;color:#d9ecff !important}
+.calc-head{background:#242a31 !important;color:#d5dbe1 !important}
+.manual-cell{background:rgba(88,166,255,.10) !important}
+.calc-cell{background:rgba(255,255,255,.025) !important;color:#d5dbe1}
+.manual-cell input{background:#102638 !important;border-color:#3978a9 !important}
+.calc-cell .money,.calc-cell .rate{font-weight:650}
+
 table{width:100%;border-collapse:collapse;min-width:2200px}
 th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
 th{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}
@@ -62,13 +69,18 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <div class="card"><div class="label">Gross Earnings</div><div class="value" id="grossTotal">₱0.00</div></div>
   <div class="card"><div class="label">Total Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
   <div class="card"><div class="label">Employer Contributions</div><div class="value" id="contributionTotal">₱0.00</div></div>
-  <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
+  
+<div class="legend" style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px;font-size:12px;color:var(--muted)">
+  <span style="padding:7px 10px;border-radius:6px;background:#12304a;color:#d9ecff;border:1px solid #3978a9">MANUAL INPUT</span>
+  <span style="padding:7px 10px;border-radius:6px;background:#242a31;color:#d5dbe1;border:1px solid var(--border)">CALCULATED</span>
+</div>
+<div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
 </div>
 
 <div class="notice">
   <b>Calculation model:</b> Daily Rate is entered by staff.
   Hourly Rate = Daily Rate ÷ Hours/Day. Basic Pay = Daily Rate × Actual Days Duty.
-  OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Days. Allowances and Commissions are manual earnings.
+  OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Factor. Allowances and Commissions are manual earnings.
   Late Deduction = Hourly Rate × Late Hours. Deductions and employer contributions remain manual.
 </div>
 
@@ -88,7 +100,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
   <span class="status" id="writeStatus">No payslips created yet.</span>
 </div>
 <div class="note">
-  Assumptions for this prototype: 8 hours/day and overtime uses the regular hourly rate. Holiday multiplier is entered per employee
+  Assumptions for this prototype: 8 hours/day and overtime uses the regular hourly rate. Holiday Factor is entered per employee
   (for example 1.00 for one additional day or 0.30 for a 30% premium). These are calculation settings, not
   a determination of Philippine statutory compliance. Payslip writing remains guarded until the Manager
   Payslip Item mappings are connected.
@@ -132,7 +144,7 @@ const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.m
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
-    dailyRate:0,actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayDays:0,holidayMultiplier:1,
+    dailyRate:0,actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,
     sss:0,phic:0,pagibig:0,tax:0,loan:0,otherDeduction:0,
     employerSss:0,employerPhic:0,employerPagibig:0
   });
@@ -144,9 +156,11 @@ function calculate(v){
   const hourlyRate=dailyRate/HOURS_PER_DAY;
   const basicPay=dailyRate*num(v.actualDaysDuty);
   const overtimePay=hourlyRate*num(v.overtimeHours);
-  const holidayPay=dailyRate*num(v.holidayDays)*num(v.holidayMultiplier);
+  const holidayPay=dailyRate*num(v.holidayFactor);
+  const allowance=num(v.allowance);
+  const commission=num(v.commission);
   const lateDeduction=hourlyRate*num(v.lateHours);
-  const gross=Math.max(0,basicPay+overtimePay+holidayPay-lateDeduction);
+  const gross=Math.max(0,basicPay+overtimePay+holidayPay+allowance+commission-lateDeduction);
   const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan)+num(v.otherDeduction);
   const net=Math.max(0,gross-deductions);
   const contributions=num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
@@ -159,7 +173,7 @@ function updateSummary(){
   grossTotal.textContent=money(g); deductionTotal.textContent=money(d); netTotal.textContent=money(n); contributionTotal.textContent=money(c);
 }
 function inputCell(e,field,value){
-  const display=(field==='holidayMultiplier' && (value===undefined || value===null || value==='')) ? 1 : value;
+  const display=value;
   return `<input class="pay-input" data-field="${field}" type="number" min="0" step="0.01" value="${display||''}" aria-label="${esc(e.name)} ${field}">`;
 }
 function render(){
@@ -171,8 +185,8 @@ function render(){
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
     <th>Employee</th><th>Daily Rate</th><th>Actual Days Duty</th>
-    <th>OT Hours</th><th>Late Hours</th><th>Holiday Days</th><th>Allowances</th><th>Commissions</th>
-    <th>Daily Rate</th><th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Allowances</th><th>Commissions</th><th>Late Deduction</th><th>Gross</th>
+    <th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
+    <th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
@@ -181,7 +195,7 @@ function render(){
       <td>${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
       <td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
       <td>${inputCell(e,'lateHours',v.lateHours)}</td>
-      <td>${inputCell(e,'holidayDays',v.holidayDays)}</td>
+      <td>${inputCell(e,'holidayFactor',v.holidayFactor)}</td>
       <td>${inputCell(e,'allowance',v.allowance)}</td>
       <td>${inputCell(e,'commission',v.commission)}</td>
       <td class="money dailyRate">${money(r.dailyRate)}</td>
@@ -297,5 +311,42 @@ modalBackdrop.addEventListener('click',e=>{if(e.target===modalBackdrop)modalBack
 const today=new Date(),yyyy=today.getFullYear(),mm=String(today.getMonth()+1).padStart(2,'0'),dd=String(today.getDate()).padStart(2,'0');
 periodStart.value=`${yyyy}-${mm}-01`;periodEnd.value=`${yyyy}-${mm}-${dd}`;payslipDate.value=`${yyyy}-${mm}-${dd}`;
 </script>
+
+<script>
+(function(){
+  function markPayrollColumns(){
+    document.querySelectorAll('table').forEach(function(table){
+      const headers = Array.from(table.querySelectorAll('thead th'));
+      const manual = new Set([
+        'DAILY RATE','ACTUAL DAYS DUTY','OT HOURS','LATE HOURS',
+        'HOLIDAY FACTOR','ALLOWANCES','COMMISSIONS',
+        'SSS','PHIC','PAG-IBIG','WITHHOLDING TAX',
+        'LOANS / ADVANCES','OTHER DEDUCTIONS',
+        'EMPLOYER SSS','EMPLOYER PHIC','EMPLOYER PAG-IBIG'
+      ]);
+      const calculated = new Set([
+        'HOURLY RATE','BASIC PAY','OT PAY','HOLIDAY PAY',
+        'LATE DEDUCTION','GROSS','TOTAL DEDUCTIONS','NET PAY'
+      ]);
+      headers.forEach(function(th, i){
+        const label = th.textContent.trim().toUpperCase();
+        const cls = manual.has(label) ? 'manual-head' : (calculated.has(label) ? 'calc-head' : '');
+        if(cls) th.classList.add(cls);
+        Array.from(table.rows).slice(1).forEach(function(row){
+          const cell = row.cells[i];
+          if(!cell) return;
+          if(manual.has(label)) cell.classList.add('manual-cell');
+          if(calculated.has(label)) cell.classList.add('calc-cell');
+        });
+      });
+    });
+  }
+  new MutationObserver(markPayrollColumns).observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',markPayrollColumns);
+  setTimeout(markPayrollColumns,500);
+  setTimeout(markPayrollColumns,1500);
+})();
+</script>
+
 </body>
 </html>
