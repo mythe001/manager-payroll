@@ -68,7 +68,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 <div class="notice">
   <b>Calculation model:</b> Daily Rate is entered by staff.
   Hourly Rate = Daily Rate ÷ Hours/Day. Basic Pay = Daily Rate × Actual Days Duty.
-  OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Days × Holiday Multiplier.
+  OT Pay = Hourly Rate × OT Hours. Holiday Pay = Daily Rate × Holiday Days. Allowances and Commissions are manual earnings.
   Late Deduction = Hourly Rate × Late Hours. Deductions and employer contributions remain manual.
 </div>
 
@@ -150,7 +150,7 @@ function calculate(v){
   const deductions=num(v.sss)+num(v.phic)+num(v.pagibig)+num(v.tax)+num(v.loan)+num(v.otherDeduction);
   const net=Math.max(0,gross-deductions);
   const contributions=num(v.employerSss)+num(v.employerPhic)+num(v.employerPagibig);
-  return {dailyRate,hourlyRate,basicPay,overtimePay,holidayPay,lateDeduction,gross,deductions,net,contributions};
+  return {dailyRate,hourlyRate,basicPay,overtimePay,holidayPay,allowance,commission,lateDeduction,gross,deductions,net,contributions};
 }
 function updateSummary(){
   let g=0,d=0,n=0,c=0;
@@ -171,8 +171,8 @@ function render(){
   earningsApp.className=''; deductionsApp.className='';
   earningsApp.innerHTML=`<table><thead><tr>
     <th>Employee</th><th>Daily Rate</th><th>Actual Days Duty</th>
-    <th>OT Hours</th><th>Late Hours</th><th>Holiday Days</th><th>Holiday Multiplier</th>
-    <th>Daily Rate</th><th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Late Deduction</th><th>Gross</th>
+    <th>OT Hours</th><th>Late Hours</th><th>Holiday Days</th><th>Allowances</th><th>Commissions</th>
+    <th>Daily Rate</th><th>Hourly Rate</th><th>Basic Pay</th><th>OT Pay</th><th>Holiday Pay</th><th>Allowances</th><th>Commissions</th><th>Late Deduction</th><th>Gross</th>
   </tr></thead><tbody>${state.employees.map(e=>{
     const v=getValues(e.id),r=calculate(v);
     return `<tr data-id="${esc(e.id)}">
@@ -182,7 +182,8 @@ function render(){
       <td>${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
       <td>${inputCell(e,'lateHours',v.lateHours)}</td>
       <td>${inputCell(e,'holidayDays',v.holidayDays)}</td>
-      <td>${inputCell(e,'holidayMultiplier',v.holidayMultiplier)}</td>
+      <td>${inputCell(e,'allowance',v.allowance)}</td>
+      <td>${inputCell(e,'commission',v.commission)}</td>
       <td class="money dailyRate">${money(r.dailyRate)}</td>
       <td class="money hourlyRate">${money(r.hourlyRate)}</td>
       <td class="money basicPay">${money(r.basicPay)}</td>
@@ -221,7 +222,7 @@ function updateRow(id){
   document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
     const fields={
       '.dailyRate':r.dailyRate,'.hourlyRate':r.hourlyRate,'.basicPay':r.basicPay,
-      '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.lateDeduction':r.lateDeduction,
+      '.overtimePay':r.overtimePay,'.holidayPay':r.holidayPay,'.allowance':r.allowance,'.commission':r.commission,'.lateDeduction':r.lateDeduction,
       '.gross':r.gross,'.net':r.net,'.deductionTotal':r.deductions
     };
     Object.entries(fields).forEach(([sel,val])=>{const el=row.querySelector(sel);if(el)el.textContent=money(val);});
