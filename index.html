@@ -26,7 +26,7 @@ table{width:100%;border-collapse:collapse;min-width:2100px}th,td{padding:8px;bor
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V8 prototype • POST payslip creation</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V9 • POST payslip creation</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -397,10 +397,10 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
-    // API4 batch POST expects each entry in Values to be the payslip value itself.
-    // The GET response wraps values as {key, item:{...}}, but that GET wrapper
-    // must NOT be sent back to the create endpoint.
-    return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
+    // Keep the payslip value inside the {key, item:{...}} structure.
+    // This is the structure that Manager renders correctly in the native
+    // Payslip form, including Payslip Item and Description columns.
+    return {key:crypto.randomUUID(),item:{date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false}};
   });
   return {Values:items};
 }
@@ -449,7 +449,8 @@ async function findExistingPayslips(payload){
   const items=unwrapItems(data);
   const matches=[];
   for(const p of payload.Values){
-    const hit=items.find(x=>{const i=x?.item||x||{};return String(i.employee||'')===String(p.employee||'') && String(i.date||'').slice(0,10)===String(p.date||'').slice(0,10) && String(i.description||'')===String(p.description||'');});
+    const pv=p?.item||p||{};
+    const hit=items.find(x=>{const i=x?.item||x||{};return String(i.employee||'')===String(pv.employee||'') && String(i.date||'').slice(0,10)===String(pv.date||'').slice(0,10) && String(i.description||'')===String(pv.description||'');});
     if(hit)matches.push({employee:p.employee,date:p.date,description:p.description,key:extractKey(hit)});
   }
   return matches;
@@ -485,7 +486,7 @@ async function confirmCreatePayslips(){
     const missingKeys=expectedKeys.filter(k=>!foundKeys.has(k));
     // Some Manager create responses may assign/return a different server key.
     // If so, verify by employee + date + description instead of falsely reporting failure.
-    const submittedSignatures=new Set(payload.Values.map(x=>`${x.employee}|${x.date}|${x.description||''}`));
+    const submittedSignatures=new Set(payload.Values.map(x=>{const i=x?.item||x||{};return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;}));
     const foundSignatures=new Set(verifyItems.map(x=>{
       const i=x?.item||x||{};
       return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;
@@ -499,8 +500,7 @@ async function confirmCreatePayslips(){
     writeStatus.textContent=`✓ ${payrollRows().length} payslip(s) created in Manager`;
     modalTitle.textContent='Payslips Created';
     modalIntro.textContent='Manager accepted the batch and the created payslips were verified through the API. Verify the Payslips tab before paying employees.';
-    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created and verified in Manager.</div><div class="success-actions"><button class="primary" id="viewPayslipsBtn" type="button">View Payslips</button><button id="closeSuccessBtn" type="button">Close</button></div>`;
-    document.getElementById('viewPayslipsBtn')?.addEventListener('click',()=>{try{window.parent.location.href='/payslips';}catch(e){window.location.href='/payslips';}});
+    modalBody.innerHTML=`<div class="notice"><b>Success.</b> ${payrollRows().length} payslip(s) were created and verified in Manager.</div><div class="success-actions"><button id="closeSuccessBtn" type="button">Close</button></div>`;
     document.getElementById('closeSuccessBtn')?.addEventListener('click',()=>modalBackdrop.style.display='none');
   }catch(err){
     if(btn)btn.disabled=false;
