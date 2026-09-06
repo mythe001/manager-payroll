@@ -53,7 +53,7 @@ pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V6 prototype • POST payslip creation</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V7 prototype • POST payslip creation</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -385,7 +385,10 @@ function buildBatchPayload(){
     addC(buildContribution(state.mappings.contributions.sss,'Employer SSS',v.employerSss));
     addC(buildContribution(state.mappings.contributions.phic,'Employer PHIC',v.employerPhic));
     addC(buildContribution(state.mappings.contributions.pagibig,'Employer Pag-IBIG',v.employerPagibig));
-    return {key:crypto.randomUUID(),item:{date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false}};
+    // API4 batch POST expects each entry in Values to be the payslip value itself.
+    // The GET response wraps values as {key, item:{...}}, but that GET wrapper
+    // must NOT be sent back to the create endpoint.
+    return {key:crypto.randomUUID(),date:payslipDate.value,employee:x.employee.id,description:`Payroll ${periodStart.value} to ${periodEnd.value}`,earnings,deductions,contributions,showTotalsForThePeriod:false};
   });
   return {Values:items};
 }
@@ -452,8 +455,16 @@ async function confirmCreatePayslips(){
     const expectedKeys=payload.Values.map(x=>x.key);
     const foundKeys=new Set(verifyItems.map(x=>x?.key||x?.item?.key||x?.item?.id));
     const missingKeys=expectedKeys.filter(k=>!foundKeys.has(k));
-    if(missingKeys.length){
-      throw new Error(`Manager accepted the POST but verification could not find ${missingKeys.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
+    // Some Manager create responses may assign/return a different server key.
+    // If so, verify by employee + date + description instead of falsely reporting failure.
+    const submittedSignatures=new Set(payload.Values.map(x=>`${x.employee}|${x.date}|${x.description||''}`));
+    const foundSignatures=new Set(verifyItems.map(x=>{
+      const i=x?.item||x||{};
+      return `${i.employee||''}|${String(i.date||'').slice(0,10)}|${i.description||''}`;
+    }));
+    const missingSignatures=[...submittedSignatures].filter(k=>!foundSignatures.has(k));
+    if(missingKeys.length && missingSignatures.length){
+      throw new Error(`Manager accepted the POST but verification could not find ${missingSignatures.length} of ${expectedKeys.length} submitted payslip(s). No success message will be shown until the records are confirmed in Manager.`);
     }
 
     state.createdResponse={postResponse:response,verification:verify};
