@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stage 6 - Payslip Payload Diagnostic | Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping v2</title>
+<title>Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping v2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
@@ -61,7 +61,7 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet • Stage 7</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -522,8 +522,11 @@ function buildLine(item, description, units, unitPrice){
   if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
   const u = Number(units)||0, p = Number(unitPrice)||0;
   return {
-    Item: item.key, Description: description, Units: u, UnitPrice: p, Amount: u * p,
-    item: item.key, description: description, units: u, unitPrice: p, earningsAmount: u * p
+    Item: item.key,
+    Description: description,
+    Units: u,
+    UnitPrice: p,
+    Amount: u * p
   };
 }
 
@@ -531,8 +534,10 @@ function buildDeduction(item, description, amount){
   const a = Number(amount)||0;
   if(!item || a<=0) return null;
   return {
-    Item: item.key, Description: description, Amount: a, DeductionAmount: a,
-    item: item.key, description: description, amount: a, deductionAmount: a
+    Item: item.key,
+    Description: description,
+    Amount: a,
+    DeductionAmount: a
   };
 }
 
@@ -540,8 +545,10 @@ function buildContribution(item, description, amount){
   const a = Number(amount)||0;
   if(!item || a<=0) return null;
   return {
-    Item: item.key, Description: description, Amount: a, ContributionAmount: a,
-    item: item.key, description: description, amount: a, contributionAmount: a
+    Item: item.key,
+    Description: description,
+    Amount: a,
+    ContributionAmount: a
   };
 }
 
@@ -572,10 +579,13 @@ function buildBatchPayload(){
 
     const uid = crypto.randomUUID();
     return {
-      Key: uid, Date: payslipDate.value, Employee: e.id, Description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
-      Earnings: earnings, Deductions: deductions, Contributions: contributions,
-      key: uid, date: payslipDate.value, employee: e.id, description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
-      earnings: earnings, deductions: deductions, contributions: contributions
+      Key: uid,
+      Date: payslipDate.value,
+      employee: e.id,
+      description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
+      Earnings: earnings,
+      Deductions: deductions,
+      Contributions: contributions
     };
   });
   return {Values: items};
@@ -591,7 +601,8 @@ function reviewHtml(){
 
   return `<div class="notice"><b>Review payroll summary below before writing to Manager.io.</b></div>
     <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Employer Contributions</th><th style="text-align:right">Net Pay</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
-    <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Confirm & Create ${state.employees.length} Payslip${state.employees.length===1?'':'s'}</button></div>`;
+    <div class="notice" style="margin-top:14px;border-left:4px solid #d97706"><b>Stage 7 test:</b> The next step will create <b>only 1 payslip</b> (the first employee in the current list) using the cleaned API4 payload. This is intentional so we can verify the Item and Description fields before restoring full-batch creation.</div>
+    <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Create 1 Test Payslip</button></div>`;
 }
 
 function previewPayslips(){
@@ -628,43 +639,25 @@ async function createPayslips(){
 async function confirmCreatePayslips(){
   const btn = document.getElementById('confirmCreateBtn');
   if(btn) btn.disabled = true;
+  modalBody.innerHTML = '<div class="notice">Creating 1 test payslip in Manager.io...</div>';
 
   try{
-    const payload = buildBatchPayload();
+    const fullPayload = buildBatchPayload();
+    const payload = {Values: fullPayload.Values.slice(0,1)};
 
-    const allMappedKeys = [];
-    for(const group of ['earnings','deductions','contributions']){
-      for(const key of Object.keys(state.mappings[group] || {})){
-        const item = state.mappings[group][key];
-        allMappedKeys.push({group, name:key, mappedName:item?.name || null, key:item?.key || null});
-      }
+    const response = await postMessageWithResponse({type:'api-request', method:'POST', path:'/api4/payslip-batch', body: payload});
+    if(response?.error || response?.errors || response?.success === false){
+      throw new Error(response?.message || response?.error || 'Manager rejected the request.');
     }
 
-    const invalidLines = [];
-    payload.Values.forEach((payslip, pi) => {
-      for(const section of ['Earnings','Deductions','Contributions']){
-        (payslip[section] || []).forEach((line, li) => {
-          if(!line.Item || !line.item){
-            invalidLines.push(`${section}[${li}] has no Item key`);
-          }
-        });
-      }
-    });
-
-    modalTitle.textContent = 'Payload Diagnostic';
-    modalIntro.textContent = 'Diagnostic only — nothing will be written to Manager. Please send me a screenshot of this panel.';
-    modalBody.innerHTML = `
-      <div class="notice"><b>Business context:</b> ${esc(state.businessContextKey || detectedBusinessContextKey || 'not detected')}<br>
-      <b>Payslips prepared:</b> ${payload.Values.length}<br>
-      <b>Lines missing Item key:</b> ${invalidLines.length}</div>
-      <h3 style="margin:16px 0 8px">Mapped Payslip Items</h3>
-      <pre style="white-space:pre-wrap;overflow:auto;max-height:260px;background:#f6f6f6;padding:12px;border:1px solid #ddd;border-radius:8px">${esc(JSON.stringify(allMappedKeys,null,2))}</pre>
-      <h3 style="margin:16px 0 8px">First Payslip Payload</h3>
-      <pre style="white-space:pre-wrap;overflow:auto;max-height:420px;background:#f6f6f6;padding:12px;border:1px solid #ddd;border-radius:8px">${esc(JSON.stringify(payload.Values[0] || null,null,2))}</pre>
-    `;
+    writeStatus.textContent = '✓ 1 test payslip created in Manager';
+    modalTitle.textContent = 'Test Payslip Created';
+    modalIntro.textContent = 'Stage 7 created only the first payslip using the cleaned API4 payload.';
+    modalBody.innerHTML = `<div class="notice"><b>Success.</b> One test payslip was created for <b>${esc(state.employees[0]?.name || 'the first employee')}</b>.</div>
+      <p style="margin-top:12px">Please open that payslip in Manager and check whether the <b>Item</b> and <b>Description</b> now appear. If they do, we will remove test mode and restore full-batch creation.</p>`;
   }catch(err){
     if(btn) btn.disabled = false;
-    modalBody.innerHTML = `<div class="error"><b>Diagnostic failed:</b><br>${esc(err.message)}</div>`;
+    modalBody.innerHTML = `<div class="error"><b>Failed to create test payslip:</b><br>${esc(err.message)}</div>`;
   }
 }
 
