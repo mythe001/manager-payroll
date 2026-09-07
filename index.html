@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manager Payroll Worksheet V2</title>
+<title>Manager Payroll Worksheet V2 — Stage 3 Payslip Item Test</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
@@ -68,6 +68,7 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 
 <div id="error"></div>
 <div id="businessDetectionStatus" class="notice" style="margin-bottom:12px">Business context: waiting for the first Manager API response…</div>
+<div id="payslipItemsTest" class="notice" style="margin-bottom:12px">Payslip Items: waiting to test the Manager API endpoint…</div>
 <div class="period">
   <label>Payroll period start<input id="periodStart" type="date"></label>
   <label>Payroll period end<input id="periodEnd" type="date"></label>
@@ -379,11 +380,56 @@ async function loadEmployees(){
     }
     loadBtn.textContent = '↻ Reload Employees';
     render();
+    await testPayslipItemsEndpoint();
   }catch(err){
     status.textContent = 'Failed to load employees';
     error.innerHTML = `<div class="error">⚠ ${esc(err?.message)}</div>`;
     loadBtn.textContent = '↻ Retry';
   }finally{ loadBtn.disabled = false; }
+}
+
+async function testPayslipItemsEndpoint(){
+  const panel = document.getElementById('payslipItemsTest');
+  if (panel) panel.textContent = 'Payslip Items: loading from Manager…';
+
+  try{
+    const data = await postMessageWithResponse({
+      type:'api-request',
+      method:'GET',
+      path:'/api4/payslip-item-batch?PageSize=99999'
+    });
+
+    const records = Array.isArray(data) ? data : (data?.items || data?.data || []);
+    const items = records.map(record => {
+      const item = record?.item || record || {};
+      return {
+        key: record?.key || item?.key || item?.id || null,
+        name: item?.name || record?.name || '(Unnamed)'
+      };
+    }).filter(x => x.key && x.name);
+
+    if(panel){
+      if(items.length){
+        panel.className = 'notice';
+        panel.innerHTML =
+          `<b>✓ Payslip Items found: ${items.length}</b><br>` +
+          `<span style="font-size:11px">${items.slice(0,30).map(x => `${esc(x.name)} — ${esc(x.key)}`).join('<br>')}` +
+          (items.length > 30 ? '<br>…showing first 30' : '') +
+          `</span>`;
+      }else{
+        panel.className = 'warning';
+        panel.textContent = 'Manager returned no Payslip Items.';
+      }
+    }
+
+    return items;
+  }catch(err){
+    if(panel){
+      panel.className = 'error';
+      panel.innerHTML = `<b>✕ Payslip Item API test failed:</b> ${esc(err?.message || err)}`;
+    }
+    return [];
+  }
 }
 
 async function loadPayslipItemMappings(){
