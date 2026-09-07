@@ -40,7 +40,6 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 
-/* Review & Summary Table Total Row Styling */
 .modal table tfoot tr th,
 .modal table tfoot tr td {
   font-size: 1.15em !important;
@@ -141,6 +140,20 @@ const peso = new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',mi
 const money = v => peso.format(Number.isFinite(Number(v)) ? Number(v) : 0);
 const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.max(0,n):0;};
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function normalizeName(s){
+  return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function unwrapItems(data){
+  const arr=Array.isArray(data)?data:(data?.items||data?.data||data?.results||[]);
+  return Array.isArray(arr)?arr:[];
+}
+function extractKey(x){
+  return x?.key||x?.Key||x?.id||x?.Id||x?.item?.key||x?.item?.id||x?.item?.Key||x?.item?.Id||null;
+}
+function extractName(x){
+  return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
+}
 
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
@@ -353,28 +366,46 @@ async function loadEmployees(){
 }
 
 async function loadPayslipItemMappings(){
-  state.mappings={
-    earnings:{
-      basic:{key:'01a073de-2e72-7fd1-8a67-16b81d70d547',name:'Basic Salaries'},
-      holiday:{key:'01a07471-d31b-721d-b077-64c5a7f43de7',name:'Holiday Pay'},
-      overtime:{key:'01a07471-50d6-74ef-a4da-506ce14307e0',name:'Overtime'},
-      allowance:{key:'01a07471-7a23-7f00-be93-f669d373deee',name:'Allowances'},
-      commission:{key:'01a07471-9669-7d49-989a-d9c6c8a4fc8d',name:'Commissions'}
+  const data = await postMessageWithResponse({
+    type: 'api-request',
+    method: 'GET',
+    path: '/api4/payslip-item-batch?PageSize=99999'
+  });
+  
+  const items = unwrapItems(data);
+  
+  const findItem = (name) => {
+    const target = normalizeName(name);
+    const match = items.find(x => {
+      const itemName = normalizeName(extractName(x));
+      return itemName === target || itemName.includes(target) || target.includes(itemName);
+    });
+    return match ? { key: extractKey(match), name: extractName(match) } : null;
+  };
+
+  state.mappings = {
+    earnings: {
+      basic: findItem('Basic Salaries') || findItem('Basic Pay') || findItem('Basic'),
+      holiday: findItem('Holiday Pay') || findItem('Holiday'),
+      overtime: findItem('Overtime Pay') || findItem('Overtime'),
+      allowance: findItem('Allowances') || findItem('Allowance'),
+      commission: findItem('Commissions') || findItem('Commission')
     },
-    deductions:{
-      tardiness:{key:'01a07680-64c4-75d2-992a-9069ced25608',name:'Tardiness'},
-      sss:{key:'01a073df-4565-7418-a1b1-d2da27f170e6',name:'SSS Contributions'},
-      phic:{key:'01a07472-d592-7d9b-ac7b-f41f073bdb80',name:'PHIC Contributions'},
-      pagibig:{key:'01a07472-fe7f-7a0a-b7ca-de940e5cc1cb',name:'Pag-IBIG Contributions'},
-      tax:{key:'01a07473-637c-7ac5-8c8f-dfb1631dc20a',name:'Withholding Tax'},
-      loan:{key:'01a07473-c1b4-7033-ac28-5035ae4812fc',name:'Employee Cash Advances/Loans'}
+    deductions: {
+      tardiness: findItem('Tardiness') || findItem('Late') || findItem('Undertime'),
+      sss: findItem('SSS Contributions') || findItem('SSS'),
+      phic: findItem('PHIC Contributions') || findItem('PHIC') || findItem('PhilHealth'),
+      pagibig: findItem('Pag-IBIG Contributions') || findItem('Pag-IBIG') || findItem('HDMF'),
+      tax: findItem('Withholding Tax') || findItem('Tax'),
+      loan: findItem('Employee Cash Advances/Loans') || findItem('Loans') || findItem('Advances')
     },
-    contributions:{
-      sss:{key:'01a073e0-505b-7337-9c5c-ce07e744f3d8',name:'SSS Employer'},
-      phic:{key:'01a07474-9699-7e04-8a40-23fce7fb16fc',name:'PHIC Employer'},
-      pagibig:{key:'01a07474-cbe9-702b-8287-9438ecbecdac',name:'Pag-IBIG Employer'}
+    contributions: {
+      sss: findItem('SSS Employer') || findItem('SSS'),
+      phic: findItem('PHIC Employer') || findItem('PHIC') || findItem('PhilHealth'),
+      pagibig: findItem('Pag-IBIG Employer') || findItem('Pag-IBIG') || findItem('HDMF')
     }
   };
+
   return state.mappings;
 }
 
