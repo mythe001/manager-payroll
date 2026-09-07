@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping v2</title>
+<title>Manager Payroll Worksheet V2 — Production</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
@@ -40,7 +40,6 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 
-/* Review & Summary Table Total Row Styling */
 .modal table tfoot tr th,
 .modal table tfoot tr td {
   font-size: 1.15em !important;
@@ -114,12 +113,6 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </div>
 
 <script>
-/*
-  Stage 2: automatically capture Manager's business-specific context key.
-  Manager includes this opaque q=... value in API response _links.self.href.
-  We use it only as a business-scoping key; it is not assumed to be a
-  decoded/public Manager business ID.
-*/
 let detectedBusinessContextKey = null;
 
 function captureBusinessContext(body) {
@@ -523,6 +516,7 @@ function buildLine(item, description, units, unitPrice){
   const u = Number(units)||0, p = Number(unitPrice)||0;
   return {
     Item: item.key,
+    PayslipItem: item.key,
     Description: description,
     Units: u,
     UnitPrice: p,
@@ -535,6 +529,7 @@ function buildDeduction(item, description, amount){
   if(!item || a<=0) return null;
   return {
     Item: item.key,
+    PayslipDeductionItem: item.key,
     Description: description,
     Amount: a,
     DeductionAmount: a
@@ -546,6 +541,7 @@ function buildContribution(item, description, amount){
   if(!item || a<=0) return null;
   return {
     Item: item.key,
+    PayslipContributionItem: item.key,
     Description: description,
     Amount: a,
     ContributionAmount: a
