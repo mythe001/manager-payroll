@@ -366,74 +366,110 @@ async function loadEmployees(){
 }
 
 async function loadPayslipItemMappings(){
-  const data = await postMessageWithResponse({
-    type: 'api-request',
-    method: 'GET',
-    path: '/api4/payslip-item-batch?PageSize=99999'
-  });
-  
-  const items = unwrapItems(data);
-  
-  const findItem = (name) => {
-    const target = normalizeName(name);
-    const match = items.find(x => {
-      const itemName = normalizeName(extractName(x));
-      return itemName === target || itemName.includes(target) || target.includes(itemName);
+  try {
+    const data = await postMessageWithResponse({
+      type: 'api-request',
+      method: 'GET',
+      path: '/api4/payslip-item-batch?PageSize=99999'
     });
-    return match ? { key: extractKey(match), name: extractName(match) } : null;
-  };
+    
+    const items = unwrapItems(data);
+    
+    const findItem = (name) => {
+      const target = normalizeName(name);
+      const match = items.find(x => {
+        const itemName = normalizeName(extractName(x));
+        return itemName === target || itemName.includes(target) || target.includes(itemName);
+      });
+      return match ? { key: extractKey(match), name: extractName(match) } : null;
+    };
 
-  state.mappings = {
-    earnings: {
-      basic: findItem('Basic Salaries') || findItem('Basic Pay') || findItem('Basic'),
-      holiday: findItem('Holiday Pay') || findItem('Holiday'),
-      overtime: findItem('Overtime Pay') || findItem('Overtime'),
-      allowance: findItem('Allowances') || findItem('Allowance'),
-      commission: findItem('Commissions') || findItem('Commission')
-    },
-    deductions: {
-      tardiness: findItem('Tardiness') || findItem('Late') || findItem('Undertime'),
-      sss: findItem('SSS Contributions') || findItem('SSS'),
-      phic: findItem('PHIC Contributions') || findItem('PHIC') || findItem('PhilHealth'),
-      pagibig: findItem('Pag-IBIG Contributions') || findItem('Pag-IBIG') || findItem('HDMF'),
-      tax: findItem('Withholding Tax') || findItem('Tax'),
-      loan: findItem('Employee Cash Advances/Loans') || findItem('Loans') || findItem('Advances')
-    },
-    contributions: {
-      sss: findItem('SSS Employer') || findItem('SSS'),
-      phic: findItem('PHIC Employer') || findItem('PHIC') || findItem('PhilHealth'),
-      pagibig: findItem('Pag-IBIG Employer') || findItem('Pag-IBIG') || findItem('HDMF')
-    }
-  };
-
+    state.mappings = {
+      earnings: {
+        basic: findItem('Basic Salaries') || findItem('Basic Pay') || findItem('Basic'),
+        holiday: findItem('Holiday Pay') || findItem('Holiday'),
+        overtime: findItem('Overtime Pay') || findItem('Overtime'),
+        allowance: findItem('Allowances') || findItem('Allowance'),
+        commission: findItem('Commissions') || findItem('Commission')
+      },
+      deductions: {
+        tardiness: findItem('Tardiness') || findItem('Late') || findItem('Undertime'),
+        sss: findItem('SSS Contributions') || findItem('SSS'),
+        phic: findItem('PHIC Contributions') || findItem('PHIC') || findItem('PhilHealth'),
+        pagibig: findItem('Pag-IBIG Contributions') || findItem('Pag-IBIG') || findItem('HDMF'),
+        tax: findItem('Withholding Tax') || findItem('Tax'),
+        loan: findItem('Employee Cash Advances/Loans') || findItem('Loans') || findItem('Advances')
+      },
+      contributions: {
+        sss: findItem('SSS Employer') || findItem('SSS'),
+        phic: findItem('PHIC Employer') || findItem('PHIC') || findItem('PhilHealth'),
+        pagibig: findItem('Pag-IBIG Employer') || findItem('Pag-IBIG') || findItem('HDMF')
+      }
+    };
+  } catch(e) {
+    console.warn("Could not load payslip items dynamically, proceeding with standard payload fallback.", e);
+  }
   return state.mappings;
 }
 
 function buildLine(item, description, units, unitPrice){
-  if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
   const u = Number(units)||0, p = Number(unitPrice)||0;
-  return {
-    Item: item.key, Description: description, Units: u, UnitPrice: p, Amount: u * p,
-    item: item.key, description: description, units: u, unitPrice: p, earningsAmount: u * p
+  if (u <= 0 && p <= 0) return null;
+  const line = {
+    Description: description,
+    Units: u,
+    Qty: u,
+    UnitPrice: p,
+    Amount: u * p,
+    EarningsAmount: u * p,
+    description: description,
+    units: u,
+    qty: u,
+    unitPrice: p,
+    amount: u * p,
+    earningsAmount: u * p
   };
+  if (item && item.key) {
+    line.Item = item.key;
+    line.item = item.key;
+  }
+  return line;
 }
 
 function buildDeduction(item, description, amount){
   const a = Number(amount)||0;
-  if(!item || a<=0) return null;
-  return {
-    Item: item.key, Description: description, Amount: a, DeductionAmount: a,
-    item: item.key, description: description, amount: a, deductionAmount: a
+  if (a <= 0) return null;
+  const line = {
+    Description: description,
+    Amount: a,
+    DeductionAmount: a,
+    description: description,
+    amount: a,
+    deductionAmount: a
   };
+  if (item && item.key) {
+    line.Item = item.key;
+    line.item = item.key;
+  }
+  return line;
 }
 
 function buildContribution(item, description, amount){
   const a = Number(amount)||0;
-  if(!item || a<=0) return null;
-  return {
-    Item: item.key, Description: description, Amount: a, ContributionAmount: a,
-    item: item.key, description: description, amount: a, contributionAmount: a
+  if (a <= 0) return null;
+  const line = {
+    Description: description,
+    Amount: a,
+    ContributionAmount: a,
+    description: description,
+    amount: a,
+    contributionAmount: a
   };
+  if (item && item.key) {
+    line.Item = item.key;
+    line.item = item.key;
+  }
+  return line;
 }
 
 function buildBatchPayload(){
