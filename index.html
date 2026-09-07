@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping</title>
+<title>Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping v2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
@@ -412,10 +412,18 @@ async function fetchPayslipItems(path){
   }).filter(x => x.key && x.name);
 }
 
+function normalizePayslipItemName(name){
+  return String(name ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/\s*\/\s*/g, '/')
+    .trim();
+}
+
 function indexPayslipItems(items){
   const index = new Map();
   for(const item of items){
-    index.set(item.name.toLowerCase(), item);
+    index.set(normalizePayslipItemName(item.name), item);
   }
   return index;
 }
@@ -463,7 +471,7 @@ async function loadPayslipItemMappings(){
   const missing = [];
   const resolve = (index, group, key) => {
     const name = required[group][key];
-    const item = index.get(name.toLowerCase());
+    const item = index.get(normalizePayslipItemName(name));
     if(!item){
       missing.push(`${group}: ${name}`);
       return null;
