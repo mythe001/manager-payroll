@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manager Payroll Worksheet V2 — Stage 3 Payslip Item Endpoint Diagnostic</title>
+<title>Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
@@ -68,7 +68,7 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 
 <div id="error"></div>
 <div id="businessDetectionStatus" class="notice" style="margin-bottom:12px">Business context: waiting for the first Manager API response…</div>
-<div id="payslipItemsTest" class="notice" style="margin-bottom:12px">Payslip Item API diagnostic: waiting to test possible Manager endpoints…</div>
+<div id="payslipItemsTest" class="notice" style="margin-bottom:12px">Payslip Item mappings: waiting for Manager…</div>
 <div class="period">
   <label>Payroll period start<input id="periodStart" type="date"></label>
   <label>Payroll period end<input id="periodEnd" type="date"></label>
@@ -380,7 +380,15 @@ async function loadEmployees(){
     }
     loadBtn.textContent = '↻ Reload Employees';
     render();
-    await testPayslipItemsEndpoint();
+    try{
+      await loadPayslipItemMappings();
+    }catch(mappingErr){
+      const panel = document.getElementById('payslipItemsTest');
+      if(panel){
+        panel.className = 'warning';
+        panel.innerHTML = `<b>⚠ Payslip Item mapping needs attention:</b> ${esc(mappingErr?.message || mappingErr)}`;
+      }
+    }
   }catch(err){
     status.textContent = 'Failed to load employees';
     error.innerHTML = `<div class="error">⚠ ${esc(err?.message)}</div>`;
@@ -388,109 +396,117 @@ async function loadEmployees(){
   }finally{ loadBtn.disabled = false; }
 }
 
-async function testPayslipItemsEndpoint(){
-  const panel = document.getElementById('payslipItemsTest');
-  if (panel) panel.innerHTML = '<b>Payslip Item API diagnostic</b><br>Testing possible Manager endpoints…';
+async function fetchPayslipItems(path){
+  const data = await postMessageWithResponse({
+    type:'api-request',
+    method:'GET',
+    path: `${path}?PageSize=99999`
+  });
+  const records = Array.isArray(data) ? data : (data?.items || data?.data || []);
+  return records.map(record => {
+    const item = record?.item || record || {};
+    return {
+      key: record?.key || item?.key || item?.id || null,
+      name: String(item?.name || record?.name || '').trim()
+    };
+  }).filter(x => x.key && x.name);
+}
 
-  const candidates = [
-    '/api4/payslip-earnings-item-batch?PageSize=99999',
-    '/api4/payslip-deduction-item-batch?PageSize=99999',
-    '/api4/payslip-contribution-item-batch?PageSize=99999',
-    '/api4/payslip-earnings-items-batch?PageSize=99999',
-    '/api4/payslip-deduction-items-batch?PageSize=99999',
-    '/api4/payslip-contribution-items-batch?PageSize=99999',
-    '/api4/payslip-item-batch?PageSize=99999'
-  ];
-
-  const results = [];
-
-  for (const path of candidates) {
-    try{
-      const data = await postMessageWithResponse({
-        type:'api-request',
-        method:'GET',
-        path
-      });
-
-      const records = Array.isArray(data)
-        ? data
-        : (data?.items || data?.data || []);
-
-      const items = records.map(record => {
-        const item = record?.item || record || {};
-        return {
-          key: record?.key || item?.key || item?.id || null,
-          name: item?.name || record?.name || '(Unnamed)'
-        };
-      }).filter(x => x.key && x.name);
-
-      results.push({
-        path,
-        ok: true,
-        count: items.length,
-        items,
-        topKeys: data && !Array.isArray(data) ? Object.keys(data).slice(0,12) : []
-      });
-    }catch(err){
-      results.push({
-        path,
-        ok: false,
-        error: err?.message || String(err)
-      });
-    }
+function indexPayslipItems(items){
+  const index = new Map();
+  for(const item of items){
+    index.set(item.name.toLowerCase(), item);
   }
-
-  const working = results.filter(x => x.ok && x.count > 0);
-
-  if(panel){
-    if(working.length){
-      panel.className = 'notice';
-      panel.innerHTML =
-        `<b>✓ Found working Payslip Item endpoint(s): ${working.length}</b>` +
-        working.map(r =>
-          `<div style="margin-top:10px"><b>${esc(r.path)}</b> — ${r.count} item(s)<br>` +
-          `<span style="font-size:11px">${r.items.slice(0,40).map(x => `${esc(x.name)} — ${esc(x.key)}`).join('<br>')}` +
-          (r.count > 40 ? '<br>…showing first 40' : '') +
-          `</span></div>`
-        ).join('');
-    }else{
-      panel.className = 'warning';
-      panel.innerHTML =
-        `<b>No candidate endpoint returned Payslip Items.</b><br>` +
-        `<span style="font-size:11px">Diagnostic results:<br>` +
-        results.map(r =>
-          `${esc(r.path)} — ${r.ok ? `HTTP response but ${r.count} usable item(s)` : `failed: ${r.error}`}`
-        ).join('<br>') +
-        `</span>`;
-    }
-  }
-
-  return results;
+  return index;
 }
 
 async function loadPayslipItemMappings(){
-  state.mappings={
-    earnings:{
-      basic:{key:'01a073de-2e72-7fd1-8a67-16b81d70d547',name:'Basic Salaries'},
-      holiday:{key:'01a07471-d31b-721d-b077-64c5a7f43de7',name:'Holiday Pay'},
-      overtime:{key:'01a07471-50d6-74ef-a4da-506ce14307e0',name:'Overtime'},
-      allowance:{key:'01a07471-7a23-7f00-be93-f669d373deee',name:'Allowances'},
-      commission:{key:'01a07471-9669-7d49-989a-d9c6c8a4fc8d',name:'Commissions'}
+  const panel = document.getElementById('payslipItemsTest');
+  if(panel){
+    panel.className = 'notice';
+    panel.textContent = 'Loading Payslip Items for this business…';
+  }
+
+  const [earningsItems, deductionItems, contributionItems] = await Promise.all([
+    fetchPayslipItems('/api4/payslip-earnings-item-batch'),
+    fetchPayslipItems('/api4/payslip-deduction-item-batch'),
+    fetchPayslipItems('/api4/payslip-contribution-item-batch')
+  ]);
+
+  const earnings = indexPayslipItems(earningsItems);
+  const deductions = indexPayslipItems(deductionItems);
+  const contributions = indexPayslipItems(contributionItems);
+
+  const required = {
+    earnings: {
+      basic: 'Basic Salaries',
+      holiday: 'Holiday Pay',
+      overtime: 'Overtime',
+      allowance: 'Allowances',
+      commission: 'Commissions'
     },
-    deductions:{
-      tardiness:{key:'01a07680-64c4-75d2-992a-9069ced25608',name:'Tardiness'},
-      sss:{key:'01a073df-4565-7418-a1b1-d2da27f170e6',name:'SSS Contributions'},
-      phic:{key:'01a07472-d592-7d9b-ac7b-f41f073bdb80',name:'PHIC Contributions'},
-      pagibig:{key:'01a07472-fe7f-7a0a-b7ca-de940e5cc1cb',name:'Pag-IBIG Contributions'},
-      tax:{key:'01a07473-637c-7ac5-8c8f-dfb1631dc20a',name:'Withholding Tax'},
-      loan:{key:'01a07473-c1b4-7033-ac28-5035ae4812fc',name:'Employee Cash Advances/Loans'}
+    deductions: {
+      tardiness: 'Tardiness',
+      sss: 'SSS Contributions',
+      phic: 'PHIC Contributions',
+      pagibig: 'Pag-IBIG Contributions',
+      tax: 'Withholding Tax',
+      loan: 'Employee Cash Advances/Loans'
     },
-    contributions:{
-      sss:{key:'01a073e0-505b-7337-9c5c-ce07e744f3d8',name:'SSS Employer'},
-      phic:{key:'01a07474-9699-7e04-8a40-23fce7fb16fc',name:'PHIC Employer'},
-      pagibig:{key:'01a07474-cbe9-702b-8287-9438ecbecdac',name:'Pag-IBIG Employer'}
+    contributions: {
+      sss: 'SSS Employer',
+      phic: 'PHIC Employer',
+      pagibig: 'Pag-IBIG Employer'
     }
   };
+
+  const missing = [];
+  const resolve = (index, group, key) => {
+    const name = required[group][key];
+    const item = index.get(name.toLowerCase());
+    if(!item){
+      missing.push(`${group}: ${name}`);
+      return null;
+    }
+    return {key:item.key, name:item.name};
+  };
+
+  state.mappings = {
+    earnings: {
+      basic: resolve(earnings, 'earnings', 'basic'),
+      holiday: resolve(earnings, 'earnings', 'holiday'),
+      overtime: resolve(earnings, 'earnings', 'overtime'),
+      allowance: resolve(earnings, 'earnings', 'allowance'),
+      commission: resolve(earnings, 'earnings', 'commission')
+    },
+    deductions: {
+      tardiness: resolve(deductions, 'deductions', 'tardiness'),
+      sss: resolve(deductions, 'deductions', 'sss'),
+      phic: resolve(deductions, 'deductions', 'phic'),
+      pagibig: resolve(deductions, 'deductions', 'pagibig'),
+      tax: resolve(deductions, 'deductions', 'tax'),
+      loan: resolve(deductions, 'deductions', 'loan')
+    },
+    contributions: {
+      sss: resolve(contributions, 'contributions', 'sss'),
+      phic: resolve(contributions, 'contributions', 'phic'),
+      pagibig: resolve(contributions, 'contributions', 'pagibig')
+    }
+  };
+
+  if(missing.length){
+    throw new Error(`Required Payslip Items are missing in this business: ${missing.join(', ')}`);
+  }
+
+  if(panel){
+    panel.className = 'notice';
+    panel.innerHTML =
+      `<b>✓ Payslip Items mapped automatically for this business.</b><br>` +
+      `<span style="font-size:11px">` +
+      `${earningsItems.length} earnings • ${deductionItems.length} deductions • ${contributionItems.length} contributions retrieved.` +
+      `</span>`;
+  }
+
   return state.mappings;
 }
 
