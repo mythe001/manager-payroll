@@ -517,7 +517,7 @@ function buildLine(item, description, units, unitPrice){
   const u = Number(units)||0, p = Number(unitPrice)||0;
   return {
     Item: item.key,
-    Description: null,
+    Description: description,
     Units: u,
     UnitPrice: p,
     Amount: u * p
@@ -529,7 +529,7 @@ function buildDeduction(item, description, amount){
   if(!item || a<=0) return null;
   return {
     Item: item.key,
-    Description: null,
+    Description: description,
     Amount: a,
     DeductionAmount: a
   };
@@ -540,7 +540,7 @@ function buildContribution(item, description, amount){
   if(!item || a<=0) return null;
   return {
     Item: item.key,
-    Description: null,
+    Description: description,
     Amount: a,
     ContributionAmount: a
   };
