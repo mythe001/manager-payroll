@@ -365,15 +365,21 @@ async function loadEmployees(){
   }finally{ loadBtn.disabled = false; }
 }
 
+async function fetchPayslipItemsFromPath(path) {
+  try {
+    const data = await postMessageWithResponse({ type: 'api-request', method: 'GET', path });
+    return unwrapItems(data);
+  } catch(e) {
+    return [];
+  }
+}
+
 async function loadPayslipItemMappings(){
   try {
-    const data = await postMessageWithResponse({
-      type: 'api-request',
-      method: 'GET',
-      path: '/api4/payslip-item-batch?PageSize=99999'
-    });
-    
-    const items = unwrapItems(data);
+    let items = await fetchPayslipItemsFromPath('/api4/payslip-item-batch?PageSize=99999');
+    if (!items.length) {
+      items = await fetchPayslipItemsFromPath('/api4/payslip-earnings-item-batch?PageSize=99999');
+    }
     
     const findItem = (name) => {
       const target = normalizeName(name);
@@ -407,7 +413,7 @@ async function loadPayslipItemMappings(){
       }
     };
   } catch(e) {
-    console.warn("Could not load payslip items dynamically, proceeding with standard payload fallback.", e);
+    console.warn("Could not load payslip items dynamically.", e);
   }
   return state.mappings;
 }
@@ -415,61 +421,61 @@ async function loadPayslipItemMappings(){
 function buildLine(item, description, units, unitPrice){
   const u = Number(units)||0, p = Number(unitPrice)||0;
   if (u <= 0 && p <= 0) return null;
-  const line = {
+  const lineKey = item?.key || null;
+  return {
+    PayslipItem: lineKey,
+    payslipItem: lineKey,
+    Item: lineKey,
+    item: lineKey,
     Description: description,
-    Units: u,
-    Qty: u,
-    UnitPrice: p,
-    Amount: u * p,
-    EarningsAmount: u * p,
     description: description,
+    Units: u,
     units: u,
+    Qty: u,
     qty: u,
+    UnitPrice: p,
     unitPrice: p,
+    Amount: u * p,
     amount: u * p,
+    EarningsAmount: u * p,
     earningsAmount: u * p
   };
-  if (item && item.key) {
-    line.Item = item.key;
-    line.item = item.key;
-  }
-  return line;
 }
 
 function buildDeduction(item, description, amount){
   const a = Number(amount)||0;
   if (a <= 0) return null;
-  const line = {
+  const lineKey = item?.key || null;
+  return {
+    PayslipItem: lineKey,
+    payslipItem: lineKey,
+    Item: lineKey,
+    item: lineKey,
     Description: description,
-    Amount: a,
-    DeductionAmount: a,
     description: description,
+    Amount: a,
     amount: a,
+    DeductionAmount: a,
     deductionAmount: a
   };
-  if (item && item.key) {
-    line.Item = item.key;
-    line.item = item.key;
-  }
-  return line;
 }
 
 function buildContribution(item, description, amount){
   const a = Number(amount)||0;
   if (a <= 0) return null;
-  const line = {
+  const lineKey = item?.key || null;
+  return {
+    PayslipItem: lineKey,
+    payslipItem: lineKey,
+    Item: lineKey,
+    item: lineKey,
     Description: description,
-    Amount: a,
-    ContributionAmount: a,
     description: description,
+    Amount: a,
     amount: a,
+    ContributionAmount: a,
     contributionAmount: a
   };
-  if (item && item.key) {
-    line.Item = item.key;
-    line.item = item.key;
-  }
-  return line;
 }
 
 function buildBatchPayload(){
