@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manager Payroll Worksheet V2 — Production</title>
+<title>Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping v2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
@@ -40,6 +40,7 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 
+/* Review & Summary Table Total Row Styling */
 .modal table tfoot tr th,
 .modal table tfoot tr td {
   font-size: 1.15em !important;
@@ -60,7 +61,7 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet • Production</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet • Stage 7</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -113,6 +114,12 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </div>
 
 <script>
+/*
+  Stage 2: automatically capture Manager's business-specific context key.
+  Manager includes this opaque q=... value in API response _links.self.href.
+  We use it only as a business-scoping key; it is not assumed to be a
+  decoded/public Manager business ID.
+*/
 let detectedBusinessContextKey = null;
 
 function captureBusinessContext(body) {
@@ -516,7 +523,6 @@ function buildLine(item, description, units, unitPrice){
   const u = Number(units)||0, p = Number(unitPrice)||0;
   return {
     Item: item.key,
-    PayslipItem: item.key,
     Description: description,
     Units: u,
     UnitPrice: p,
@@ -529,7 +535,6 @@ function buildDeduction(item, description, amount){
   if(!item || a<=0) return null;
   return {
     Item: item.key,
-    PayslipDeductionItem: item.key,
     Description: description,
     Amount: a,
     DeductionAmount: a
@@ -541,7 +546,6 @@ function buildContribution(item, description, amount){
   if(!item || a<=0) return null;
   return {
     Item: item.key,
-    PayslipContributionItem: item.key,
     Description: description,
     Amount: a,
     ContributionAmount: a
@@ -597,7 +601,7 @@ function reviewHtml(){
 
   return `<div class="notice"><b>Review payroll summary below before writing to Manager.io.</b></div>
     <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Employer Contributions</th><th style="text-align:right">Net Pay</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
-    <div class="notice" style="margin-top:14px"><b>Ready to create:</b> ${state.employees.length} payslip(s) using the automatically mapped Payslip Items for this Manager business.</div>
+    <div class="notice" style="margin-top:14px;border-left:4px solid #d97706"><b>Stage 7 test:</b> The next step will create <b>payslips one at a time</b> (the first employee in the current list) using the cleaned API4 payload. This is intentional so we can verify the Item and Description fields before restoring full-batch creation.</div>
     <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Confirm & Create Payslips</button></div>`;
 }
 
@@ -635,31 +639,82 @@ async function createPayslips(){
 async function confirmCreatePayslips(){
   const btn = document.getElementById('confirmCreateBtn');
   if(btn) btn.disabled = true;
-  modalBody.innerHTML = '<div class="notice">Creating payslips in Manager.io...</div>';
 
   try{
-    const payload = buildBatchPayload();
+    const fullPayload = buildBatchPayload();
+    const values = fullPayload.Values || [];
 
-    if(!payload.Values.length){
+    if(!values.length){
       throw new Error('No payslips were prepared.');
     }
 
-    const response = await postMessageWithResponse({
-      type:'api-request',
-      method:'POST',
-      path:'/api4/payslip-batch',
-      body: payload
-    });
+    modalTitle.textContent = 'Creating Payslips';
+    modalIntro.textContent = 'Creating one payslip per API request to preserve Item and Description mapping.';
+    modalBody.innerHTML = `
+      <div class="notice">
+        <b>Starting...</b>
+        <div id="createProgress" style="margin-top:8px">Preparing ${values.length} payslip(s).</div>
+      </div>
+      <div id="createResults" style="margin-top:12px"></div>`;
 
-    if(response?.error || response?.errors || response?.success === false){
-      throw new Error(response?.message || response?.error || 'Manager rejected the request.');
+    const progressEl = document.getElementById('createProgress');
+    const resultsEl = document.getElementById('createResults');
+    const created = [];
+    const failed = [];
+
+    for(let i = 0; i < values.length; i++){
+      const payslip = values[i];
+      const employee = state.employees[i];
+
+      progressEl.textContent = `Creating payslip ${i + 1} of ${values.length} — ${employee?.name || 'Employee'}...`;
+
+      try{
+        const response = await postMessageWithResponse({
+          type:'api-request',
+          method:'POST',
+          path:'/api4/payslip-batch',
+          body: {Values: [payslip]}
+        });
+
+        if(response?.error || response?.errors || response?.success === false){
+          throw new Error(response?.message || response?.error || 'Manager rejected the request.');
+        }
+
+        created.push(employee?.name || `Employee ${i + 1}`);
+        resultsEl.innerHTML = `<div class="notice">✓ ${created.length} payslip(s) created successfully.</div>`;
+      }catch(err){
+        failed.push({name: employee?.name || `Employee ${i + 1}`, error: err.message});
+        resultsEl.innerHTML = `
+          <div class="error">
+            <b>Stopped after an error.</b><br>
+            Employee: ${esc(employee?.name || `Employee ${i + 1}`)}<br>
+            Error: ${esc(err.message)}
+          </div>
+          <p style="margin-top:10px">
+            ${created.length} payslip(s) were created before the error.
+            No further payslips were submitted.
+          </p>`;
+        break;
+      }
     }
 
-    writeStatus.textContent = `✓ ${payload.Values.length} payslip(s) created in Manager`;
-    modalTitle.textContent = 'Payslips Created';
-    modalIntro.textContent = 'The payroll batch was successfully submitted to Manager.io.';
-    modalBody.innerHTML = `<div class="notice"><b>Success.</b> ${payload.Values.length} payslip(s) were created in Manager.</div>
-      <p style="margin-top:12px">The Payslip Items were mapped automatically for the current Manager business.</p>`;
+    if(!failed.length){
+      writeStatus.textContent = `✓ ${created.length} payslip(s) created in Manager`;
+      modalTitle.textContent = 'Payslips Created';
+      modalIntro.textContent = 'All payslips were created successfully, one API request per employee.';
+      modalBody.innerHTML = `
+        <div class="notice">
+          <b>Success.</b> ${created.length} payslip(s) were created in Manager.
+        </div>
+        <p style="margin-top:12px">
+          Payslip Items and line descriptions were submitted using the same working
+          single-payslip API4 payload tested in Stage 7.
+        </p>`;
+    }else{
+      writeStatus.textContent = `⚠ ${created.length} payslip(s) created; process stopped after an error`;
+    }
+
+    if(btn) btn.disabled = false;
   }catch(err){
     if(btn) btn.disabled = false;
     modalBody.innerHTML = `<div class="error"><b>Failed to create payslips:</b><br>${esc(err.message)}</div>`;
