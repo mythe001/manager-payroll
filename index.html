@@ -57,12 +57,6 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 }
 
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
-
-.business-diagnostic{margin-bottom:14px;background:#fff;border:2px solid #2b83c6;border-radius:8px;padding:14px 16px}
-.business-diagnostic h2{font-size:16px;margin-bottom:6px}
-.business-diagnostic p{font-size:12px;color:#666;margin-bottom:10px}
-.business-diagnostic pre{margin:0;max-height:320px;overflow:auto;background:#f7f7f7;border:1px solid #d8d8d8;border-radius:6px;padding:10px;font-size:11px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
-
 </style>
 </head>
 <body>
@@ -72,14 +66,8 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
 
-
-<div class="business-diagnostic">
-  <h2>🔎 Business Detection Test</h2>
-  <p>This temporary panel shows the context available to the extension. We will compare this in each Manager business.</p>
-  <pre id="businessDiagnostic">Detecting business context…</pre>
-</div>
-
 <div id="error"></div>
+<div id="businessDetectionStatus" class="notice" style="margin-bottom:12px">Business context: waiting for the first Manager API response…</div>
 <div class="period">
   <label>Payroll period start<input id="periodStart" type="date"></label>
   <label>Payroll period end<input id="periodEnd" type="date"></label>
@@ -125,49 +113,27 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </div>
 
 <script>
+/*
+  Stage 2: automatically capture Manager's business-specific context key.
+  Manager includes this opaque q=... value in API response _links.self.href.
+  We use it only as a business-scoping key; it is not assumed to be a
+  decoded/public Manager business ID.
+*/
+let detectedBusinessContextKey = null;
 
-/* TEMPORARY BUSINESS DETECTION DIAGNOSTIC */
-(function(){
-  const el = document.getElementById('businessDiagnostic');
-  const messages = [];
-
-  function locInfo(loc){
-    if(!loc) return null;
-    return {
-      href: loc.href,
-      origin: loc.origin,
-      pathname: loc.pathname,
-      search: loc.search,
-      hash: loc.hash
-    };
-  }
-
-  function refresh(){
-    const info = {
-      extensionWindow: locInfo(window.location),
-      referrer: document.referrer || null,
-      parentWindow: null,
-      messagesReceived: messages
-    };
-
-    try {
-      info.parentWindow = locInfo(window.parent.location);
-    } catch(e) {
-      info.parentWindow = "Parent location not directly accessible: " + e.message;
+function captureBusinessContext(body) {
+  try {
+    const href = body?._links?.self?.href || '';
+    const match = href.match(/[?&]q=([^&]+)/);
+    if (match && match[1]) {
+      detectedBusinessContextKey = decodeURIComponent(match[1]);
+      const el = document.getElementById('businessDetectionStatus');
+      if (el) {
+        el.textContent = `✓ Business context detected: ${detectedBusinessContextKey}`;
+      }
     }
-
-    el.textContent = JSON.stringify(info, null, 2);
-    console.log("=== MANAGER BUSINESS DETECTION TEST ===", info);
-  }
-
-  window.addEventListener("message", event => {
-    messages.push({origin:event.origin, data:event.data});
-    if(messages.length > 20) messages.shift();
-    refresh();
-  });
-
-  refresh();
-})();
+  } catch (_) {}
+}
 
 function postMessageWithResponse(message) {
   return new Promise((resolve, reject) => {
@@ -178,7 +144,10 @@ function postMessageWithResponse(message) {
     }, 15000);
     function handler(event) {
       if (event.data?.type?.endsWith('-response') && event.data?.requestId === requestId) {
-        clearTimeout(timer); window.removeEventListener('message', handler); resolve(event.data.body);
+        clearTimeout(timer);
+        window.removeEventListener('message', handler);
+        captureBusinessContext(event.data.body);
+        resolve(event.data.body);
       }
     }
     window.addEventListener('message', handler);
@@ -188,6 +157,7 @@ function postMessageWithResponse(message) {
 
 const state = {
   employees: [], excludedEmployees: [], dailyRateFieldKeys: [], values: new Map(),
+  businessContextKey: null,
   mappings: {
     earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
     deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
@@ -381,7 +351,9 @@ async function loadEmployees(){
   loadBtn.disabled = true; loadBtn.textContent = 'Loading…';
   try{
     await loadDailyRateField();
+    state.businessContextKey = detectedBusinessContextKey;
     const data = await postMessageWithResponse({type:'api-request', method:'GET', path:'/api4/employee-batch?PageSize=99999'});
+    state.businessContextKey = detectedBusinessContextKey;
     const records = Array.isArray(data)?data:(data?.items||data?.data||[]);
     state.excludedEmployees = [];
     state.employees = records.map(record => {
@@ -399,7 +371,12 @@ async function loadEmployees(){
       };
     }).filter(e => e.id && !e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
 
+    state.businessContextKey = detectedBusinessContextKey;
     status.textContent = `✓ ${state.employees.length} active employees loaded`;
+    if (state.businessContextKey) {
+      businessDetectionStatus.textContent = `✓ Business context detected: ${state.businessContextKey}`;
+      businessDetectionStatus.className = 'notice';
+    }
     loadBtn.textContent = '↻ Reload Employees';
     render();
   }catch(err){
