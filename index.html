@@ -366,107 +366,84 @@ async function loadEmployees(){
 }
 
 async function loadPayslipItemMappings(){
+  /*
+   * Manager requires every payslip line to reference a real Payslip Item.
+   * Query the Payslip Items table directly first instead of relying on the
+   * structure of an existing payslip.
+   */
   try {
-    // 1. Fetch all existing payslips to find a Template / Default payslip
-    const payslipData = await postMessageWithResponse({
-      type: 'api-request',
-      method: 'GET',
-      path: '/api4/payslip-batch?PageSize=99999'
-    });
-    const payslips = unwrapItems(payslipData);
-    
-    // Look for a payslip marked 'template' or 'default', or pick the most recent existing payslip
-    let template = payslips.find(p => {
-      const desc = normalizeName(p?.item?.description || p?.description || '');
-      return desc.includes('template') || desc.includes('default');
+    const itemData = await postMessageWithResponse({
+      type:'api-request',
+      method:'GET',
+      path:'/api4/payslip-item-batch?PageSize=99999'
     });
 
-    if (!template && payslips.length > 0) {
-      template = payslips[0]; // fallback to first payslip
-    }
-
-    if (template) {
-      const itemObj = template.item || template;
-      const extractLineItem = (array, labelMatch) => {
-        if (!Array.isArray(array)) return null;
-        const target = normalizeName(labelMatch);
-        const match = array.find(line => {
-          const desc = normalizeName(line.description || line.Description || '');
-          return desc === target || desc.includes(target) || target.includes(desc);
-        });
-        const key = match?.item || match?.Item || match?.payslipItem || match?.PayslipItem || null;
-        return key ? { key, name: labelMatch } : null;
-      };
-
-      const earnings = itemObj.earnings || itemObj.Earnings || [];
-      const deductions = itemObj.deductions || itemObj.Deductions || [];
-      const contributions = itemObj.contributions || itemObj.Contributions || [];
-
-      state.mappings = {
-        earnings: {
-          basic: extractLineItem(earnings, 'Basic Pay') || extractLineItem(earnings, 'Basic Salaries'),
-          holiday: extractLineItem(earnings, 'Holiday Pay'),
-          overtime: extractLineItem(earnings, 'Overtime'),
-          allowance: extractLineItem(earnings, 'Allowances'),
-          commission: extractLineItem(earnings, 'Commissions')
-        },
-        deductions: {
-          tardiness: extractLineItem(deductions, 'Tardiness'),
-          sss: extractLineItem(deductions, 'SSS'),
-          phic: extractLineItem(deductions, 'PHIC'),
-          pagibig: extractLineItem(deductions, 'Pag-IBIG'),
-          tax: extractLineItem(deductions, 'Withholding Tax'),
-          loan: extractLineItem(deductions, 'Loans / Advances')
-        },
-        contributions: {
-          sss: extractLineItem(contributions, 'Employer SSS'),
-          phic: extractLineItem(contributions, 'Employer PHIC'),
-          pagibig: extractLineItem(contributions, 'Employer Pag-IBIG')
-        }
-      };
-      return state.mappings;
-    }
-
-    // Fallback: If no payslip template exists yet, query API4 payslip items directly
-    const itemData = await postMessageWithResponse({ type: 'api-request', method: 'GET', path: '/api4/payslip-item-batch?PageSize=99999' });
     const items = unwrapItems(itemData);
-    const findItem = (name) => {
-      const target = normalizeName(name);
-      const match = items.find(x => {
-        const itemName = normalizeName(extractName(x));
-        return itemName === target || itemName.includes(target) || target.includes(itemName);
-      });
-      return match ? { key: extractKey(match), name: extractName(match) } : null;
+
+    const findItem = (...names) => {
+      for (const name of names) {
+        const target = normalizeName(name);
+
+        const match = items.find(x => {
+          const item = x?.item || x;
+          const itemName = normalizeName(
+            item?.name || item?.Name ||
+            x?.name || x?.Name ||
+            x?.description || x?.Description || ''
+          );
+
+          return itemName === target ||
+                 itemName.includes(target) ||
+                 target.includes(itemName);
+        });
+
+        if (match) {
+          const item = match?.item || match;
+          const key =
+            match?.key || match?.Key ||
+            item?.key || item?.Key ||
+            match?.id || match?.Id ||
+            item?.id || item?.Id;
+
+          if (key) return {key, name};
+        }
+      }
+
+      return null;
     };
 
     state.mappings = {
       earnings: {
-        basic: findItem('Basic Salaries') || findItem('Basic Pay'),
-        holiday: findItem('Holiday Pay'),
-        overtime: findItem('Overtime Pay') || findItem('Overtime'),
-        allowance: findItem('Allowances'),
-        commission: findItem('Commissions')
+        basic: findItem('Basic Pay', 'Basic Salaries', 'Regular Wages'),
+        holiday: findItem('Holiday Pay', 'Holiday'),
+        overtime: findItem('Overtime Pay', 'Overtime'),
+        allowance: findItem('Allowances', 'Allowance'),
+        commission: findItem('Commissions', 'Commission')
       },
       deductions: {
-        tardiness: findItem('Tardiness'),
-        sss: findItem('SSS Contributions') || findItem('SSS'),
-        phic: findItem('PHIC Contributions') || findItem('PHIC'),
-        pagibig: findItem('Pag-IBIG Contributions') || findItem('Pag-IBIG'),
+        tardiness: findItem('Tardiness', 'Late'),
+        sss: findItem('SSS Contributions', 'SSS'),
+        phic: findItem('PHIC Contributions', 'PHIC'),
+        pagibig: findItem('Pag-IBIG Contributions', 'Pag-IBIG', 'Pagibig'),
         tax: findItem('Withholding Tax'),
-        loan: findItem('Employee Cash Advances/Loans') || findItem('Loans')
+        loan: findItem('Employee Cash Advances/Loans', 'Loans / Advances', 'Loans')
       },
       contributions: {
-        sss: findItem('SSS Employer'),
-        phic: findItem('PHIC Employer'),
-        pagibig: findItem('Pag-IBIG Employer')
+        sss: findItem('SSS Employer', 'Employer SSS'),
+        phic: findItem('PHIC Employer', 'Employer PHIC'),
+        pagibig: findItem('Pag-IBIG Employer', 'Employer Pag-IBIG', 'Employer Pagibig')
       }
     };
-  } catch(e) {
-    console.warn("Error resolving payslip item mappings:", e);
-  }
-  return state.mappings;
-}
 
+    console.log('Manager payslip item mappings:', JSON.stringify(state.mappings, null, 2));
+
+    return state.mappings;
+
+  } catch (err) {
+    console.warn('Direct payslip-item lookup failed:', err);
+    throw new Error('Unable to load Manager Payslip Items. Check that the required Payslip Items exist under Settings > Payslip Items.');
+  }
+}
 function buildLine(item, description, units, unitPrice){
   const u = Number(units)||0, p = Number(unitPrice)||0;
   if (u <= 0 && p <= 0) return null;
