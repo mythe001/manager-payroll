@@ -40,6 +40,7 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 
+/* Review & Summary Table Total Row Styling */
 .modal table tfoot tr th,
 .modal table tfoot tr td {
   font-size: 1.15em !important;
@@ -56,6 +57,12 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 }
 
 @media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
+
+.business-diagnostic{margin-bottom:14px;background:#fff;border:2px solid #2b83c6;border-radius:8px;padding:14px 16px}
+.business-diagnostic h2{font-size:16px;margin-bottom:6px}
+.business-diagnostic p{font-size:12px;color:#666;margin-bottom:10px}
+.business-diagnostic pre{margin:0;max-height:320px;overflow:auto;background:#f7f7f7;border:1px solid #d8d8d8;border-radius:6px;padding:10px;font-size:11px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+
 </style>
 </head>
 <body>
@@ -63,6 +70,13 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
   <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
+</div>
+
+
+<div class="business-diagnostic">
+  <h2>🔎 Business Detection Test</h2>
+  <p>This temporary panel shows the context available to the extension. We will compare this in each Manager business.</p>
+  <pre id="businessDiagnostic">Detecting business context…</pre>
 </div>
 
 <div id="error"></div>
@@ -111,6 +125,50 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </div>
 
 <script>
+
+/* TEMPORARY BUSINESS DETECTION DIAGNOSTIC */
+(function(){
+  const el = document.getElementById('businessDiagnostic');
+  const messages = [];
+
+  function locInfo(loc){
+    if(!loc) return null;
+    return {
+      href: loc.href,
+      origin: loc.origin,
+      pathname: loc.pathname,
+      search: loc.search,
+      hash: loc.hash
+    };
+  }
+
+  function refresh(){
+    const info = {
+      extensionWindow: locInfo(window.location),
+      referrer: document.referrer || null,
+      parentWindow: null,
+      messagesReceived: messages
+    };
+
+    try {
+      info.parentWindow = locInfo(window.parent.location);
+    } catch(e) {
+      info.parentWindow = "Parent location not directly accessible: " + e.message;
+    }
+
+    el.textContent = JSON.stringify(info, null, 2);
+    console.log("=== MANAGER BUSINESS DETECTION TEST ===", info);
+  }
+
+  window.addEventListener("message", event => {
+    messages.push({origin:event.origin, data:event.data});
+    if(messages.length > 20) messages.shift();
+    refresh();
+  });
+
+  refresh();
+})();
+
 function postMessageWithResponse(message) {
   return new Promise((resolve, reject) => {
     const requestId = crypto.randomUUID();
@@ -140,20 +198,6 @@ const peso = new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',mi
 const money = v => peso.format(Number.isFinite(Number(v)) ? Number(v) : 0);
 const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.max(0,n):0;};
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-function normalizeName(s){
-  return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-}
-function unwrapItems(data){
-  const arr=Array.isArray(data)?data:(data?.items||data?.data||data?.results||[]);
-  return Array.isArray(arr)?arr:[];
-}
-function extractKey(x){
-  return x?.key||x?.Key||x?.id||x?.Id||x?.item?.key||x?.item?.id||x?.item?.Key||x?.item?.Id||null;
-}
-function extractName(x){
-  return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
-}
 
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
@@ -365,116 +409,56 @@ async function loadEmployees(){
   }finally{ loadBtn.disabled = false; }
 }
 
-async function fetchPayslipItemsFromPath(path) {
-  try {
-    const data = await postMessageWithResponse({ type: 'api-request', method: 'GET', path });
-    return unwrapItems(data);
-  } catch(e) {
-    return [];
-  }
-}
-
 async function loadPayslipItemMappings(){
-  try {
-    let items = await fetchPayslipItemsFromPath('/api4/payslip-item-batch?PageSize=99999');
-    if (!items.length) {
-      items = await fetchPayslipItemsFromPath('/api4/payslip-earnings-item-batch?PageSize=99999');
+  state.mappings={
+    earnings:{
+      basic:{key:'01a073de-2e72-7fd1-8a67-16b81d70d547',name:'Basic Salaries'},
+      holiday:{key:'01a07471-d31b-721d-b077-64c5a7f43de7',name:'Holiday Pay'},
+      overtime:{key:'01a07471-50d6-74ef-a4da-506ce14307e0',name:'Overtime'},
+      allowance:{key:'01a07471-7a23-7f00-be93-f669d373deee',name:'Allowances'},
+      commission:{key:'01a07471-9669-7d49-989a-d9c6c8a4fc8d',name:'Commissions'}
+    },
+    deductions:{
+      tardiness:{key:'01a07680-64c4-75d2-992a-9069ced25608',name:'Tardiness'},
+      sss:{key:'01a073df-4565-7418-a1b1-d2da27f170e6',name:'SSS Contributions'},
+      phic:{key:'01a07472-d592-7d9b-ac7b-f41f073bdb80',name:'PHIC Contributions'},
+      pagibig:{key:'01a07472-fe7f-7a0a-b7ca-de940e5cc1cb',name:'Pag-IBIG Contributions'},
+      tax:{key:'01a07473-637c-7ac5-8c8f-dfb1631dc20a',name:'Withholding Tax'},
+      loan:{key:'01a07473-c1b4-7033-ac28-5035ae4812fc',name:'Employee Cash Advances/Loans'}
+    },
+    contributions:{
+      sss:{key:'01a073e0-505b-7337-9c5c-ce07e744f3d8',name:'SSS Employer'},
+      phic:{key:'01a07474-9699-7e04-8a40-23fce7fb16fc',name:'PHIC Employer'},
+      pagibig:{key:'01a07474-cbe9-702b-8287-9438ecbecdac',name:'Pag-IBIG Employer'}
     }
-    
-    const findItem = (name) => {
-      const target = normalizeName(name);
-      const match = items.find(x => {
-        const itemName = normalizeName(extractName(x));
-        return itemName === target || itemName.includes(target) || target.includes(itemName);
-      });
-      return match ? { key: extractKey(match), name: extractName(match) } : null;
-    };
-
-    state.mappings = {
-      earnings: {
-        basic: findItem('Basic Salaries') || findItem('Basic Pay') || findItem('Basic'),
-        holiday: findItem('Holiday Pay') || findItem('Holiday'),
-        overtime: findItem('Overtime Pay') || findItem('Overtime'),
-        allowance: findItem('Allowances') || findItem('Allowance'),
-        commission: findItem('Commissions') || findItem('Commission')
-      },
-      deductions: {
-        tardiness: findItem('Tardiness') || findItem('Late') || findItem('Undertime'),
-        sss: findItem('SSS Contributions') || findItem('SSS'),
-        phic: findItem('PHIC Contributions') || findItem('PHIC') || findItem('PhilHealth'),
-        pagibig: findItem('Pag-IBIG Contributions') || findItem('Pag-IBIG') || findItem('HDMF'),
-        tax: findItem('Withholding Tax') || findItem('Tax'),
-        loan: findItem('Employee Cash Advances/Loans') || findItem('Loans') || findItem('Advances')
-      },
-      contributions: {
-        sss: findItem('SSS Employer') || findItem('SSS'),
-        phic: findItem('PHIC Employer') || findItem('PHIC') || findItem('PhilHealth'),
-        pagibig: findItem('Pag-IBIG Employer') || findItem('Pag-IBIG') || findItem('HDMF')
-      }
-    };
-  } catch(e) {
-    console.warn("Could not load payslip items dynamically.", e);
-  }
+  };
   return state.mappings;
 }
 
 function buildLine(item, description, units, unitPrice){
+  if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
   const u = Number(units)||0, p = Number(unitPrice)||0;
-  if (u <= 0 && p <= 0) return null;
-  const lineKey = item?.key || null;
   return {
-    PayslipItem: lineKey,
-    payslipItem: lineKey,
-    Item: lineKey,
-    item: lineKey,
-    Description: description,
-    description: description,
-    Units: u,
-    units: u,
-    Qty: u,
-    qty: u,
-    UnitPrice: p,
-    unitPrice: p,
-    Amount: u * p,
-    amount: u * p,
-    EarningsAmount: u * p,
-    earningsAmount: u * p
+    Item: item.key, Description: description, Units: u, UnitPrice: p, Amount: u * p,
+    item: item.key, description: description, units: u, unitPrice: p, earningsAmount: u * p
   };
 }
 
 function buildDeduction(item, description, amount){
   const a = Number(amount)||0;
-  if (a <= 0) return null;
-  const lineKey = item?.key || null;
+  if(!item || a<=0) return null;
   return {
-    PayslipItem: lineKey,
-    payslipItem: lineKey,
-    Item: lineKey,
-    item: lineKey,
-    Description: description,
-    description: description,
-    Amount: a,
-    amount: a,
-    DeductionAmount: a,
-    deductionAmount: a
+    Item: item.key, Description: description, Amount: a, DeductionAmount: a,
+    item: item.key, description: description, amount: a, deductionAmount: a
   };
 }
 
 function buildContribution(item, description, amount){
   const a = Number(amount)||0;
-  if (a <= 0) return null;
-  const lineKey = item?.key || null;
+  if(!item || a<=0) return null;
   return {
-    PayslipItem: lineKey,
-    payslipItem: lineKey,
-    Item: lineKey,
-    item: lineKey,
-    Description: description,
-    description: description,
-    Amount: a,
-    amount: a,
-    ContributionAmount: a,
-    contributionAmount: a
+    Item: item.key, Description: description, Amount: a, ContributionAmount: a,
+    item: item.key, description: description, amount: a, contributionAmount: a
   };
 }
 
