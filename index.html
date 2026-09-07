@@ -40,6 +40,7 @@ td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-nume
 pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
 .mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
 
+/* Review & Summary Table Total Row Styling */
 .modal table tfoot tr th,
 .modal table tfoot tr td {
   font-size: 1.15em !important;
@@ -140,20 +141,6 @@ const peso = new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',mi
 const money = v => peso.format(Number.isFinite(Number(v)) ? Number(v) : 0);
 const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.max(0,n):0;};
 const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-function normalizeName(s){
-  return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-}
-function unwrapItems(data){
-  const arr=Array.isArray(data)?data:(data?.items||data?.data||data?.results||[]);
-  return Array.isArray(arr)?arr:[];
-}
-function extractKey(x){
-  return x?.key||x?.Key||x?.id||x?.Id||x?.item?.key||x?.item?.id||x?.item?.Key||x?.item?.Id||null;
-}
-function extractName(x){
-  return x?.item?.name||x?.item?.Name||x?.name||x?.Name||x?.item?.description||x?.description||'';
-}
 
 function getValues(id){
   if(!state.values.has(id)) state.values.set(id,{
@@ -367,140 +354,167 @@ async function loadEmployees(){
 
 async function loadPayslipItemMappings(){
   /*
-   * Manager requires every payslip line to reference a real Payslip Item.
-   * Query the Payslip Items table directly first instead of relying on the
-   * structure of an existing payslip.
+   * IMPORTANT:
+   * Never hard-code Payslip Item UUIDs here.
+   * Every Manager business has its own UUIDs.
+   *
+   * We query the Payslip Items belonging to the CURRENT business and
+   * resolve the configured payroll items by name.
    */
-  try {
-    const itemData = await postMessageWithResponse({
-      type:'api-request',
-      method:'GET',
-      path:'/api4/payslip-item-batch?PageSize=99999'
-    });
+  const data = await postMessageWithResponse({
+    type:'api-request',
+    method:'GET',
+    path:'/api4/payslip-item-batch?PageSize=99999'
+  });
 
-    const items = unwrapItems(itemData);
+  const records = unwrapItems(data);
 
-    const findItem = (...names) => {
-      for (const name of names) {
-        const target = normalizeName(name);
-
-        const match = items.find(x => {
-          const item = x?.item || x;
-          const itemName = normalizeName(
-            item?.name || item?.Name ||
-            x?.name || x?.Name ||
-            x?.description || x?.Description || ''
-          );
-
-          return itemName === target ||
-                 itemName.includes(target) ||
-                 target.includes(itemName);
-        });
-
-        if (match) {
-          const item = match?.item || match;
-          const key =
-            match?.key || match?.Key ||
-            item?.key || item?.Key ||
-            match?.id || match?.Id ||
-            item?.id || item?.Id;
-
-          if (key) return {key, name};
-        }
-      }
-
-      return null;
-    };
-
-    state.mappings = {
-      earnings: {
-        basic: findItem('Basic Pay', 'Basic Salaries', 'Regular Wages'),
-        holiday: findItem('Holiday Pay', 'Holiday'),
-        overtime: findItem('Overtime Pay', 'Overtime'),
-        allowance: findItem('Allowances', 'Allowance'),
-        commission: findItem('Commissions', 'Commission')
-      },
-      deductions: {
-        tardiness: findItem('Tardiness', 'Late'),
-        sss: findItem('SSS Contributions', 'SSS'),
-        phic: findItem('PHIC Contributions', 'PHIC'),
-        pagibig: findItem('Pag-IBIG Contributions', 'Pag-IBIG', 'Pagibig'),
-        tax: findItem('Withholding Tax'),
-        loan: findItem('Employee Cash Advances/Loans', 'Loans / Advances', 'Loans')
-      },
-      contributions: {
-        sss: findItem('SSS Employer', 'Employer SSS'),
-        phic: findItem('PHIC Employer', 'Employer PHIC'),
-        pagibig: findItem('Pag-IBIG Employer', 'Employer Pag-IBIG', 'Employer Pagibig')
-      }
-    };
-
-    console.log('Manager payslip item mappings:', JSON.stringify(state.mappings, null, 2));
-
-    return state.mappings;
-
-  } catch (err) {
-    console.warn('Direct payslip-item lookup failed:', err);
-    throw new Error('Unable to load Manager Payslip Items. Check that the required Payslip Items exist under Settings > Payslip Items.');
+  if(!records.length){
+    throw new Error(
+      'No Payslip Items were returned by Manager. Make sure Payslip Items are configured in this business.'
+    );
   }
+
+  const candidates = records.map(record => {
+    const item = record?.item || record;
+
+    return {
+      key:
+        record?.key || record?.Key ||
+        item?.key || item?.Key ||
+        record?.id || record?.Id ||
+        item?.id || item?.Id || null,
+
+      name:
+        item?.name || item?.Name ||
+        record?.name || record?.Name ||
+        item?.description || item?.Description ||
+        record?.description || record?.Description || ''
+    };
+  }).filter(x => x.key && x.name);
+
+  const findItem = (...names) => {
+    for(const requestedName of names){
+      const target = normalizeName(requestedName);
+
+      // Prefer exact matches.
+      let match = candidates.find(x =>
+        normalizeName(x.name) === target
+      );
+
+      // Then allow reasonable partial matches.
+      if(!match){
+        match = candidates.find(x => {
+          const actual = normalizeName(x.name);
+          return actual.includes(target) || target.includes(actual);
+        });
+      }
+
+      if(match){
+        return {key:match.key, name:match.name};
+      }
+    }
+
+    return null;
+  };
+
+  state.mappings = {
+    earnings:{
+      basic: findItem('Basic Salaries', 'Basic Pay'),
+      holiday: findItem('Holiday Pay'),
+      overtime: findItem('Overtime', 'Overtime Pay'),
+      allowance: findItem('Allowances', 'Allowance'),
+      commission: findItem('Commissions', 'Commission')
+    },
+
+    deductions:{
+      tardiness: findItem('Tardiness'),
+      sss: findItem('SSS Contributions', 'SSS'),
+      phic: findItem('PHIC Contributions', 'PHIC'),
+      pagibig: findItem('Pag-IBIG Contributions', 'Pag-IBIG', 'Pagibig'),
+      tax: findItem('Withholding Tax'),
+      loan: findItem(
+        'Employee Cash Advances/Loans',
+        'Loans / Advances',
+        'Loans'
+      )
+    },
+
+    contributions:{
+      sss: findItem('SSS Employer', 'Employer SSS'),
+      phic: findItem('PHIC Employer', 'Employer PHIC'),
+      pagibig: findItem(
+        'Pag-IBIG Employer',
+        'Employer Pag-IBIG',
+        'Employer Pagibig'
+      )
+    }
+  };
+
+  /*
+   * Fail before creating a payslip if a required item is missing.
+   * This is much safer than silently creating blank Item fields.
+   */
+  const required = [
+    ['Earnings → Basic Salaries', state.mappings.earnings.basic],
+    ['Earnings → Holiday Pay', state.mappings.earnings.holiday],
+    ['Earnings → Overtime', state.mappings.earnings.overtime],
+    ['Earnings → Allowances', state.mappings.earnings.allowance],
+    ['Earnings → Commissions', state.mappings.earnings.commission],
+    ['Deductions → Tardiness', state.mappings.deductions.tardiness],
+    ['Deductions → SSS', state.mappings.deductions.sss],
+    ['Deductions → PHIC', state.mappings.deductions.phic],
+    ['Deductions → Pag-IBIG', state.mappings.deductions.pagibig],
+    ['Deductions → Withholding Tax', state.mappings.deductions.tax],
+    ['Deductions → Loans / Advances', state.mappings.deductions.loan],
+    ['Contributions → Employer SSS', state.mappings.contributions.sss],
+    ['Contributions → Employer PHIC', state.mappings.contributions.phic],
+    ['Contributions → Employer Pag-IBIG', state.mappings.contributions.pagibig]
+  ];
+
+  const missing = required
+    .filter(([, item]) => !item)
+    .map(([label]) => label);
+
+  if(missing.length){
+    throw new Error(
+      'The following Payslip Items could not be found in this business: ' +
+      missing.join(', ') +
+      '. Create or rename these Payslip Items in Manager, then try again.'
+    );
+  }
+
+  console.log(
+    'Payslip Items resolved for current Manager business:',
+    JSON.stringify(state.mappings, null, 2)
+  );
+
+  return state.mappings;
 }
 function buildLine(item, description, units, unitPrice){
+  if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
   const u = Number(units)||0, p = Number(unitPrice)||0;
-  if (u <= 0 && p <= 0) return null;
-  const lineKey = item?.key || null;
   return {
-    PayslipItem: lineKey,
-    payslipItem: lineKey,
-    Item: lineKey,
-    item: lineKey,
-    Description: description,
-    description: description,
-    Units: u,
-    units: u,
-    Qty: u,
-    qty: u,
-    UnitPrice: p,
-    unitPrice: p,
-    Amount: u * p,
-    amount: u * p,
-    EarningsAmount: u * p,
-    earningsAmount: u * p
+    Item: item.key, Description: description, Units: u, UnitPrice: p, Amount: u * p,
+    item: item.key, description: description, units: u, unitPrice: p, earningsAmount: u * p
   };
 }
 
 function buildDeduction(item, description, amount){
   const a = Number(amount)||0;
-  if (a <= 0) return null;
-  const lineKey = item?.key || null;
+  if(!item || a<=0) return null;
   return {
-    PayslipItem: lineKey,
-    payslipItem: lineKey,
-    Item: lineKey,
-    item: lineKey,
-    Description: description,
-    description: description,
-    Amount: a,
-    amount: a,
-    DeductionAmount: a,
-    deductionAmount: a
+    Item: item.key, Description: description, Amount: a, DeductionAmount: a,
+    item: item.key, description: description, amount: a, deductionAmount: a
   };
 }
 
 function buildContribution(item, description, amount){
   const a = Number(amount)||0;
-  if (a <= 0) return null;
-  const lineKey = item?.key || null;
+  if(!item || a<=0) return null;
   return {
-    PayslipItem: lineKey,
-    payslipItem: lineKey,
-    Item: lineKey,
-    item: lineKey,
-    Description: description,
-    description: description,
-    Amount: a,
-    amount: a,
-    ContributionAmount: a,
-    contributionAmount: a
+    Item: item.key, Description: description, Amount: a, ContributionAmount: a,
+    item: item.key, description: description, amount: a, contributionAmount: a
   };
 }
 
@@ -572,7 +586,7 @@ async function createPayslips(){
   if(!state.employees.length) return;
   modalTitle.textContent = 'Review & Create Payslips';
   modalIntro.textContent = 'Please double check totals before writing to Manager. No records are written until you click Confirm & Create.';
-  modalBody.innerHTML = '<div class="notice">Loading template item mappings...</div>';
+  modalBody.innerHTML = '<div class="notice">Loading mappings...</div>';
   modalBackdrop.style.display = 'flex';
 
   try{
