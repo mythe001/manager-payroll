@@ -61,7 +61,7 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet • Stage 7</div></div>
+  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet • Production</div></div>
   <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
   <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
 </div>
@@ -601,8 +601,8 @@ function reviewHtml(){
 
   return `<div class="notice"><b>Review payroll summary below before writing to Manager.io.</b></div>
     <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Employer Contributions</th><th style="text-align:right">Net Pay</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
-    <div class="notice" style="margin-top:14px;border-left:4px solid #d97706"><b>Stage 7 test:</b> The next step will create <b>only 1 payslip</b> (the first employee in the current list) using the cleaned API4 payload. This is intentional so we can verify the Item and Description fields before restoring full-batch creation.</div>
-    <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Create 1 Test Payslip</button></div>`;
+    <div class="notice" style="margin-top:14px"><b>Ready to create:</b> ${state.employees.length} payslip(s) using the automatically mapped Payslip Items for this Manager business.</div>
+    <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Confirm & Create Payslips</button></div>`;
 }
 
 function previewPayslips(){
@@ -639,25 +639,34 @@ async function createPayslips(){
 async function confirmCreatePayslips(){
   const btn = document.getElementById('confirmCreateBtn');
   if(btn) btn.disabled = true;
-  modalBody.innerHTML = '<div class="notice">Creating 1 test payslip in Manager.io...</div>';
+  modalBody.innerHTML = '<div class="notice">Creating payslips in Manager.io...</div>';
 
   try{
-    const fullPayload = buildBatchPayload();
-    const payload = {Values: fullPayload.Values.slice(0,1)};
+    const payload = buildBatchPayload();
 
-    const response = await postMessageWithResponse({type:'api-request', method:'POST', path:'/api4/payslip-batch', body: payload});
+    if(!payload.Values.length){
+      throw new Error('No payslips were prepared.');
+    }
+
+    const response = await postMessageWithResponse({
+      type:'api-request',
+      method:'POST',
+      path:'/api4/payslip-batch',
+      body: payload
+    });
+
     if(response?.error || response?.errors || response?.success === false){
       throw new Error(response?.message || response?.error || 'Manager rejected the request.');
     }
 
-    writeStatus.textContent = '✓ 1 test payslip created in Manager';
-    modalTitle.textContent = 'Test Payslip Created';
-    modalIntro.textContent = 'Stage 7 created only the first payslip using the cleaned API4 payload.';
-    modalBody.innerHTML = `<div class="notice"><b>Success.</b> One test payslip was created for <b>${esc(state.employees[0]?.name || 'the first employee')}</b>.</div>
-      <p style="margin-top:12px">Please open that payslip in Manager and check whether the <b>Item</b> and <b>Description</b> now appear. If they do, we will remove test mode and restore full-batch creation.</p>`;
+    writeStatus.textContent = `✓ ${payload.Values.length} payslip(s) created in Manager`;
+    modalTitle.textContent = 'Payslips Created';
+    modalIntro.textContent = 'The payroll batch was successfully submitted to Manager.io.';
+    modalBody.innerHTML = `<div class="notice"><b>Success.</b> ${payload.Values.length} payslip(s) were created in Manager.</div>
+      <p style="margin-top:12px">The Payslip Items were mapped automatically for the current Manager business.</p>`;
   }catch(err){
     if(btn) btn.disabled = false;
-    modalBody.innerHTML = `<div class="error"><b>Failed to create test payslip:</b><br>${esc(err.message)}</div>`;
+    modalBody.innerHTML = `<div class="error"><b>Failed to create payslips:</b><br>${esc(err.message)}</div>`;
   }
 }
 
