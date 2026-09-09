@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manager Payroll Worksheet — Native Theme & UI V2</title>
+<title>Manager Payroll Worksheet — Native Theme & UI</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 
@@ -68,7 +68,7 @@ input:focus,select:focus{outline:2px solid #b3d7ff;border-color:var(--mgr-btn-pr
 
 /* Tab Controls */
 .view-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--mgr-border);padding-bottom:1px}
-.tab-btn{border:1px solid var(--mgr-border);border-bottom:none;border-radius:3px 3px 0 0;background:#e9e9e9;padding:6px 14px;font-size:12px;color:var(--mgr-muted);cursor:pointer}
+.tab-btn{border:1px solid var(--mgr-border);border-bottom:none;border-radius:3px 3px 0 0;background:#e9e9e9;padding:7px 16px;font-size:12px;color:var(--mgr-muted);cursor:pointer}
 .tab-btn.active{background:var(--mgr-card);border-color:var(--mgr-border-dark);border-bottom:1px solid var(--mgr-card);color:var(--mgr-text);font-weight:600;margin-bottom:-1px}
 
 /* Search & Filter Bar */
@@ -78,7 +78,7 @@ input:focus,select:focus{outline:2px solid #b3d7ff;border-color:var(--mgr-btn-pr
 
 /* Tables & Density Layout */
 .table-wrap{overflow:auto;background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:3px}
-table{width:100%;border-collapse:collapse;min-width:1100px;font-size:12px}
+table{width:100%;border-collapse:collapse;min-width:980px;font-size:12px}
 th,td{padding:4px 6px;border:1px solid var(--mgr-border);text-align:left;vertical-align:middle;height:29px}
 th{font-size:10px;color:var(--mgr-muted);text-transform:uppercase;background:var(--mgr-header);position:sticky;top:0;z-index:2;white-space:nowrap;font-weight:600}
 tr:nth-child(even){background-color:var(--mgr-row-alt)}
@@ -92,9 +92,9 @@ tr:nth-child(even) td.name{background:var(--mgr-row-alt)}
 .exclude-btn:hover{border-color:var(--mgr-btn-danger);background:var(--mgr-danger-bg);color:var(--mgr-danger-text)}
 .reset-btn:hover{border-color:var(--mgr-btn-primary);background:var(--mgr-info-bg);color:var(--mgr-info-text)}
 
-/* Column Fill Down Shortcuts */
-.th-fill{display:inline-flex;align-items:center;gap:3px;cursor:pointer;color:var(--mgr-btn-primary)}
-.th-fill:hover{text-decoration:underline}
+/* Prominent Fill-Down Buttons */
+.fill-btn{display:inline-block;margin-left:4px;padding:2px 6px;background:var(--mgr-info-bg);color:var(--mgr-info-text);border:1px solid var(--mgr-info-border);border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;line-height:1;text-transform:none}
+.fill-btn:hover{background:var(--mgr-btn-primary);color:#fff;border-color:var(--mgr-btn-primary-border)}
 
 td input{width:75px;height:24px;padding:2px 4px;font-size:12px;text-align:right}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#111}
 .manual-cell{background:#f8fcff!important}.calc-cell{background:#fff!important;color:#333;text-align:right!important}.reference-cell{background:#fdfdf0!important;color:#665305;text-align:right!important}
@@ -104,6 +104,9 @@ td input{width:75px;height:24px;padding:2px 4px;font-size:12px;text-align:right}
 
 /* Sticky Action Footer */
 .actions-footer{position:fixed;bottom:0;left:0;right:0;background:var(--mgr-card);border-top:1px solid var(--mgr-border-dark);padding:8px 16px;display:flex;gap:10px;align-items:center;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,0.05)}
+
+/* Summary Table Specifics */
+.summary-table tfoot th, .summary-table tfoot td {font-weight:800;background:var(--mgr-header);border-top:2px solid var(--mgr-border-dark)}
 
 /* Validation Highlights */
 .rate-missing{background:#fff3cd!important;color:#856404!important;font-weight:700!important}
@@ -145,11 +148,12 @@ td input{width:75px;height:24px;padding:2px 4px;font-size:12px;text-align:right}
     <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
   </div>
 
-  <!-- Tab Switcher -->
+  <!-- 4 View Tabs -->
   <div class="view-tabs">
-    <button type="button" class="tab-btn active" data-tab="earnings">1. Gross Earnings</button>
-    <button type="button" class="tab-btn" data-tab="deductions">2. Deductions &amp; Net Pay</button>
-    <button type="button" class="tab-btn" data-tab="all">All-in-One View</button>
+    <button type="button" class="tab-btn active" data-tab="earnings">1. Earnings</button>
+    <button type="button" class="tab-btn" data-tab="deductions">2. Deductions</button>
+    <button type="button" class="tab-btn" data-tab="contributions">3. Employer Contributions</button>
+    <button type="button" class="tab-btn" data-tab="summary">4. Payroll Summary</button>
   </div>
 
   <div class="filter-bar">
@@ -157,14 +161,24 @@ td input{width:75px;height:24px;padding:2px 4px;font-size:12px;text-align:right}
     <div class="filter-info" id="filterInfo">Showing all employees</div>
   </div>
 
-  <!-- Earnings Section -->
+  <!-- Tab 1: Earnings -->
   <div class="table-wrap" id="earningsPanel">
     <div id="earningsApp" class="empty">No employees loaded yet.</div>
   </div>
 
-  <!-- Deductions Section -->
+  <!-- Tab 2: Deductions -->
   <div class="table-wrap" id="deductionsPanel" style="display:none">
     <div id="deductionsApp" class="empty">No employees loaded yet.</div>
+  </div>
+
+  <!-- Tab 3: Contributions -->
+  <div class="table-wrap" id="contributionsPanel" style="display:none">
+    <div id="contributionsApp" class="empty">No employees loaded yet.</div>
+  </div>
+
+  <!-- Tab 4: Summary -->
+  <div class="table-wrap" id="summaryPanel" style="display:none">
+    <div id="summaryApp" class="empty">No employees loaded yet.</div>
   </div>
 
   <div id="excludedApp"></div>
@@ -336,20 +350,22 @@ function render(){
   if(!filtered.length){
     earningsApp.className='empty'; earningsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
     deductionsApp.className='empty'; deductionsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
+    contributionsApp.className='empty'; contributionsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
+    summaryApp.className='empty'; summaryApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
     renderExcluded(); updateSummary(); setButtons(); return;
   }
 
-  earningsApp.className=''; deductionsApp.className='';
-  
-  // Render Earnings Table
+  earningsApp.className=''; deductionsApp.className=''; contributionsApp.className=''; summaryApp.className='';
+
+  // TAB 1: EARNINGS (Retains Late Hours for Encoder Convenience)
   earningsApp.innerHTML=`<table><thead><tr>
     <th class="employee-head">Employee</th>
-    <th>Actual Days <span class="th-fill" onclick="fillDown('actualDaysDuty')" title="Fill down first row value">↓</span></th>
-    <th>OT Hours <span class="th-fill" onclick="fillDown('overtimeHours')" title="Fill down first row value">↓</span></th>
-    <th>Late Hours <span class="th-fill" onclick="fillDown('lateHours')" title="Fill down first row value">↓</span></th>
-    <th>Holiday Factor <span class="th-fill" onclick="fillDown('holidayFactor')" title="Fill down first row value">↓</span></th>
-    <th>Allowances <span class="th-fill" onclick="fillDown('allowance')" title="Fill down first row value">↓</span></th>
-    <th>Commissions <span class="th-fill" onclick="fillDown('commission')" title="Fill down first row value">↓</span></th>
+    <th>Actual Days <button type="button" class="fill-btn" onclick="fillDown('actualDaysDuty')" title="Fill down first row value">↓ Fill</button></th>
+    <th>OT Hours <button type="button" class="fill-btn" onclick="fillDown('overtimeHours')" title="Fill down first row value">↓ Fill</button></th>
+    <th>Late Hours <button type="button" class="fill-btn" onclick="fillDown('lateHours')" title="Fill down first row value">↓ Fill</button></th>
+    <th>Holiday Factor <button type="button" class="fill-btn" onclick="fillDown('holidayFactor')" title="Fill down first row value">↓ Fill</button></th>
+    <th>Allowances <button type="button" class="fill-btn" onclick="fillDown('allowance')" title="Fill down first row value">↓ Fill</button></th>
+    <th>Commissions <button type="button" class="fill-btn" onclick="fillDown('commission')" title="Fill down first row value">↓ Fill</button></th>
     <th style="text-align:right">Daily Rate</th><th style="text-align:right">Hourly Rate</th><th style="text-align:right">Basic Pay</th><th style="text-align:right">OT Pay</th><th style="text-align:right">Holiday Pay</th><th style="text-align:right">Gross Pay</th>
   </tr></thead><tbody>${filtered.map(e=>{
     const v = getValues(e.id), r = calculate(e, v);
@@ -377,16 +393,15 @@ function render(){
     </tr>`;
   }).join('')}</tbody></table>`;
 
-  // Render Deductions Table
+  // TAB 2: DEDUCTIONS
   deductionsApp.innerHTML=`<table><thead><tr>
     <th class="employee-head">Employee</th><th style="text-align:right">Tardiness</th>
-    <th>SSS <span class="th-fill" onclick="fillDown('sss')" title="Fill down">↓</span></th>
-    <th>PHIC <span class="th-fill" onclick="fillDown('phic')" title="Fill down">↓</span></th>
-    <th>Pag-IBIG <span class="th-fill" onclick="fillDown('pagibig')" title="Fill down">↓</span></th>
-    <th>Tax <span class="th-fill" onclick="fillDown('tax')" title="Fill down">↓</span></th>
-    <th>Loans <span class="th-fill" onclick="fillDown('loan')" title="Fill down">↓</span></th>
-    <th style="text-align:right">Total Deductions</th>
-    <th>ER SSS</th><th>ER PHIC</th><th>ER Pag-IBIG</th><th style="text-align:right">Net Pay</th>
+    <th>SSS <button type="button" class="fill-btn" onclick="fillDown('sss')" title="Fill down">↓ Fill</button></th>
+    <th>PHIC <button type="button" class="fill-btn" onclick="fillDown('phic')" title="Fill down">↓ Fill</button></th>
+    <th>Pag-IBIG <button type="button" class="fill-btn" onclick="fillDown('pagibig')" title="Fill down">↓ Fill</button></th>
+    <th>Tax <button type="button" class="fill-btn" onclick="fillDown('tax')" title="Fill down">↓ Fill</button></th>
+    <th>Loans <button type="button" class="fill-btn" onclick="fillDown('loan')" title="Fill down">↓ Fill</button></th>
+    <th style="text-align:right">Total Deductions</th><th style="text-align:right">Net Pay</th>
   </tr></thead><tbody>${filtered.map(e=>{
     const v = getValues(e.id), r = calculate(e, v);
     const netClass = r.rawNet < 0 ? 'net-negative' : '';
@@ -405,12 +420,63 @@ function render(){
       <td class="manual-cell">${inputCell(e,'tax',v.tax)}</td>
       <td class="manual-cell">${inputCell(e,'loan',v.loan)}</td>
       <td class="calc-cell money deductionTotal">${money(r.deductions)}</td>
-      <td class="manual-cell">${inputCell(e,'employerSss',v.employerSss)}</td>
-      <td class="manual-cell">${inputCell(e,'employerPhic',v.employerPhic)}</td>
-      <td class="manual-cell">${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
       <td class="calc-cell money net ${netClass}">${money(r.net)}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
+
+  // TAB 3: EMPLOYER CONTRIBUTIONS
+  contributionsApp.innerHTML=`<table><thead><tr>
+    <th class="employee-head">Employee</th>
+    <th>ER SSS <button type="button" class="fill-btn" onclick="fillDown('employerSss')" title="Fill down">↓ Fill</button></th>
+    <th>ER PHIC <button type="button" class="fill-btn" onclick="fillDown('employerPhic')" title="Fill down">↓ Fill</button></th>
+    <th>ER Pag-IBIG <button type="button" class="fill-btn" onclick="fillDown('employerPagibig')" title="Fill down">↓ Fill</button></th>
+    <th style="text-align:right">Total ER Contributions</th>
+  </tr></thead><tbody>${filtered.map(e=>{
+    const v = getValues(e.id), r = calculate(e, v);
+    return `<tr data-id="${esc(e.id)}">
+      <td class="name">
+        <div class="row-actions">
+          <button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude employee">×</button>
+          <button class="reset-btn" type="button" data-reset="${esc(e.id)}" title="Reset inputs">↺</button>
+        </div>
+        <span>${esc(e.name)}</span>
+      </td>
+      <td class="manual-cell">${inputCell(e,'employerSss',v.employerSss)}</td>
+      <td class="manual-cell">${inputCell(e,'employerPhic',v.employerPhic)}</td>
+      <td class="manual-cell">${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
+      <td class="calc-cell money contributionsTotal">${money(r.contributions)}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+
+  // TAB 4: PAYROLL SUMMARY (Read-only breakdown of Tabs 1-3 & Net Pay)
+  let sumG = 0, sumD = 0, sumC = 0, sumN = 0;
+  const summaryRows = filtered.map(e => {
+    const v = getValues(e.id), r = calculate(e, v);
+    sumG += r.gross; sumD += r.deductions; sumC += r.contributions; sumN += r.net;
+    const netClass = r.rawNet < 0 ? 'net-negative' : '';
+    return `<tr data-id="${esc(e.id)}">
+      <td class="name"><span>${esc(e.name)}</span></td>
+      <td class="calc-cell money">${money(r.gross)}</td>
+      <td class="calc-cell money">${money(r.deductions)}</td>
+      <td class="calc-cell money">${money(r.contributions)}</td>
+      <td class="calc-cell money net ${netClass}">${money(r.net)}</td>
+    </tr>`;
+  }).join('');
+
+  summaryApp.innerHTML=`<table class="summary-table"><thead><tr>
+    <th class="employee-head">Employee</th>
+    <th style="text-align:right">Gross Earnings (Tab 1)</th>
+    <th style="text-align:right">Total Deductions (Tab 2)</th>
+    <th style="text-align:right">Employer Contributions (Tab 3)</th>
+    <th style="text-align:right">Net Pay</th>
+  </tr></thead><tbody>${summaryRows}</tbody>
+  <tfoot><tr>
+    <th class="employee-head">TOTALS</th>
+    <th class="calc-cell money">${money(sumG)}</th>
+    <th class="calc-cell money">${money(sumD)}</th>
+    <th class="calc-cell money">${money(sumC)}</th>
+    <th class="calc-cell money net">${money(sumN)}</th>
+  </tr></tfoot></table>`;
 
   // Attach Input Listeners & Excel Navigation
   document.querySelectorAll('.pay-input').forEach(input => {
@@ -450,7 +516,7 @@ function render(){
   setButtons();
 }
 
-/* Tab Navigation Handling */
+/* Tab Switcher Logic */
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -458,16 +524,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     const tab = btn.dataset.tab;
     state.activeTab = tab;
     
-    if (tab === 'earnings') {
-      earningsPanel.style.display = 'block';
-      deductionsPanel.style.display = 'none';
-    } else if (tab === 'deductions') {
-      earningsPanel.style.display = 'none';
-      deductionsPanel.style.display = 'block';
-    } else {
-      earningsPanel.style.display = 'block';
-      deductionsPanel.style.display = 'block';
-    }
+    earningsPanel.style.display     = tab === 'earnings'      ? 'block' : 'none';
+    deductionsPanel.style.display   = tab === 'deductions'    ? 'block' : 'none';
+    contributionsPanel.style.display = tab === 'contributions' ? 'block' : 'none';
+    summaryPanel.style.display       = tab === 'summary'       ? 'block' : 'none';
   });
 });
 
@@ -498,7 +558,7 @@ function excludeEmployee(id){
 
 function showExcludedEmployees(){
   if(!state.excludedEmployees.length) return;
-  const names = state.excludedEmployees.map(e => `<div style="display:flex;justify-space-between;align-items:center;padding:4px 0"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
+  const names = state.excludedEmployees.map(e => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
   modalTitle.textContent = 'Excluded Employees';
   modalIntro.textContent = 'These employees are excluded from the active payroll run.';
   modalBody.innerHTML = `<div>${names}</div>`;
@@ -525,7 +585,7 @@ function updateRow(id){
       '.dailyRate':r.dailyRate, '.hourlyRate':r.hourlyRate, '.basicPay':r.basicPay,
       '.overtimePay':r.overtimePay, '.holidayPay':r.holidayPay, '.allowance':r.allowance,
       '.commission':r.commission, '.tardiness':r.lateDeduction, '.lateDeduction':r.lateDeduction,
-      '.gross':r.gross, '.net':r.net, '.deductionTotal':r.deductions
+      '.gross':r.gross, '.net':r.net, '.deductionTotal':r.deductions, '.contributionsTotal':r.contributions
     };
     Object.entries(fields).forEach(([sel,val])=>{
       const el = row.querySelector(sel);
