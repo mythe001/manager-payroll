@@ -3,104 +3,177 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Manager Payroll Worksheet V2 — Automatic Payslip Item Mapping v2</title>
+<title>Manager Payroll Worksheet — Native Theme & UI V2</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#f3f3f3;--panel:#fff;--panel2:#f7f7f7;--border:#d8d8d8;--text:#222;--muted:#777;--accent:#2b83c6;--accent-soft:#eef7fd;--good:#4aa564;--good-soft:#edf8f0;--danger:#c94b45;--danger-soft:#fff1f0;--warn:#a77a16;--warn-soft:#fff8df}
-body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:18px}
+
+/* Manager.io Native Theme System */
+:root{
+  --mgr-bg:#f2f2f2;
+  --mgr-card:#ffffff;
+  --mgr-header:#f9f9f9;
+  --mgr-row-alt:#fcfcfc;
+  --mgr-border:#e0e0e0;
+  --mgr-border-dark:#cccccc;
+  --mgr-text:#333333;
+  --mgr-muted:#666666;
+  --mgr-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  
+  --mgr-btn-primary:#428bca;
+  --mgr-btn-primary-border:#357ebd;
+  --mgr-btn-success:#5cb85c;
+  --mgr-btn-success-border:#4cae4c;
+  --mgr-btn-danger:#d9534f;
+  --mgr-btn-danger-border:#d43f3a;
+  
+  --mgr-warn-bg:#fcf8e3;
+  --mgr-warn-text:#8a6d3b;
+  --mgr-warn-border:#faebcc;
+  --mgr-danger-bg:#f2dede;
+  --mgr-danger-text:#a94442;
+  --mgr-danger-border:#ebccd1;
+  --mgr-info-bg:#d9edf7;
+  --mgr-info-text:#31708f;
+  --mgr-info-border:#bce8f1;
+}
+
+body{font-family:var(--mgr-font);background:var(--mgr-bg);color:var(--mgr-text);min-height:100vh;padding:12px;padding-bottom:70px}
 button,input,select{font:inherit}
-.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;background:var(--panel);border:1px solid var(--border);border-radius:10px;margin-bottom:14px}
-h1{font-size:20px}.sub{color:var(--muted);font-size:12px;margin-top:3px}.spacer{flex:1}
-button{border:1px solid #ccc;background:#fff;color:#222;border-radius:4px;padding:8px 13px;cursor:pointer;font-weight:600}
-button:hover{border-color:#aaa;background:#fafafa}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-button.good{background:var(--good);border-color:var(--good);color:#fff}button.warn{background:#fff;border-color:#d2b05d;color:#77580c}button.danger{background:#fff;border-color:#d8aaa7;color:#9d3833}
+
+/* Auto-Scaling Container */
+.scale-wrapper{transform-origin:top left;transition:transform 0.15s ease}
+
+/* Top Navigation & Period Cards */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:4px;margin-bottom:10px}
+h1{font-size:18px;font-weight:600;color:var(--mgr-text)}.sub{color:var(--mgr-muted);font-size:11px;margin-top:2px}.spacer{flex:1}
+
+button{border:1px solid var(--mgr-border-dark);background:#fff;color:var(--mgr-text);border-radius:3px;padding:5px 11px;cursor:pointer;font-weight:500;font-size:12px}
+button:hover{background:#f5f5f5;border-color:#adadad}
+button.primary{background:var(--mgr-btn-primary);border-color:var(--mgr-btn-primary-border);color:#fff}
+button.primary:hover{background:#3071a9}
+button.success{background:var(--mgr-btn-success);border-color:var(--mgr-btn-success-border);color:#fff}
+button.success:hover{background:#449d44}
+button.danger{background:#fff;border-color:var(--mgr-btn-danger-border);color:var(--mgr-btn-danger)}
+button.danger:hover{background:var(--mgr-danger-bg)}
 button:disabled{opacity:.5;cursor:not-allowed}
-.period{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:var(--panel);border:1px solid var(--border);padding:12px 14px;border-radius:4px;margin-bottom:14px}
-.period label{display:flex;flex-direction:column;gap:6px;color:#666;font-size:12px;font-weight:650}.period input{min-width:155px}
-input,select{background:#fff;border:1px solid #cfcfcf;color:var(--text);border-radius:4px;padding:8px 9px;min-height:38px}
-input:focus,select:focus{outline:2px solid rgba(43,131,198,.2);border-color:var(--accent)}input[type=date]{cursor:pointer}.period-summary{display:none;flex-basis:100%;font-size:12px;color:var(--muted);padding-top:2px}.period-summary.visible{display:block}.period-summary.warning{color:#795c0d}
-.summary{display:grid;grid-template-columns:repeat(5,minmax(125px,1fr));gap:10px;margin-bottom:14px}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:12px}.card .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.card .value{font-size:19px;font-weight:750;margin-top:4px}
-.legend{display:flex;gap:7px;flex-wrap:wrap;align-items:center}.legend span{padding:5px 8px;border-radius:3px;font-size:10px;font-weight:700}.legend .manual-legend{background:var(--accent-soft);color:#22699d;border:1px solid #c5e1f4}.legend .calc-legend{background:#f2f2f2;color:#555;border:1px solid #d9d9d9}.legend .reference-legend{background:var(--warn-soft);color:#7b5b0c;border:1px solid #ead58e}
-.table-wrap{overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:4px}.manual-head{background:var(--accent-soft)!important;color:#246b9d!important}.calc-head{background:#f0f0f0!important;color:#555!important}.manual-cell{background:#f7fbfe!important}.calc-cell{background:#fff!important;color:#444}.reference-head,.calc-head{text-align:right!important}.reference-cell,.calc-cell{text-align:right!important}.employee-head{text-align:left!important}.manual-cell input{background:#fff!important;border-color:#9fc9e6!important}.calc-cell .money,.calc-cell .rate{font-weight:650}.reference-head{background:var(--warn-soft)!important;color:#785b0b!important}.reference-cell{background:#fffaf0!important;color:#72590f}
 
-table{width:100%;border-collapse:collapse;min-width:2200px}
-th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
-th{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0;z-index:2;white-space:nowrap}
-td.name{font-weight:650;min-width:220px;position:sticky;left:0;background:var(--panel);z-index:3;white-space:nowrap}td.name span{vertical-align:middle}.exclude-btn{width:22px;height:22px;padding:0;margin-right:7px;border:1px solid transparent;background:transparent;color:#777;font-size:17px;line-height:18px;border-radius:3px;vertical-align:middle}.exclude-btn:hover{border-color:#cfcfcf;background:#f5f5f5;color:#a13b36}
-td input{width:94px}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#1f2937}
-.section-title{padding:11px 13px;background:var(--panel2);border-bottom:1px solid var(--border);font-size:13px;font-weight:700}
-.empty{padding:35px;text-align:center;color:var(--muted)}.status{color:var(--muted);font-size:12px}
-.error,.notice{padding:10px 12px;border-radius:4px;margin-bottom:12px;font-size:12px;line-height:1.5}.error{color:#9b3732;background:var(--danger-soft);border:1px solid #e5b3b0}.notice{color:#444;background:#f5f9fc;border:1px solid #c8ddeb}.warning{color:#795c0d;background:var(--warn-soft);border:1px solid #ead58e}
-.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
-.note{color:var(--muted);font-size:12px;line-height:1.5;margin-top:10px}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
-.modal{width:min(900px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid #cfcfcf;border-radius:5px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
-.modal h2{font-size:17px;margin-bottom:8px}.modal p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
-pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:11px;line-height:1.45;white-space:pre-wrap}
-.mapping{display:grid;grid-template-columns:1fr 1fr;gap:10px}.excluded-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 10px;background:#f7f7f7;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:12px}.excluded-bar button,.excluded-row button{background:#fff;border:1px solid #cfcfcf;border-radius:4px;padding:5px 8px;color:#2b83c6;cursor:pointer}.excluded-bar button:hover,.excluded-row button:hover{border-color:#2b83c6}.excluded-list{border:1px solid var(--border);border-radius:4px;background:#fff}.excluded-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)}.excluded-row:last-child{border-bottom:0}.success-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.mapping .box{background:var(--panel2);padding:10px;border:1px solid var(--border);border-radius:8px}
+.period{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;background:var(--mgr-card);border:1px solid var(--mgr-border);padding:10px 12px;border-radius:4px;margin-bottom:10px}
+.period label{display:flex;flex-direction:column;gap:4px;color:var(--mgr-muted);font-size:11px;font-weight:600}.period input{min-width:140px}
+input,select{background:#fff;border:1px solid var(--mgr-border-dark);color:var(--mgr-text);border-radius:3px;padding:4px 7px;height:28px;font-size:12px}
+input:focus,select:focus{outline:2px solid #b3d7ff;border-color:var(--mgr-btn-primary)}
 
-/* Review & Summary Table Total Row Styling */
-.modal table tfoot tr th,
-.modal table tfoot tr td {
-  font-size: 1.15em !important;
-  font-weight: 800 !important;
-  color: #1b5e20 !important;
-  background-color: #e8f5e9 !important;
-  border-top: 2px solid #a5d6a7 !important;
-  border-bottom: 2px solid #a5d6a7 !important;
-  padding: 10px 8px !important;
-}
+/* Summary Stat Cards */
+.summary{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+.card{background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:3px;padding:8px 10px}.card .label{font-size:10px;color:var(--mgr-muted);text-transform:uppercase;letter-spacing:.03em}.card .value{font-size:16px;font-weight:700;margin-top:3px;color:#111}
 
-.modal table tbody tr:hover {
-  background-color: #f8fafc;
-}
+/* Tab Controls */
+.view-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--mgr-border);padding-bottom:1px}
+.tab-btn{border:1px solid var(--mgr-border);border-bottom:none;border-radius:3px 3px 0 0;background:#e9e9e9;padding:6px 14px;font-size:12px;color:var(--mgr-muted);cursor:pointer}
+.tab-btn.active{background:var(--mgr-card);border-color:var(--mgr-border-dark);border-bottom:1px solid var(--mgr-card);color:var(--mgr-text);font-weight:600;margin-bottom:-1px}
 
-@media(max-width:900px){.summary{grid-template-columns:repeat(2,minmax(130px,1fr))}.mapping{grid-template-columns:1fr}}
+/* Search & Filter Bar */
+.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;background:var(--mgr-card);border:1px solid var(--mgr-border);padding:6px 10px;border-radius:3px}
+.filter-bar input{flex:1;max-width:280px;height:26px;font-size:12px}
+.filter-info{font-size:11px;color:var(--mgr-muted)}
+
+/* Tables & Density Layout */
+.table-wrap{overflow:auto;background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:3px}
+table{width:100%;border-collapse:collapse;min-width:1100px;font-size:12px}
+th,td{padding:4px 6px;border:1px solid var(--mgr-border);text-align:left;vertical-align:middle;height:29px}
+th{font-size:10px;color:var(--mgr-muted);text-transform:uppercase;background:var(--mgr-header);position:sticky;top:0;z-index:2;white-space:nowrap;font-weight:600}
+tr:nth-child(even){background-color:var(--mgr-row-alt)}
+tr:hover{background-color:#f5f5f5}
+
+td.name{font-weight:600;min-width:220px;position:sticky;left:0;background:var(--mgr-card);z-index:3;white-space:nowrap}
+tr:nth-child(even) td.name{background:var(--mgr-row-alt)}
+
+.row-actions{display:inline-flex;gap:3px;margin-right:6px;vertical-align:middle}
+.exclude-btn,.reset-btn{height:20px;padding:0 4px;border:1px solid var(--mgr-border-dark);background:#fff;color:var(--mgr-muted);font-size:11px;line-height:18px;border-radius:2px;cursor:pointer}
+.exclude-btn:hover{border-color:var(--mgr-btn-danger);background:var(--mgr-danger-bg);color:var(--mgr-danger-text)}
+.reset-btn:hover{border-color:var(--mgr-btn-primary);background:var(--mgr-info-bg);color:var(--mgr-info-text)}
+
+/* Column Fill Down Shortcuts */
+.th-fill{display:inline-flex;align-items:center;gap:3px;cursor:pointer;color:var(--mgr-btn-primary)}
+.th-fill:hover{text-decoration:underline}
+
+td input{width:75px;height:24px;padding:2px 4px;font-size:12px;text-align:right}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#111}
+.manual-cell{background:#f8fcff!important}.calc-cell{background:#fff!important;color:#333;text-align:right!important}.reference-cell{background:#fdfdf0!important;color:#665305;text-align:right!important}
+.empty{padding:25px;text-align:center;color:var(--mgr-muted)}.status{color:var(--mgr-muted);font-size:11px}
+
+.error,.notice,.warning{padding:8px 10px;border-radius:3px;margin-bottom:10px;font-size:12px;line-height:1.4}.error{color:var(--mgr-danger-text);background:var(--mgr-danger-bg);border:1px solid var(--mgr-danger-border)}.notice{color:var(--mgr-info-text);background:var(--mgr-info-bg);border:1px solid var(--mgr-info-border)}.warning{color:var(--mgr-warn-text);background:var(--mgr-warn-bg);border:1px solid var(--mgr-warn-border)}
+
+/* Sticky Action Footer */
+.actions-footer{position:fixed;bottom:0;left:0;right:0;background:var(--mgr-card);border-top:1px solid var(--mgr-border-dark);padding:8px 16px;display:flex;gap:10px;align-items:center;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,0.05)}
+
+/* Validation Highlights */
+.rate-missing{background:#fff3cd!important;color:#856404!important;font-weight:700!important}
+.net-negative{background:var(--mgr-danger-bg)!important;color:var(--mgr-danger-text)!important;font-weight:800!important}
+
+/* Modal Styling */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:16px;z-index:200}
+.modal{width:min(920px,100%);max-height:88vh;overflow:auto;background:var(--mgr-card);border:1px solid var(--mgr-border-dark);border-radius:4px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.modal h2{font-size:16px;margin-bottom:6px}.modal p{font-size:12px;color:var(--mgr-muted);margin-bottom:10px}
 </style>
 </head>
 <body>
-<div class="top">
-  <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io • V1.0 • Payroll worksheet • Stage 7</div></div>
-  <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
-  <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
+
+<div class="scale-wrapper" id="scaleWrapper">
+  <div class="top">
+    <div><h1>Payroll Worksheet</h1><div class="sub">Manager.io Integrated • Native Theme</div></div>
+    <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
+    <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
+  </div>
+
+  <div id="error"></div>
+  <div id="validationBanner"></div>
+  <div id="businessDetectionStatus" class="notice" style="margin-bottom:10px">Business context: waiting for Manager API response…</div>
+  <div id="payslipItemsTest" class="notice" style="margin-bottom:10px">Payslip Item mappings: waiting for Manager…</div>
+
+  <div class="period">
+    <label>Payroll period start<input id="periodStart" type="date"></label>
+    <label>Payroll period end<input id="periodEnd" type="date"></label>
+    <label>Payslip date<input id="payslipDate" type="date"></label>
+    <button id="recalcBtn" type="button">Recalculate</button>
+    <button id="clearBtn" class="danger" type="button">Clear Inputs</button>
+  </div>
+
+  <div class="summary">
+    <div class="card"><div class="label">Employees</div><div class="value" id="employeeCount">0</div></div>
+    <div class="card"><div class="label">Gross Earnings</div><div class="value" id="grossTotal">₱0.00</div></div>
+    <div class="card"><div class="label">Total Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
+    <div class="card"><div class="label">Employer Contributions</div><div class="value" id="contributionTotal">₱0.00</div></div>
+    <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
+  </div>
+
+  <!-- Tab Switcher -->
+  <div class="view-tabs">
+    <button type="button" class="tab-btn active" data-tab="earnings">1. Gross Earnings</button>
+    <button type="button" class="tab-btn" data-tab="deductions">2. Deductions &amp; Net Pay</button>
+    <button type="button" class="tab-btn" data-tab="all">All-in-One View</button>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Search employee name…">
+    <div class="filter-info" id="filterInfo">Showing all employees</div>
+  </div>
+
+  <!-- Earnings Section -->
+  <div class="table-wrap" id="earningsPanel">
+    <div id="earningsApp" class="empty">No employees loaded yet.</div>
+  </div>
+
+  <!-- Deductions Section -->
+  <div class="table-wrap" id="deductionsPanel" style="display:none">
+    <div id="deductionsApp" class="empty">No employees loaded yet.</div>
+  </div>
+
+  <div id="excludedApp"></div>
 </div>
 
-<div id="error"></div>
-<div id="businessDetectionStatus" class="notice" style="margin-bottom:12px">Business context: waiting for the first Manager API response…</div>
-<div id="payslipItemsTest" class="notice" style="margin-bottom:12px">Payslip Item mappings: waiting for Manager…</div>
-<div class="period">
-  <label>Payroll period start<input id="periodStart" type="date"></label>
-  <label>Payroll period end<input id="periodEnd" type="date"></label>
-  <label>Payslip date<input id="payslipDate" type="date"></label>
-  <button id="recalcBtn" type="button">Recalculate</button>
-  <button id="clearBtn" class="danger" type="button">Clear Inputs</button>
-  <div id="periodSummary" class="period-summary"></div>
-</div>
-
-<div class="summary">
-  <div class="card"><div class="label">Employees</div><div class="value" id="employeeCount">0</div></div>
-  <div class="card"><div class="label">Gross Earnings</div><div class="value" id="grossTotal">₱0.00</div></div>
-  <div class="card"><div class="label">Total Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
-  <div class="card"><div class="label">Employer Contributions</div><div class="value" id="contributionTotal">₱0.00</div></div>
-  <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
-</div>
-
-<div class="table-wrap">
-  <div class="section-title">Earnings &amp; payroll inputs</div>
-  <div id="earningsApp" class="empty">No employees loaded yet.</div>
-</div>
-
-<div class="table-wrap" style="margin-top:14px">
-  <div class="section-title">Deductions &amp; employer contributions</div>
-  <div id="deductionsApp" class="empty">No employees loaded yet.</div>
-</div>
-
-<div id="excludedApp"></div>
-
-<div class="actions">
+<!-- Docked Sticky Action Footer -->
+<div class="actions-footer">
   <button class="primary" id="previewBtn" type="button" disabled>Preview Payslips</button>
-  <button class="good" id="createBtn" type="button" disabled>Create Payslips in Manager</button>
+  <button class="success" id="createBtn" type="button" disabled>Create Payslips in Manager</button>
   <span class="status" id="writeStatus">No payslips created yet.</span>
 </div>
 
@@ -109,17 +182,11 @@ pre{background:#f7f7f7;border:1px solid var(--border);border-radius:8px;padding:
     <h2 id="modalTitle">Payslip Preview</h2>
     <p id="modalIntro"></p>
     <div id="modalBody"></div>
-    <div class="actions"><button id="closeModal" type="button">Close</button></div>
+    <div class="actions" style="margin-top:12px"><button id="closeModal" type="button">Close</button></div>
   </div>
 </div>
 
 <script>
-/*
-  Stage 2: automatically capture Manager's business-specific context key.
-  Manager includes this opaque q=... value in API response _links.self.href.
-  We use it only as a business-scoping key; it is not assumed to be a
-  decoded/public Manager business ID.
-*/
 let detectedBusinessContextKey = null;
 
 function captureBusinessContext(body) {
@@ -129,9 +196,7 @@ function captureBusinessContext(body) {
     if (match && match[1]) {
       detectedBusinessContextKey = decodeURIComponent(match[1]);
       const el = document.getElementById('businessDetectionStatus');
-      if (el) {
-        el.textContent = `✓ Business context detected: ${detectedBusinessContextKey}`;
-      }
+      if (el) el.textContent = `✓ Business context detected: ${detectedBusinessContextKey}`;
     }
   } catch (_) {}
 }
@@ -158,13 +223,14 @@ function postMessageWithResponse(message) {
 
 const state = {
   employees: [], excludedEmployees: [], dailyRateFieldKeys: [], values: new Map(),
-  businessContextKey: null,
+  searchQuery: '', activeTab: 'earnings',
   mappings: {
     earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
     deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
     contributions: {sss:null, phic:null, pagibig:null}
   }
 };
+
 const peso = new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',minimumFractionDigits:2,maximumFractionDigits:2});
 const money = v => peso.format(Number.isFinite(Number(v)) ? Number(v) : 0);
 const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.max(0,n):0;};
@@ -192,49 +258,117 @@ function calculate(e, v){
   const lateDeduction = hourlyRate * num(v.lateHours);
   const gross = Math.max(0, basicPay + overtimePay + holidayPay + allowance + commission);
   const deductions = lateDeduction + num(v.sss) + num(v.phic) + num(v.pagibig) + num(v.tax) + num(v.loan);
-  const net = Math.max(0, gross - deductions);
+  const rawNet = gross - deductions;
+  const net = Math.max(0, rawNet);
   const contributions = num(v.employerSss) + num(v.employerPhic) + num(v.employerPagibig);
-  return {dailyRate, hourlyRate, basicPay, overtimePay, holidayPay, allowance, commission, lateDeduction, gross, deductions, net, contributions};
+  return {dailyRate, hourlyRate, basicPay, overtimePay, holidayPay, allowance, commission, lateDeduction, gross, deductions, net, rawNet, contributions};
 }
 
+/* Auto-Scaling Helper */
+function adjustScale() {
+  const wrapper = document.getElementById('scaleWrapper');
+  const winWidth = window.innerWidth;
+  if (winWidth < 1300) {
+    const scale = Math.max(0.82, winWidth / 1350);
+    wrapper.style.transform = `scale(${scale})`;
+    wrapper.style.width = `${100 / scale}%`;
+  } else {
+    wrapper.style.transform = 'none';
+    wrapper.style.width = '100%';
+  }
+}
+window.addEventListener('resize', adjustScale);
+
 function updateSummary(){
-  let g=0, d=0, n=0, c=0;
+  let g=0, d=0, n=0, c=0, hasMissingRates=false, hasNegativeNet=false;
   for(const e of state.employees){
     const r = calculate(e, getValues(e.id));
     g += r.gross; d += r.deductions; n += r.net; c += r.contributions;
+    if(e.dailyRate == null) hasMissingRates = true;
+    if(r.rawNet < 0) hasNegativeNet = true;
   }
   employeeCount.textContent = state.employees.length.toLocaleString();
   grossTotal.textContent = money(g);
   deductionTotal.textContent = money(d);
   netTotal.textContent = money(n);
   contributionTotal.textContent = money(c);
+
+  const banner = document.getElementById('validationBanner');
+  let warnings = [];
+  if(hasMissingRates) warnings.push('⚠ One or more employees are missing a Daily Rate in Manager.');
+  if(hasNegativeNet) warnings.push('⛔ Deductions exceed Gross Pay for one or more employees (Negative Net Pay).');
+  
+  if(warnings.length) {
+    banner.innerHTML = `<div class="warning">${warnings.join('<br>')}</div>`;
+  } else {
+    banner.innerHTML = '';
+  }
 }
 
 function inputCell(e, field, value){
   return `<input class="pay-input" data-field="${field}" type="number" min="0" step="0.01" value="${value||''}" aria-label="${esc(e.name)} ${field}">`;
 }
 
+function getFilteredEmployees() {
+  if(!state.searchQuery) return state.employees;
+  const q = state.searchQuery.toLowerCase();
+  return state.employees.filter(e => e.name.toLowerCase().includes(q));
+}
+
+/* Fill Down Feature */
+function fillDown(field) {
+  const filtered = getFilteredEmployees();
+  if(!filtered.length) return;
+  const firstVal = getValues(filtered[0].id)[field];
+  filtered.forEach(e => { getValues(e.id)[field] = firstVal; });
+  render();
+  writeStatus.textContent = `Applied ${firstVal} to all visible rows.`;
+}
+
 function render(){
-  if(!state.employees.length){
-    earningsApp.className='empty'; earningsApp.textContent='No active employees included in this payroll.';
-    deductionsApp.className='empty'; deductionsApp.textContent='No active employees included in this payroll.';
+  adjustScale();
+  const filtered = getFilteredEmployees();
+  
+  filterInfo.textContent = state.searchQuery 
+    ? `Showing ${filtered.length} of ${state.employees.length} employees` 
+    : `Showing all ${state.employees.length} employees`;
+
+  if(!filtered.length){
+    earningsApp.className='empty'; earningsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
+    deductionsApp.className='empty'; deductionsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
     renderExcluded(); updateSummary(); setButtons(); return;
   }
+
   earningsApp.className=''; deductionsApp.className='';
+  
+  // Render Earnings Table
   earningsApp.innerHTML=`<table><thead><tr>
-    <th class="employee-head">Employee</th><th>Actual Days Duty</th><th>OT Hours</th><th>Late Hours</th><th>Holiday Factor</th><th>Allowances</th><th>Commissions</th>
-    <th class="reference-head">Daily Rate</th><th class="calc-head">Hourly Rate</th><th class="calc-head">Basic Pay</th><th class="calc-head">OT Pay</th><th class="calc-head">Holiday Pay</th><th class="calc-head">Gross</th>
-  </tr></thead><tbody>${state.employees.map(e=>{
+    <th class="employee-head">Employee</th>
+    <th>Actual Days <span class="th-fill" onclick="fillDown('actualDaysDuty')" title="Fill down first row value">↓</span></th>
+    <th>OT Hours <span class="th-fill" onclick="fillDown('overtimeHours')" title="Fill down first row value">↓</span></th>
+    <th>Late Hours <span class="th-fill" onclick="fillDown('lateHours')" title="Fill down first row value">↓</span></th>
+    <th>Holiday Factor <span class="th-fill" onclick="fillDown('holidayFactor')" title="Fill down first row value">↓</span></th>
+    <th>Allowances <span class="th-fill" onclick="fillDown('allowance')" title="Fill down first row value">↓</span></th>
+    <th>Commissions <span class="th-fill" onclick="fillDown('commission')" title="Fill down first row value">↓</span></th>
+    <th style="text-align:right">Daily Rate</th><th style="text-align:right">Hourly Rate</th><th style="text-align:right">Basic Pay</th><th style="text-align:right">OT Pay</th><th style="text-align:right">Holiday Pay</th><th style="text-align:right">Gross Pay</th>
+  </tr></thead><tbody>${filtered.map(e=>{
     const v = getValues(e.id), r = calculate(e, v);
+    const rateClass = e.dailyRate == null ? 'rate-missing' : '';
     return `<tr data-id="${esc(e.id)}">
-      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)}">×</button><span>${esc(e.name)}</span></td>
+      <td class="name">
+        <div class="row-actions">
+          <button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude employee">×</button>
+          <button class="reset-btn" type="button" data-reset="${esc(e.id)}" title="Reset inputs">↺</button>
+        </div>
+        <span>${esc(e.name)}</span>
+      </td>
       <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
       <td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
       <td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
       <td class="manual-cell">${inputCell(e,'holidayFactor',v.holidayFactor)}</td>
       <td class="manual-cell">${inputCell(e,'allowance',v.allowance)}</td>
       <td class="manual-cell">${inputCell(e,'commission',v.commission)}</td>
-      <td class="reference-cell money dailyRate">${e.dailyRate==null?'⚠ Not set':money(e.dailyRate)}</td>
+      <td class="reference-cell money dailyRate ${rateClass}">${e.dailyRate==null?'⚠ Missing':money(e.dailyRate)}</td>
       <td class="calc-cell money hourlyRate">${money(r.hourlyRate)}</td>
       <td class="calc-cell money basicPay">${money(r.basicPay)}</td>
       <td class="calc-cell money overtimePay">${money(r.overtimePay)}</td>
@@ -243,13 +377,27 @@ function render(){
     </tr>`;
   }).join('')}</tbody></table>`;
 
-  deductionsApp.innerHTML=`<table class="deductions-table"><thead><tr>
-    <th class="employee-head">Employee</th><th class="calc-head">Tardiness</th><th>SSS</th><th>PHIC</th><th>Pag-IBIG</th><th>Withholding Tax</th><th>Loans / Advances</th>
-    <th class="calc-head">Total Deductions</th><th>Employer SSS</th><th>Employer PHIC</th><th>Employer Pag-IBIG</th><th class="calc-head">Net Pay</th>
-  </tr></thead><tbody>${state.employees.map(e=>{
+  // Render Deductions Table
+  deductionsApp.innerHTML=`<table><thead><tr>
+    <th class="employee-head">Employee</th><th style="text-align:right">Tardiness</th>
+    <th>SSS <span class="th-fill" onclick="fillDown('sss')" title="Fill down">↓</span></th>
+    <th>PHIC <span class="th-fill" onclick="fillDown('phic')" title="Fill down">↓</span></th>
+    <th>Pag-IBIG <span class="th-fill" onclick="fillDown('pagibig')" title="Fill down">↓</span></th>
+    <th>Tax <span class="th-fill" onclick="fillDown('tax')" title="Fill down">↓</span></th>
+    <th>Loans <span class="th-fill" onclick="fillDown('loan')" title="Fill down">↓</span></th>
+    <th style="text-align:right">Total Deductions</th>
+    <th>ER SSS</th><th>ER PHIC</th><th>ER Pag-IBIG</th><th style="text-align:right">Net Pay</th>
+  </tr></thead><tbody>${filtered.map(e=>{
     const v = getValues(e.id), r = calculate(e, v);
+    const netClass = r.rawNet < 0 ? 'net-negative' : '';
     return `<tr data-id="${esc(e.id)}">
-      <td class="name"><button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude ${esc(e.name)}">×</button><span>${esc(e.name)}</span></td>
+      <td class="name">
+        <div class="row-actions">
+          <button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude employee">×</button>
+          <button class="reset-btn" type="button" data-reset="${esc(e.id)}" title="Reset inputs">↺</button>
+        </div>
+        <span>${esc(e.name)}</span>
+      </td>
       <td class="calc-cell money tardiness">${money(r.lateDeduction)}</td>
       <td class="manual-cell">${inputCell(e,'sss',v.sss)}</td>
       <td class="manual-cell">${inputCell(e,'phic',v.phic)}</td>
@@ -260,10 +408,11 @@ function render(){
       <td class="manual-cell">${inputCell(e,'employerSss',v.employerSss)}</td>
       <td class="manual-cell">${inputCell(e,'employerPhic',v.employerPhic)}</td>
       <td class="manual-cell">${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
-      <td class="calc-cell money net">${money(r.net)}</td>
+      <td class="calc-cell money net ${netClass}">${money(r.net)}</td>
     </tr>`;
   }).join('')}</tbody></table>`;
 
+  // Attach Input Listeners & Excel Navigation
   document.querySelectorAll('.pay-input').forEach(input => {
     input.addEventListener('focus', () => input.select());
     input.addEventListener('input', () => {
@@ -273,21 +422,69 @@ function render(){
       updateSummary();
       setButtons();
     });
+
+    // Excel Keyboard Navigation
+    input.addEventListener('keydown', e => {
+      const cell = input.closest('td');
+      const row = input.closest('tr');
+      const colIndex = Array.from(row.children).indexOf(cell);
+
+      if (e.key === 'Enter' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextRow = row.nextElementSibling;
+        if (nextRow) nextRow.children[colIndex]?.querySelector('input')?.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevRow = row.previousElementSibling;
+        if (prevRow) prevRow.children[colIndex]?.querySelector('input')?.focus();
+      }
+    });
   });
 
-  document.querySelectorAll('.exclude-btn').forEach(btn => {
-    btn.addEventListener('click', () => excludeEmployee(btn.dataset.exclude));
-  });
+  // Action Listeners
+  document.querySelectorAll('.exclude-btn').forEach(btn => btn.addEventListener('click', () => excludeEmployee(btn.dataset.exclude)));
+  document.querySelectorAll('.reset-btn').forEach(btn => btn.addEventListener('click', () => resetRowInputs(btn.dataset.reset)));
 
   renderExcluded();
   updateSummary();
   setButtons();
 }
 
+/* Tab Navigation Handling */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    state.activeTab = tab;
+    
+    if (tab === 'earnings') {
+      earningsPanel.style.display = 'block';
+      deductionsPanel.style.display = 'none';
+    } else if (tab === 'deductions') {
+      earningsPanel.style.display = 'none';
+      deductionsPanel.style.display = 'block';
+    } else {
+      earningsPanel.style.display = 'block';
+      deductionsPanel.style.display = 'block';
+    }
+  });
+});
+
+function resetRowInputs(id) {
+  const v = getValues(id);
+  Object.assign(v, {
+    actualDaysDuty:0, overtimeHours:0, lateHours:0, holidayFactor:0, allowance:0, commission:0,
+    sss:0, phic:0, pagibig:0, tax:0, loan:0,
+    employerSss:0, employerPhic:0, employerPagibig:0
+  });
+  render();
+}
+
 function renderExcluded(){
   if(!excludedApp) return;
   if(!state.excludedEmployees.length){ excludedApp.innerHTML = ''; return; }
-  excludedApp.innerHTML = `<div class="excluded-bar"><span><b>${state.excludedEmployees.length}</b> employee${state.excludedEmployees.length===1?'':'s'} excluded from this payroll.</span><button type="button" id="showExcludedBtn">Show excluded</button></div>`;
+  excludedApp.innerHTML = `<div class="notice" style="margin-top:10px"><span><b>${state.excludedEmployees.length}</b> employee(s) excluded from this payroll.</span> <button type="button" id="showExcludedBtn">Show Excluded</button></div>`;
   document.getElementById('showExcludedBtn')?.addEventListener('click', showExcludedEmployees);
 }
 
@@ -297,15 +494,14 @@ function excludeEmployee(id){
   const [employee] = state.employees.splice(index, 1);
   state.excludedEmployees.push(employee);
   render();
-  writeStatus.textContent = `${employee.name} excluded from this payroll.`;
 }
 
 function showExcludedEmployees(){
   if(!state.excludedEmployees.length) return;
-  const names = state.excludedEmployees.map(e => `<div class="excluded-row"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
+  const names = state.excludedEmployees.map(e => `<div style="display:flex;justify-space-between;align-items:center;padding:4px 0"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
   modalTitle.textContent = 'Excluded Employees';
-  modalIntro.textContent = 'These employees are excluded only from the current payroll.';
-  modalBody.innerHTML = `<div class="excluded-list">${names}</div>`;
+  modalIntro.textContent = 'These employees are excluded from the active payroll run.';
+  modalBody.innerHTML = `<div>${names}</div>`;
   modalBackdrop.style.display = 'flex';
   document.querySelectorAll('[data-restore]').forEach(btn => btn.addEventListener('click', () => restoreEmployee(btn.dataset.restore)));
 }
@@ -318,7 +514,6 @@ function restoreEmployee(id){
   state.employees.sort((a,b) => a.name.localeCompare(b.name));
   modalBackdrop.style.display = 'none';
   render();
-  writeStatus.textContent = `${employee.name} restored to this payroll.`;
 }
 
 function updateRow(id){
@@ -352,9 +547,7 @@ async function loadEmployees(){
   loadBtn.disabled = true; loadBtn.textContent = 'Loading…';
   try{
     await loadDailyRateField();
-    state.businessContextKey = detectedBusinessContextKey;
     const data = await postMessageWithResponse({type:'api-request', method:'GET', path:'/api4/employee-batch?PageSize=99999'});
-    state.businessContextKey = detectedBusinessContextKey;
     const records = Array.isArray(data)?data:(data?.items||data?.data||[]);
     state.excludedEmployees = [];
     state.employees = records.map(record => {
@@ -372,12 +565,7 @@ async function loadEmployees(){
       };
     }).filter(e => e.id && !e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
 
-    state.businessContextKey = detectedBusinessContextKey;
     status.textContent = `✓ ${state.employees.length} active employees loaded`;
-    if (state.businessContextKey) {
-      businessDetectionStatus.textContent = `✓ Business context detected: ${state.businessContextKey}`;
-      businessDetectionStatus.className = 'notice';
-    }
     loadBtn.textContent = '↻ Reload Employees';
     render();
     try{
@@ -386,7 +574,7 @@ async function loadEmployees(){
       const panel = document.getElementById('payslipItemsTest');
       if(panel){
         panel.className = 'warning';
-        panel.innerHTML = `<b>⚠ Payslip Item mapping needs attention:</b> ${esc(mappingErr?.message || mappingErr)}`;
+        panel.innerHTML = `<b>⚠ Payslip Item mapping notice:</b> ${esc(mappingErr?.message || mappingErr)}`;
       }
     }
   }catch(err){
@@ -397,11 +585,7 @@ async function loadEmployees(){
 }
 
 async function fetchPayslipItems(path){
-  const data = await postMessageWithResponse({
-    type:'api-request',
-    method:'GET',
-    path: `${path}?PageSize=99999`
-  });
+  const data = await postMessageWithResponse({type:'api-request', method:'GET', path:`${path}?PageSize=99999`});
   const records = Array.isArray(data) ? data : (data?.items || data?.data || []);
   return records.map(record => {
     const item = record?.item || record || {};
@@ -413,27 +597,18 @@ async function fetchPayslipItems(path){
 }
 
 function normalizePayslipItemName(name){
-  return String(name ?? '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .replace(/\s*\/\s*/g, '/')
-    .trim();
+  return String(name ?? '').toLowerCase().replace(/\s+/g, ' ').replace(/\s*\/\s*/g, '/').trim();
 }
 
 function indexPayslipItems(items){
   const index = new Map();
-  for(const item of items){
-    index.set(normalizePayslipItemName(item.name), item);
-  }
+  for(const item of items){ index.set(normalizePayslipItemName(item.name), item); }
   return index;
 }
 
 async function loadPayslipItemMappings(){
   const panel = document.getElementById('payslipItemsTest');
-  if(panel){
-    panel.className = 'notice';
-    panel.textContent = 'Loading Payslip Items for this business…';
-  }
+  if(panel){ panel.className = 'notice'; panel.textContent = 'Loading Payslip Items for this business…'; }
 
   const [earningsItems, deductionItems, contributionItems] = await Promise.all([
     fetchPayslipItems('/api4/payslip-earnings-item-batch'),
@@ -446,115 +621,59 @@ async function loadPayslipItemMappings(){
   const contributions = indexPayslipItems(contributionItems);
 
   const required = {
-    earnings: {
-      basic: 'Basic Salaries',
-      holiday: 'Holiday Pay',
-      overtime: 'Overtime',
-      allowance: 'Allowances',
-      commission: 'Commissions'
-    },
-    deductions: {
-      tardiness: 'Tardiness',
-      sss: 'SSS Contributions',
-      phic: 'PHIC Contributions',
-      pagibig: 'Pag-IBIG Contributions',
-      tax: 'Withholding Tax',
-      loan: 'Employee Cash Advances/Loans'
-    },
-    contributions: {
-      sss: 'SSS Employer',
-      phic: 'PHIC Employer',
-      pagibig: 'Pag-IBIG Employer'
-    }
+    earnings: { basic: 'Basic Salaries', holiday: 'Holiday Pay', overtime: 'Overtime', allowance: 'Allowances', commission: 'Commissions' },
+    deductions: { tardiness: 'Tardiness', sss: 'SSS Contributions', phic: 'PHIC Contributions', pagibig: 'Pag-IBIG Contributions', tax: 'Withholding Tax', loan: 'Employee Cash Advances/Loans' },
+    contributions: { sss: 'SSS Employer', phic: 'PHIC Employer', pagibig: 'Pag-IBIG Employer' }
   };
 
   const missing = [];
   const resolve = (index, group, key) => {
     const name = required[group][key];
     const item = index.get(normalizePayslipItemName(name));
-    if(!item){
-      missing.push(`${group}: ${name}`);
-      return null;
-    }
+    if(!item){ missing.push(`${group}: ${name}`); return null; }
     return {key:item.key, name:item.name};
   };
 
   state.mappings = {
     earnings: {
-      basic: resolve(earnings, 'earnings', 'basic'),
-      holiday: resolve(earnings, 'earnings', 'holiday'),
-      overtime: resolve(earnings, 'earnings', 'overtime'),
-      allowance: resolve(earnings, 'earnings', 'allowance'),
-      commission: resolve(earnings, 'earnings', 'commission')
+      basic: resolve(earnings, 'earnings', 'basic'), holiday: resolve(earnings, 'earnings', 'holiday'),
+      overtime: resolve(earnings, 'earnings', 'overtime'), allowance: resolve(earnings, 'earnings', 'allowance'), commission: resolve(earnings, 'earnings', 'commission')
     },
     deductions: {
-      tardiness: resolve(deductions, 'deductions', 'tardiness'),
-      sss: resolve(deductions, 'deductions', 'sss'),
-      phic: resolve(deductions, 'deductions', 'phic'),
-      pagibig: resolve(deductions, 'deductions', 'pagibig'),
-      tax: resolve(deductions, 'deductions', 'tax'),
-      loan: resolve(deductions, 'deductions', 'loan')
+      tardiness: resolve(deductions, 'deductions', 'tardiness'), sss: resolve(deductions, 'deductions', 'sss'),
+      phic: resolve(deductions, 'deductions', 'phic'), pagibig: resolve(deductions, 'deductions', 'pagibig'),
+      tax: resolve(deductions, 'deductions', 'tax'), loan: resolve(deductions, 'deductions', 'loan')
     },
     contributions: {
-      sss: resolve(contributions, 'contributions', 'sss'),
-      phic: resolve(contributions, 'contributions', 'phic'),
-      pagibig: resolve(contributions, 'contributions', 'pagibig')
+      sss: resolve(contributions, 'contributions', 'sss'), phic: resolve(contributions, 'contributions', 'phic'), pagibig: resolve(contributions, 'contributions', 'pagibig')
     }
   };
 
-  if(missing.length){
-    throw new Error(`Required Payslip Items are missing in this business: ${missing.join(', ')}`);
-  }
+  if(missing.length) throw new Error(`Required Payslip Items missing: ${missing.join(', ')}`);
 
   if(panel){
     panel.className = 'notice';
-    panel.innerHTML =
-      `<b>✓ Payslip Items mapped automatically for this business.</b><br>` +
-      `<span style="font-size:11px">` +
-      `${earningsItems.length} earnings • ${deductionItems.length} deductions • ${contributionItems.length} contributions retrieved.` +
-      `</span>`;
+    panel.innerHTML = `<b>✓ Payslip Items mapped automatically for this business.</b>`;
   }
-
   return state.mappings;
 }
 
 function buildLine(item, description, units, unitPrice){
+  if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
   const u = Number(units)||0, p = Number(unitPrice)||0;
-
-  // Do not create an earnings line when Units is blank/zero.
-  // This prevents Manager from treating a rate with no units
-  // as an unintended/default earnings amount.
-  if(!item || u <= 0) return null;
-
-  return {
-    Item: item.key,
-    Description: description,
-    Units: u,
-    UnitPrice: p,
-    Amount: u * p
-  };
+  return { Item: item.key, Description: description, Units: u, UnitPrice: p, Amount: u * p };
 }
 
 function buildDeduction(item, description, amount){
   const a = Number(amount)||0;
   if(!item || a<=0) return null;
-  return {
-    Item: item.key,
-    Description: description,
-    Amount: a,
-    DeductionAmount: a
-  };
+  return { Item: item.key, Description: description, Amount: a, DeductionAmount: a };
 }
 
 function buildContribution(item, description, amount){
   const a = Number(amount)||0;
   if(!item || a<=0) return null;
-  return {
-    Item: item.key,
-    Description: description,
-    Amount: a,
-    ContributionAmount: a
-  };
+  return { Item: item.key, Description: description, Amount: a, ContributionAmount: a };
 }
 
 function buildBatchPayload(){
@@ -584,30 +703,12 @@ function buildBatchPayload(){
 
     const uid = crypto.randomUUID();
     return {
-      Key: uid,
-      Date: payslipDate.value,
-      employee: e.id,
+      Key: uid, Date: payslipDate.value, employee: e.id,
       description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
-      Earnings: earnings,
-      Deductions: deductions,
-      Contributions: contributions
+      Earnings: earnings, Deductions: deductions, Contributions: contributions
     };
   });
   return {Values: items};
-}
-
-function reviewHtml(){
-  let totals = {gross:0, ded:0, net:0, con:0};
-  const rows = state.employees.map(e => {
-    const r = calculate(e, getValues(e.id));
-    totals.gross += r.gross; totals.ded += r.deductions; totals.net += r.net; totals.con += r.contributions;
-    return `<tr><td>${esc(e.name)}</td><td class="money">${money(r.gross)}</td><td class="money">${money(r.deductions)}</td><td class="money">${money(r.contributions)}</td><td class="money net">${money(r.net)}</td></tr>`;
-  }).join('');
-
-  return `<div class="notice"><b>Review payroll summary below before writing to Manager.io.</b></div>
-    <div style="overflow:auto;margin-top:12px"><table style="min-width:760px"><thead><tr><th>Employee</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Employer Contributions</th><th style="text-align:right">Net Pay</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money">${money(totals.con)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>
-    <div class="notice" style="margin-top:14px;border-left:4px solid #d97706"><b>Stage 7 test:</b> The next step will create <b>payslips one at a time</b> (the first employee in the current list) using the cleaned API4 payload. This is intentional so we can verify the Item and Description fields before restoring full-batch creation.</div>
-    <div class="actions" style="margin-top:14px"><button class="good" id="confirmCreateBtn" type="button">✓ Confirm & Create Payslips</button></div>`;
 }
 
 function previewPayslips(){
@@ -620,21 +721,21 @@ function previewPayslips(){
   }).join('');
 
   modalTitle.textContent = 'Review Payslips';
-  modalIntro.textContent = `${state.employees.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}. This review does not write anything to Manager.`;
+  modalIntro.textContent = `${state.employees.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}.`;
   modalBody.innerHTML = `<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th style="text-align:right">Daily Rate</th><th style="text-align:right">Basic</th><th style="text-align:right">OT</th><th style="text-align:right">Holiday</th><th style="text-align:right">Allowances</th><th style="text-align:right">Commission</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Net</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th colspan="6"></th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>`;
   modalBackdrop.style.display = 'flex';
 }
 
 async function createPayslips(){
   if(!state.employees.length) return;
-  modalTitle.textContent = 'Review & Create Payslips';
-  modalIntro.textContent = 'Please double check totals before writing to Manager. No records are written until you click Confirm & Create.';
-  modalBody.innerHTML = '<div class="notice">Loading mappings...</div>';
+  modalTitle.textContent = 'Confirm Batch Creation';
+  modalIntro.textContent = 'Review total payroll before committing to Manager.';
+  modalBody.innerHTML = '<div class="notice">Validating mappings...</div>';
   modalBackdrop.style.display = 'flex';
 
   try{
     await loadPayslipItemMappings();
-    modalBody.innerHTML = reviewHtml();
+    modalBody.innerHTML = `<div class="notice"><b>Ready to post:</b> ${state.employees.length} payslips.</div><div class="actions" style="margin-top:10px"><button class="success" id="confirmCreateBtn" type="button">✓ Confirm & Post Payslips</button></div>`;
     document.getElementById('confirmCreateBtn')?.addEventListener('click', confirmCreatePayslips);
   }catch(err){
     modalBody.innerHTML = `<div class="error"><b>Error preparing payslips:</b> ${esc(err.message)}</div>`;
@@ -644,82 +745,18 @@ async function createPayslips(){
 async function confirmCreatePayslips(){
   const btn = document.getElementById('confirmCreateBtn');
   if(btn) btn.disabled = true;
+  modalBody.innerHTML = `<div class="notice">Submitting batch to Manager.io...</div>`;
 
   try{
-    const fullPayload = buildBatchPayload();
-    const values = fullPayload.Values || [];
-
-    if(!values.length){
-      throw new Error('No payslips were prepared.');
+    const payload = buildBatchPayload();
+    const response = await postMessageWithResponse({type:'api-request', method:'POST', path:'/api4/payslip-batch', body: payload});
+    if(response?.error || response?.errors || response?.success === false){
+      throw new Error(response?.message || response?.error || 'Manager rejected request.');
     }
-
-    modalTitle.textContent = 'Creating Payslips';
-    modalIntro.textContent = 'Creating one payslip per API request to preserve Item and Description mapping.';
-    modalBody.innerHTML = `
-      <div class="notice">
-        <b>Starting...</b>
-        <div id="createProgress" style="margin-top:8px">Preparing ${values.length} payslip(s).</div>
-      </div>
-      <div id="createResults" style="margin-top:12px"></div>`;
-
-    const progressEl = document.getElementById('createProgress');
-    const resultsEl = document.getElementById('createResults');
-    const created = [];
-    const failed = [];
-
-    for(let i = 0; i < values.length; i++){
-      const payslip = values[i];
-      const employee = state.employees[i];
-
-      progressEl.textContent = `Creating payslip ${i + 1} of ${values.length} — ${employee?.name || 'Employee'}...`;
-
-      try{
-        const response = await postMessageWithResponse({
-          type:'api-request',
-          method:'POST',
-          path:'/api4/payslip-batch',
-          body: {Values: [payslip]}
-        });
-
-        if(response?.error || response?.errors || response?.success === false){
-          throw new Error(response?.message || response?.error || 'Manager rejected the request.');
-        }
-
-        created.push(employee?.name || `Employee ${i + 1}`);
-        resultsEl.innerHTML = `<div class="notice">✓ ${created.length} payslip(s) created successfully.</div>`;
-      }catch(err){
-        failed.push({name: employee?.name || `Employee ${i + 1}`, error: err.message});
-        resultsEl.innerHTML = `
-          <div class="error">
-            <b>Stopped after an error.</b><br>
-            Employee: ${esc(employee?.name || `Employee ${i + 1}`)}<br>
-            Error: ${esc(err.message)}
-          </div>
-          <p style="margin-top:10px">
-            ${created.length} payslip(s) were created before the error.
-            No further payslips were submitted.
-          </p>`;
-        break;
-      }
-    }
-
-    if(!failed.length){
-      writeStatus.textContent = `✓ ${created.length} payslip(s) created in Manager`;
-      modalTitle.textContent = 'Payslips Created';
-      modalIntro.textContent = 'All payslips were created successfully, one API request per employee.';
-      modalBody.innerHTML = `
-        <div class="notice">
-          <b>Success.</b> ${created.length} payslip(s) were created in Manager.
-        </div>
-        <p style="margin-top:12px">
-          Payslip Items and line descriptions were submitted using the same working
-          single-payslip API4 payload tested in Stage 7.
-        </p>`;
-    }else{
-      writeStatus.textContent = `⚠ ${created.length} payslip(s) created; process stopped after an error`;
-    }
-
-    if(btn) btn.disabled = false;
+    writeStatus.textContent = `✓ ${payload.Values.length} payslips created in Manager`;
+    modalTitle.textContent = 'Payslips Created';
+    modalIntro.textContent = 'The batch was successfully posted.';
+    modalBody.innerHTML = `<div class="notice"><b>Success!</b> ${payload.Values.length} payslips created.</div>`;
   }catch(err){
     if(btn) btn.disabled = false;
     modalBody.innerHTML = `<div class="error"><b>Failed to create payslips:</b><br>${esc(err.message)}</div>`;
@@ -735,9 +772,10 @@ function clearManualInputs(){
     employerSss:0, employerPhic:0, employerPagibig:0
   }));
   render();
-  writeStatus.textContent = 'Manual payroll inputs cleared.';
+  writeStatus.textContent = 'Manual inputs cleared.';
 }
 
+searchInput.addEventListener('input', e => { state.searchQuery = e.target.value.trim(); render(); });
 loadBtn.addEventListener('click', loadEmployees);
 recalcBtn.addEventListener('click', render);
 clearBtn.addEventListener('click', clearManualInputs);
