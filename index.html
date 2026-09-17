@@ -2,237 +2,959 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Payroll Worksheet — Developed by Jesse Alcaraz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alcaraz Business Manager — V1</title>
+<!-- Tailwind CSS via CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+  body {
+    background-color: #111820;
+    color: #F5F7FA;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Manager.io Native Theme System */
-:root{
-  --mgr-bg:#f2f2f2;
-  --mgr-card:#ffffff;
-  --mgr-header:#f9f9f9;
-  --mgr-row-alt:#fcfcfc;
-  --mgr-border:#e0e0e0;
-  --mgr-border-dark:#cccccc;
-  --mgr-text:#333333;
-  --mgr-muted:#666666;
-  --mgr-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  
-  --mgr-btn-primary:#428bca;
-  --mgr-btn-primary-border:#357ebd;
-  --mgr-btn-success:#5cb85c;
-  --mgr-btn-success-border:#4cae4c;
-  --mgr-btn-danger:#d9534f;
-  --mgr-btn-danger-border:#d43f3a;
-  
-  --mgr-warn-bg:#fcf8e3;
-  --mgr-warn-text:#8a6d3b;
-  --mgr-warn-border:#faebcc;
-  --mgr-danger-bg:#f2dede;
-  --mgr-danger-text:#a94442;
-  --mgr-danger-border:#ebccd1;
-  --mgr-info-bg:#d9edf7;
-  --mgr-info-text:#31708f;
-  --mgr-info-border:#bce8f1;
+  .inventory-dropdown-item {
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #242D38;
+    background: #111820;
+    color: #fff;
+    cursor: pointer;
+  }
+  .inventory-dropdown-item:last-child { border-bottom: 0; }
+  .inventory-dropdown-item:hover,
+  .inventory-dropdown-item.active { background: #1B222B; }
+  .inventory-dropdown-item.disabled { cursor: not-allowed; opacity: .55; }
+  .inventory-dropdown-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 3px;
+    font-size: 11px;
+    color: #B4C0CC;
+  }
+  .inventory-dropdown-price { color: #28D66B; font-weight: 600; white-space: nowrap; }
+  .inventory-dropdown-empty { padding: 12px; font-size: 12px; color: #B4C0CC; }
+  #pos-toast-container { pointer-events: none; }
+  .pos-toast { pointer-events: auto; animation: posToastIn .18s ease-out; }
+  @keyframes posToastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* POS decimal quantity control */
+.cart-qty-editor {
+  width: 58px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  background: #202832;
+  border: 1px solid #384352;
+  border-radius: 10px;
+  color: #F5F7FA;
+  height: 34px;
+  padding: 0 6px;
+}
+.cart-qty-editor:focus {
+  outline: none;
+  border-color: #4DA3FF;
+  box-shadow: 0 0 0 2px rgba(77,163,255,.18);
 }
 
-body{font-family:var(--mgr-font);background:var(--mgr-bg);color:var(--mgr-text);min-height:100vh;padding:12px;padding-bottom:70px}
-button,input,select{font:inherit}
-
-/* Auto-Scaling Container */
-.scale-wrapper{transform-origin:top left;transition:transform 0.15s ease}
-
-/* Top Navigation & Period Cards */
-.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:4px;margin-bottom:10px}
-h1{font-size:18px;font-weight:600;color:var(--mgr-text)}
-.sub{color:var(--mgr-muted);font-size:11px;margin-top:2px}
-.sub strong{color:#222;font-weight:600}
-.spacer{flex:1}
-
-button{border:1px solid var(--mgr-border-dark);background:#fff;color:var(--mgr-text);border-radius:3px;padding:5px 11px;cursor:pointer;font-weight:500;font-size:12px}
-button:hover{background:#f5f5f5;border-color:#adadad}
-button.primary{background:var(--mgr-btn-primary);border-color:var(--mgr-btn-primary-border);color:#fff}
-button.primary:hover{background:#3071a9}
-button.success{background:var(--mgr-btn-success);border-color:var(--mgr-btn-success-border);color:#fff}
-button.success:hover{background:#449d44}
-button.danger{background:#fff;border-color:var(--mgr-btn-danger-border);color:var(--mgr-btn-danger)}
-button.danger:hover{background:var(--mgr-danger-bg)}
-button:disabled{opacity:.5;cursor:not-allowed}
-
-.period{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;background:var(--mgr-card);border:1px solid var(--mgr-border);padding:10px 12px;border-radius:4px;margin-bottom:10px}
-.period label{display:flex;flex-direction:column;gap:4px;color:var(--mgr-muted);font-size:11px;font-weight:600}.period input{min-width:140px}
-input,select{background:#fff;border:1px solid var(--mgr-border-dark);color:var(--mgr-text);border-radius:3px;padding:4px 7px;height:28px;font-size:12px}
-input:focus,select:focus{outline:2px solid #b3d7ff;border-color:var(--mgr-btn-primary)}
-
-/* Summary Stat Cards */
-.summary{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:8px;margin-bottom:10px}
-.card{background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:3px;padding:8px 10px}.card .label{font-size:10px;color:var(--mgr-muted);text-transform:uppercase;letter-spacing:.03em}.card .value{font-size:16px;font-weight:700;margin-top:3px;color:#111}
-
-/* Tab Controls */
-.view-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid var(--mgr-border);padding-bottom:1px}
-.tab-btn{border:1px solid var(--mgr-border);border-bottom:none;border-radius:3px 3px 0 0;background:#e9e9e9;padding:7px 16px;font-size:12px;color:var(--mgr-muted);cursor:pointer}
-.tab-btn.active{background:var(--mgr-card);border-color:var(--mgr-border-dark);border-bottom:1px solid var(--mgr-card);color:var(--mgr-text);font-weight:600;margin-bottom:-1px}
-
-/* Search & Filter Bar */
-.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px;background:var(--mgr-card);border:1px solid var(--mgr-border);padding:6px 10px;border-radius:3px}
-.filter-bar input{flex:1;max-width:280px;height:26px;font-size:12px}
-.filter-info{font-size:11px;color:var(--mgr-muted)}
-
-/* Tables & Density Layout */
-.table-wrap{overflow:auto;background:var(--mgr-card);border:1px solid var(--mgr-border);border-radius:3px}
-table{width:100%;border-collapse:collapse;min-width:980px;font-size:12px}
-th,td{padding:4px 6px;border:1px solid var(--mgr-border);text-align:left;vertical-align:middle;height:29px}
-th{font-size:10px;color:var(--mgr-muted);text-transform:uppercase;background:var(--mgr-header);position:sticky;top:0;z-index:2;white-space:nowrap;font-weight:600}
-tr:nth-child(even){background-color:var(--mgr-row-alt)}
-tr:hover{background-color:#f5f5f5}
-
-td.name{font-weight:600;min-width:220px;position:sticky;left:0;background:var(--mgr-card);z-index:3;white-space:nowrap}
-tr:nth-child(even) td.name{background:var(--mgr-row-alt)}
-
-.row-actions{display:inline-flex;gap:3px;margin-right:6px;vertical-align:middle}
-.exclude-btn,.reset-btn{height:20px;padding:0 4px;border:1px solid var(--mgr-border-dark);background:#fff;color:var(--mgr-muted);font-size:11px;line-height:18px;border-radius:2px;cursor:pointer}
-.exclude-btn:hover{border-color:var(--mgr-btn-danger);background:var(--mgr-danger-bg);color:var(--mgr-danger-text)}
-.reset-btn:hover{border-color:var(--mgr-btn-primary);background:var(--mgr-info-bg);color:var(--mgr-info-text)}
-
-/* Prominent Fill-Down Buttons */
-.fill-btn{display:inline-block;margin-left:4px;padding:2px 6px;background:var(--mgr-info-bg);color:var(--mgr-info-text);border:1px solid var(--mgr-info-border);border-radius:3px;font-size:10px;font-weight:600;cursor:pointer;line-height:1;text-transform:none}
-.fill-btn:hover{background:var(--mgr-btn-primary);color:#fff;border-color:var(--mgr-btn-primary-border)}
-
-td input{width:75px;height:24px;padding:2px 4px;font-size:12px;text-align:right}.money{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.gross{font-weight:750}.net{font-weight:800;color:#111}
-.manual-cell{background:#f8fcff!important}.calc-cell{background:#fff!important;color:#333;text-align:right!important}.reference-cell{background:#fdfdf0!important;color:#665305;text-align:right!important}
-.empty{padding:25px;text-align:center;color:var(--mgr-muted)}.status{color:var(--mgr-muted);font-size:11px}
-
-.error,.notice,.warning{padding:8px 10px;border-radius:3px;margin-bottom:10px;font-size:12px;line-height:1.4}.error{color:var(--mgr-danger-text);background:var(--mgr-danger-bg);border:1px solid var(--mgr-danger-border)}.notice{color:var(--mgr-info-text);background:var(--mgr-info-bg);border:1px solid var(--mgr-info-border)}.warning{color:var(--mgr-warn-text);background:var(--mgr-warn-bg);border:1px solid var(--mgr-warn-border)}
-
-/* Sticky Action Footer */
-.actions-footer{position:fixed;bottom:0;left:0;right:0;background:var(--mgr-card);border-top:1px solid var(--mgr-border-dark);padding:8px 16px;display:flex;gap:10px;align-items:center;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,0.05)}
-
-/* Tab 4 Prominent Green Totals Footer */
-.summary-table tfoot tr th,
-.summary-table tfoot tr td {
-  font-size: 14px !important;
-  font-weight: 800 !important;
-  color: #1b5e20 !important;
-  background-color: #e8f5e9 !important;
-  border-top: 2px solid #a5d6a7 !important;
-  border-bottom: 2px solid #a5d6a7 !important;
-  padding: 8px 10px !important;
-}
-.summary-table tfoot tr td.net {
-  font-size: 15px !important;
-  color: #0f5132 !important;
-  background-color: #d1e7dd !important;
-}
-
-/* Validation Highlights */
-.rate-missing{background:#fff3cd!important;color:#856404!important;font-weight:700!important}
-.net-negative{background:var(--mgr-danger-bg)!important;color:var(--mgr-danger-text)!important;font-weight:800!important}
-
-/* Modal Styling */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:16px;z-index:200}
-.modal{width:min(920px,100%);max-height:88vh;overflow:auto;background:var(--mgr-card);border:1px solid var(--mgr-border-dark);border-radius:4px;padding:16px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
-.modal h2{font-size:16px;margin-bottom:6px}.modal p{font-size:12px;color:var(--mgr-muted);margin-bottom:10px}
 </style>
+
+<style>
+  /* Visibility pass — visual only */
+  body { color: #F5F7FA; }
+
+  /* Make product cards easier to scan */
+  #bestsellers-grid > button {
+    border-color: #384352;
+  }
+  #bestsellers-grid > button:hover:not(:disabled) {
+    border-color: #4DA3FF;
+    background-color: #2A3440;
+  }
+
+  /* Make cart controls more legible */
+  #cart-container button {
+    border-color: #384352;
+  }
+
+  /* Stronger focus visibility for cashier inputs */
+  input:focus, select:focus {
+    outline-color: #4DA3FF;
+  }
+
+  /* Keep secondary information readable without overpowering primary text */
+  .inventory-dropdown-meta,
+  .inventory-dropdown-empty {
+    color: #B4C0CC;
+  }
+</style>
+
+
+<style>
+  /* Alcaraz Business Manager V1 — spreadsheet-style visual layer */
+  :root { --abm-border:#d9dee5; --abm-muted:#687385; --abm-text:#202733; --abm-blue:#2563eb; --abm-bg:#f5f7fa; --abm-panel:#ffffff; }
+  body { background:#f5f7fa !important; color:var(--abm-text) !important; font-size:13px; }
+  body > div.min-h-screen.max-w-7xl { background:#fff !important; border-color:var(--abm-border) !important; box-shadow:none !important; max-width:1440px !important; }
+  header { background:#fff !important; border-color:var(--abm-border) !important; padding:10px 16px !important; }
+  header .text-white { color:#202733 !important; }
+  header .text-\[\#B4C0CC\] { color:#687385 !important; }
+  header .bg-\[\#242D38\] { background:#fff !important; border-color:var(--abm-border) !important; color:#687385 !important; }
+  header button { border-radius:6px !important; background:#fff !important; color:#344054 !important; box-shadow:none !important; }
+  header button:hover { background:#f3f5f8 !important; border-color:#b8c0cc !important; }
+  #prog-bar { background:#2563eb !important; }
+  #sync-dot { background:#2563eb !important; }
+  main { background:#fff !important; }
+  main > section:first-child { background:#fff !important; border-color:var(--abm-border) !important; padding:16px !important; }
+  main > section:last-child { background:#fff !important; }
+  /* Make selectors and search look like ordinary business-data inputs */
+  #customer-select, #search-input, input, select { background:#fff !important; color:#202733 !important; border-color:var(--abm-border) !important; border-radius:6px !important; }
+  #search-input { height:38px; }
+  #customer-select { min-height:36px; }
+  #customer-select option { background:#fff !important; color:#202733 !important; }
+  #inventory-dropdown { background:#fff !important; border-color:var(--abm-border) !important; border-radius:6px !important; box-shadow:0 8px 24px rgba(16,24,40,.12) !important; }
+  .inventory-dropdown-item { background:#fff !important; color:#202733 !important; border-color:#eef0f3 !important; }
+  .inventory-dropdown-item:hover, .inventory-dropdown-item.active { background:#f5f8ff !important; }
+  .inventory-dropdown-item .text-white { color:#202733 !important; }
+  .inventory-dropdown-meta { color:#687385 !important; }
+  .inventory-dropdown-price { color:#2563eb !important; }
+  /* Remove cashier-style product cards: item list behaves like a compact table */
+  #bestsellers-grid { display:block !important; max-height:none !important; border:1px solid var(--abm-border); border-radius:6px; overflow-y:auto; background:#fff; }
+  #bestsellers-grid > button { display:grid !important; grid-template-columns:minmax(0,1fr) 130px 130px; align-items:center; gap:12px; width:100%; min-height:42px !important; padding:8px 12px !important; border:0 !important; border-bottom:1px solid #eef0f3 !important; border-radius:0 !important; background:#fff !important; box-shadow:none !important; transform:none !important; }
+  #bestsellers-grid > button:hover:not(:disabled) { background:#f5f8ff !important; }
+  #bestsellers-grid > button:last-child { border-bottom:0 !important; }
+  #bestsellers-grid > button > div:first-child { min-width:0; }
+  #bestsellers-grid > button .text-white { color:#202733 !important; }
+  #bestsellers-grid > button .text-\[\#28D66B\] { color:#202733 !important; font-weight:600 !important; }
+  #bestsellers-grid > button > div:last-child { border-top:0 !important; padding-top:0 !important; margin-top:0 !important; display:contents; }
+  #bestsellers-grid > button > div:last-child span:first-child { grid-column:2; text-align:right; }
+  #bestsellers-grid > button > div:last-child span:last-child { grid-column:3; text-align:right; color:#687385 !important; }
+  #bestsellers-grid::before { content:'Item'; display:none; }
+  /* Current transaction = spreadsheet-like detail panel */
+  #cart-container { background:#fff !important; padding:0 !important; }
+  #cart-container > div { background:#fff !important; border-bottom:1px solid #eef0f3 !important; padding:10px 12px !important; }
+  #cart-container .text-white { color:#202733 !important; }
+  #cart-container .text-\[\#B4C0CC\] { color:#687385 !important; }
+  #cart-container .text-\[\#28D66B\] { color:#202733 !important; }
+  .cart-qty-editor { background:#fff !important; color:#202733 !important; border-color:var(--abm-border) !important; border-radius:5px !important; height:30px !important; font-weight:500 !important; }
+  #cart-container button { border-radius:5px !important; }
+  #cart-container button:not([title="Remove item"]) { background:#fff !important; color:#344054 !important; border-color:var(--abm-border) !important; }
+  /* Footer becomes a document total area, not a checkout panel */
+  #cart-container + footer { background:#fff !important; border-color:var(--abm-border) !important; box-shadow:none !important; padding:12px 16px !important; }
+  #cart-container + footer .text-\[\#B4C0CC\] { color:#687385 !important; }
+  #cart-total { color:#202733 !important; font-size:20px !important; }
+  #checkout-btn { background:#2563eb !important; border-radius:6px !important; box-shadow:none !important; padding:10px 14px !important; }
+  #checkout-btn:hover:not(:disabled) { background:#1d4ed8 !important; }
+  /* Generic modal restyling */
+  [id$="-modal"] { background:rgba(15,23,42,.35) !important; backdrop-filter:blur(2px) !important; }
+  [id$="-modal"] > div { background:#fff !important; color:#202733 !important; border-color:var(--abm-border) !important; border-radius:8px !important; box-shadow:0 20px 50px rgba(16,24,40,.18) !important; }
+  [id$="-modal"] .text-white { color:#202733 !important; }
+  [id$="-modal"] .text-\[\#B4C0CC\] { color:#687385 !important; }
+  [id$="-modal"] .bg-\[\#242D38\] { background:#f8f9fb !important; border-color:var(--abm-border) !important; }
+  [id$="-modal"] .bg-\[\#111820\] { background:#fff !important; border-color:var(--abm-border) !important; color:#202733 !important; }
+  [id$="-modal"] button { border-radius:6px !important; box-shadow:none !important; }
+  [id$="-modal"] .bg-\[\#1C9E4B\] { background:#2563eb !important; }
+  [id$="-modal"] .text-\[\#28D66B\] { color:#202733 !important; }
+  /* Section labels */
+  label, .uppercase { letter-spacing:.04em !important; }
+  @media (max-width: 767px) {
+    #bestsellers-grid > button { grid-template-columns:minmax(0,1fr) 90px; }
+    #bestsellers-grid > button > div:last-child span:last-child { display:none; }
+    #bestsellers-grid > button > div:last-child span:first-child { grid-column:2; }
+  }
+</style>
+
+
+<style>
+/* V1.1 — Business transaction workspace */
+:root{
+  --abm-bg:#f6f7f9; --abm-panel:#fff; --abm-border:#dfe3e8;
+  --abm-border-soft:#edf0f3; --abm-text:#202733; --abm-muted:#697586;
+  --abm-blue:#2563eb; --abm-blue-soft:#eff6ff;
+}
+html,body{background:var(--abm-bg)!important;color:var(--abm-text)!important}
+body{font-size:13px}
+body > div.min-h-screen.max-w-7xl{max-width:1500px!important;background:#fff!important;border-color:var(--abm-border)!important;box-shadow:none!important}
+header{background:#fff!important;border-color:var(--abm-border)!important;padding:14px 18px 10px!important}
+header .text-white, header .text-\[\#F5F7FA\]{color:var(--abm-text)!important}
+header button{background:#fff!important;color:#344054!important;border:1px solid var(--abm-border)!important;border-radius:6px!important;box-shadow:none!important}
+header button:hover{background:#f8fafc!important;border-color:#bfc6cf!important}
+header .bg-\[\#242D38\]{background:#fff!important;border-color:var(--abm-border)!important;color:var(--abm-muted)!important}
+#status-txt{color:var(--abm-muted)!important}
+#prog-bar{background:var(--abm-blue)!important}
+#sync-dot{background:var(--abm-blue)!important}
+main{background:#fff!important}
+main > section{background:#fff!important;border-color:var(--abm-border)!important}
+main > section:first-child{padding:18px!important}
+/* Customer / transaction context */
+main > section:first-child > div:first-child{background:#fff!important;border:1px solid var(--abm-border)!important;border-radius:6px!important;padding:12px!important;box-shadow:none!important}
+main > section:first-child > div:first-child > div:first-child{background:var(--abm-blue-soft)!important;border:1px solid #dbeafe!important;color:var(--abm-blue)!important;border-radius:6px!important}
+main > section:first-child label{color:var(--abm-muted)!important}
+#customer-select,#search-input,input,select{background:#fff!important;color:var(--abm-text)!important;border-color:var(--abm-border)!important;border-radius:6px!important;box-shadow:none!important}
+#customer-select{min-height:36px}
+#search-input{height:38px}
+#search-input::placeholder,input::placeholder{color:#98a2b3!important}
+main > section:first-child > div.relative{margin-top:2px}
+#inventory-dropdown{background:#fff!important;border-color:var(--abm-border)!important;border-radius:6px!important;box-shadow:0 10px 30px rgba(16,24,40,.12)!important}
+.inventory-dropdown-item{background:#fff!important;color:var(--abm-text)!important;border-color:var(--abm-border-soft)!important}
+.inventory-dropdown-item:hover,.inventory-dropdown-item.active{background:#f8fafc!important}
+.inventory-dropdown-meta{color:var(--abm-muted)!important}
+.inventory-dropdown-price{color:var(--abm-blue)!important}
+/* Available items as a data list */
+#bestsellers-grid{display:block!important;border:1px solid var(--abm-border)!important;border-radius:6px!important;background:#fff!important;overflow-y:auto!important}
+#bestsellers-grid > button{display:grid!important;grid-template-columns:minmax(0,1fr) 150px 110px!important;align-items:center!important;gap:12px!important;width:100%!important;min-height:44px!important;padding:9px 12px!important;border:0!important;border-bottom:1px solid var(--abm-border-soft)!important;border-radius:0!important;background:#fff!important;box-shadow:none!important;transform:none!important;text-align:left!important}
+#bestsellers-grid > button:hover:not(:disabled){background:#f8fafc!important;border-color:var(--abm-border-soft)!important}
+#bestsellers-grid > button:last-child{border-bottom:0!important}
+#bestsellers-grid > button .text-white{color:var(--abm-text)!important}
+#bestsellers-grid > button .text-\[\#B4C0CC\]{color:var(--abm-muted)!important}
+#bestsellers-grid > button .text-\[\#28D66B\]{color:var(--abm-blue)!important}
+/* Right side is a transaction-detail workspace, not a checkout terminal */
+main > section:last-child{background:#fff!important;border-left:1px solid var(--abm-border)!important}
+main > section:last-child > div:first-child{background:#f8fafc!important;border-color:var(--abm-border)!important;padding:12px 14px!important}
+main > section:last-child > div:first-child span{color:var(--abm-text)!important}
+main > section:last-child > div:first-child i{color:var(--abm-blue)!important}
+#cart-container{background:#fff!important;padding:0!important;display:block!important}
+#cart-container > div{background:#fff!important;border-bottom:1px solid var(--abm-border-soft)!important;padding:12px 14px!important}
+#cart-container > div:hover{background:#fbfcfe!important}
+#cart-container .text-white{color:var(--abm-text)!important}
+#cart-container .text-\[\#B4C0CC\]{color:var(--abm-muted)!important}
+#cart-container .text-\[\#28D66B\]{color:var(--abm-text)!important}
+#cart-container button:not([title="Remove item"]){background:#fff!important;color:#344054!important;border:1px solid var(--abm-border)!important;border-radius:5px!important}
+#cart-container button:not([title="Remove item"]):hover{background:#f8fafc!important}
+.cart-qty-editor{height:30px!important;width:58px!important;background:#fff!important;color:var(--abm-text)!important;border:1px solid var(--abm-border)!important;border-radius:5px!important}
+#cart-container + footer{background:#fff!important;border-color:var(--abm-border)!important;box-shadow:none!important;padding:14px!important}
+#cart-container + footer .text-\[\#B4C0CC\]{color:var(--abm-muted)!important}
+#cart-total{color:var(--abm-text)!important}
+#checkout-btn{background:var(--abm-blue)!important;border-radius:6px!important;box-shadow:none!important}
+#checkout-btn:hover:not(:disabled){background:#1d4ed8!important}
+/* Modals follow the same neutral workspace language */
+[id$="-modal"] > div{background:#fff!important;border-color:var(--abm-border)!important;border-radius:8px!important;box-shadow:0 20px 50px rgba(16,24,40,.18)!important}
+[id$="-modal"] .text-white{color:var(--abm-text)!important}
+[id$="-modal"] .text-\[\#B4C0CC\]{color:var(--abm-muted)!important}
+[id$="-modal"] .bg-\[\#242D38\]{background:#f8fafc!important;border-color:var(--abm-border)!important}
+[id$="-modal"] button{border-radius:6px!important}
+@media(max-width:767px){
+  #bestsellers-grid > button{grid-template-columns:minmax(0,1fr) 90px!important}
+  #bestsellers-grid > button > div:last-child span:last-child{display:none}
+  main > section:last-child{border-left:0!important}
+}
+</style>
+
 </head>
-<body>
+<style>
+/* V1.2 — stronger contrast and consistent controls */
+:root{--abm-text-strong:#111827;--abm-text:#1f2937;--abm-muted:#4b5563;--abm-icon:#374151;--abm-border:#d1d5db;--abm-border-soft:#e5e7eb;--abm-blue:#2563eb}
+body{color:var(--abm-text)!important}
+header .text-white,header .text-\[\#F5F7FA\],header .text-\[\#B4C0CC\]{color:var(--abm-text-strong)!important}
+header .text-\[\#687385\],#status-txt{color:var(--abm-muted)!important}
+header button{color:var(--abm-text-strong)!important;font-weight:600!important}
+header button i{color:var(--abm-icon)!important}
+header button i.text-\[\#4DA3FF\]{color:var(--abm-blue)!important}
+header button i.text-\[\#F6B73C\]{color:#92400e!important}
+header button i.text-\[\#28D66B\]{color:#047857!important}
+#sync-dot{background:var(--abm-blue)!important}
+main > section:first-child label,.uppercase{color:var(--abm-text-strong)!important;font-weight:600!important}
+#customer-select,#search-input,input,select{color:var(--abm-text-strong)!important}
+#customer-select::placeholder,#search-input::placeholder,input::placeholder,textarea::placeholder{color:var(--abm-muted)!important;opacity:1!important}
+main > section:first-child > div:first-child > div:first-child{color:var(--abm-blue)!important}
+main > section:first-child > div:first-child > div:first-child i{color:var(--abm-blue)!important}
+main > section:first-child > div:first-child button{background:#fff!important;color:var(--abm-text-strong)!important;border-color:var(--abm-border)!important}
+main > section:first-child > div:first-child button:hover{background:#f8fafc!important;border-color:#9ca3af!important}
+main > section:first-child > div:first-child button i{color:var(--abm-blue)!important}
+.relative > i[data-lucide="search"]{color:var(--abm-icon)!important}
+#bestsellers-grid > button .text-white,#bestsellers-grid > button .text-\[\#B4C0CC\]{color:var(--abm-text-strong)!important}
+#bestsellers-grid > button > div:last-child span:last-child{color:var(--abm-muted)!important}
+main > section:last-child > div:first-child span{color:var(--abm-text-strong)!important}
+main > section:last-child > div:first-child i{color:var(--abm-blue)!important}
+#cart-container .text-white{color:var(--abm-text-strong)!important}
+#cart-container .text-\[\#B4C0CC\]{color:var(--abm-muted)!important}
+#cart-container .text-\[\#28D66B\]{color:var(--abm-text-strong)!important}
+#cart-container > i{color:var(--abm-icon)!important;opacity:.55!important}
+#cart-container + footer .text-\[\#B4C0CC\]{color:var(--abm-muted)!important}
+#cart-total{color:var(--abm-text-strong)!important}
+[id$="-modal"] .text-white{color:var(--abm-text-strong)!important}
+[id$="-modal"] .text-\[\#B4C0CC\],[id$="-modal"] .text-\[\#687585\]{color:var(--abm-muted)!important}
+[id$="-modal"] label{color:var(--abm-text-strong)!important;font-weight:600!important}
+[id$="-modal"] input,[id$="-modal"] textarea{color:var(--abm-text-strong)!important}
+[id$="-modal"] input::placeholder,[id$="-modal"] textarea::placeholder{color:#6b7280!important;opacity:1!important}
+#new-customer-modal > div > div:first-child button{color:var(--abm-muted)!important}
+#new-customer-modal > div > div:first-child button:hover{color:var(--abm-text-strong)!important}
+#new-customer-modal .new-customer-secondary{background:#fff!important;color:var(--abm-text-strong)!important;border-color:var(--abm-border)!important}
+#new-customer-modal .new-customer-primary{background:var(--abm-blue)!important;color:#fff!important}
+#new-customer-modal .new-customer-primary:hover{background:#1d4ed8!important}
+</style>
+<body class="min-h-screen bg-[#111820] text-[#F5F7FA]">
 
-<div class="scale-wrapper" id="scaleWrapper">
-  <div class="top">
-    <div>
-      <h1>Payroll Worksheet</h1>
-      <div class="sub">Manager.io Integrated • Developed by <strong>Jesse Alcaraz</strong></div>
+<div class="min-h-screen max-w-7xl mx-auto border-x border-[#384352] flex flex-col bg-[#1B222B] relative shadow-2xl">
+
+  <!-- Header & Sync Control Bar -->
+  <header class="px-4 py-3 border-b border-[#384352] bg-[#1B222B] shrink-0 sticky top-0 z-30">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-extrabold text-white tracking-tight">Alcaraz Business Manager</span>
+          <span class="text-[10px] font-semibold bg-[#242D38] text-[#B4C0CC] border border-[#384352] px-2 py-0.5 rounded-full">V1</span>
+        </div>
+        <div class="mt-0.5 inline-flex items-center gap-1.5 text-xs text-[#B4C0CC]">
+          <span id="sync-dot" class="w-2 h-2 rounded-full bg-[#F6B73C] shrink-0"></span>
+          <span id="sync-label" class="truncate">Not synced</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Park Sale: icon left + text right -->
+        <button type="button" onclick="parkCurrentOrder()" title="Save current transaction as draft"
+          class="h-10 px-3 rounded-lg border border-[#384352] bg-[#242D38] text-white hover:bg-[#384352] active:scale-95 transition-all flex items-center gap-2 text-xs font-bold">
+          <i data-lucide="pause-circle" class="w-4 h-4 text-[#4DA3FF]"></i>
+          <span class="hidden sm:inline">Save Draft</span>
+        </button>
+
+        <!-- Parked: icon left + text right -->
+        <button type="button" onclick="openParkedOrders()" title="View draft transactions"
+          class="h-10 px-3 rounded-lg border border-[#384352] bg-[#242D38] text-white hover:bg-[#384352] active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold">
+          <i data-lucide="layers" class="w-4 h-4 text-[#F6B73C]"></i>
+          <span>Drafts <span id="parked-orders-count" class="text-[#B4C0CC]">(0)</span></span>
+        </button>
+
+        <!-- Receive Payment: icon left + text right -->
+        <button type="button" onclick="openUnpaidInvoices()" title="Record a receipt for an unpaid invoice"
+          class="h-10 px-3 rounded-lg border border-[#384352] bg-[#242D38] text-white hover:bg-[#384352] active:scale-95 transition-all flex items-center gap-2 text-xs font-bold">
+          <i data-lucide="wallet-cards" class="w-4 h-4 text-[#28D66B]"></i>
+          <span>Record Receipt</span>
+        </button>
+
+        <button type="button" id="auth-btn" onclick="openAuthModal()" title="Sign in to Supabase"
+          class="h-10 px-3 rounded-lg border border-[#d1d5db] bg-white text-[#111827] hover:bg-[#f8fafc] active:scale-95 transition-all flex items-center gap-2 text-xs font-semibold">
+          <i data-lucide="log-in" class="w-4 h-4 text-[#374151]"></i>
+          <span id="auth-btn-label">Sign In</span>
+        </button>
+
+        <!-- Temporary Manager Cloud connection test -->
+        <button type="button" id="manager-test-btn" onclick="testManagerConnection()" disabled title="Test Manager Cloud connection"
+          class="h-10 px-3 rounded-lg border border-[#d1d5db] bg-white text-[#111827] hover:bg-[#f8fafc] disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all flex items-center gap-2 text-xs font-semibold">
+          <i data-lucide="plug-zap" class="w-4 h-4 text-[#2563eb]"></i>
+          <span>Test Manager</span>
+        </button>
+
+        <!-- Sync: icon only -->
+        <button id="load-btn" onclick="loadPosData()" title="Sync data"
+          class="h-10 w-10 rounded-lg border border-[#384352] bg-[#242D38] text-[#B4C0CC] hover:bg-[#384352] hover:text-white active:scale-95 transition-all flex items-center justify-center shrink-0">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
     </div>
-    <div class="spacer"></div><span class="status" id="status">Press Load Employees</span>
-    <button class="primary" id="loadBtn" type="button">↻ Load Employees</button>
-  </div>
 
-  <div id="error"></div>
-  <div id="validationBanner"></div>
-  <div id="businessDetectionStatus" class="notice" style="margin-bottom:10px">Business context: waiting for Manager API response…</div>
-  <div id="payslipItemsTest" class="notice" style="margin-bottom:10px">Payslip Item mappings: waiting for Manager…</div>
+    <div class="mt-2.5 h-1 bg-[#242D38] rounded-full overflow-hidden">
+      <div id="prog-bar" class="bg-[#1C9E4B] h-full w-0 transition-all duration-300"></div>
+    </div>
+    <div id="status-txt" class="mt-1 text-[11px] text-[#B4C0CC] truncate">Sign in and select a business and branch to sync Manager data</div>
 
-  <div class="period">
-    <label>Payroll period start<input id="periodStart" type="date"></label>
-    <label>Payroll period end<input id="periodEnd" type="date"></label>
-    <label>Payslip date<input id="payslipDate" type="date"></label>
-    <button id="recalcBtn" type="button">Recalculate</button>
-    <button id="clearBtn" class="danger" type="button">Clear Inputs</button>
-  </div>
+    <!-- Business / Branch context -->
+    <div id="business-context" class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div class="flex items-center gap-2 rounded-lg border border-[#d1d5db] bg-white px-3 py-2">
+        <i data-lucide="building-2" class="w-4 h-4 text-[#374151] shrink-0"></i>
+        <div class="min-w-0 flex-1">
+          <label class="block text-[9px] font-bold uppercase tracking-wider text-[#4B5563]">Business</label>
+          <select id="business-select" disabled class="w-full bg-transparent text-xs font-semibold text-[#111827] focus:outline-none truncate">
+            <option value="">Sign in to load businesses</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 rounded-lg border border-[#d1d5db] bg-white px-3 py-2">
+        <i data-lucide="map-pin" class="w-4 h-4 text-[#374151] shrink-0"></i>
+        <div class="min-w-0 flex-1">
+          <label class="block text-[9px] font-bold uppercase tracking-wider text-[#4B5563]">Branch</label>
+          <select id="branch-select" disabled class="w-full bg-transparent text-xs font-semibold text-[#111827] focus:outline-none truncate">
+            <option value="">Select a business first</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
-  <div class="summary">
-    <div class="card"><div class="label">Employees</div><div class="value" id="employeeCount">0</div></div>
-    <div class="card"><div class="label">Gross Earnings</div><div class="value" id="grossTotal">₱0.00</div></div>
-    <div class="card"><div class="label">Total Deductions</div><div class="value" id="deductionTotal">₱0.00</div></div>
-    <div class="card"><div class="label">Employer Contributions</div><div class="value" id="contributionTotal">₱0.00</div></div>
-    <div class="card"><div class="label">Net Payroll</div><div class="value" id="netTotal">₱0.00</div></div>
-  </div>
+    <div class="mt-3 flex items-center gap-4 text-[11px] text-[#687385] border-t border-[#eef0f3] pt-2">
+      <span><strong class="text-[#344054]">Transactions</strong></span><span>Sales</span><span>Expenses</span><span>Receipts</span><span>Customers</span><span>Items</span><span>Reports</span>
+    </div>
+  </header>
 
-  <!-- 4 View Tabs -->
-  <div class="view-tabs">
-    <button type="button" class="tab-btn active" data-tab="earnings">1. Earnings</button>
-    <button type="button" class="tab-btn" data-tab="deductions">2. Deductions</button>
-    <button type="button" class="tab-btn" data-tab="contributions">3. Employer Contributions</button>
-    <button type="button" class="tab-btn" data-tab="summary">4. Payroll Summary</button>
-  </div>
+  <!-- Responsive Main Workspace Layout -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden min-h-0">
 
-  <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍 Search employee name…">
-    <div class="filter-info" id="filterInfo">Showing all employees</div>
-  </div>
+    <!-- LEFT COLUMN: Transaction context + available items -->
+    <section class="md:col-span-7 lg:col-span-8 p-4 flex flex-col gap-4 border-b md:border-b-0 md:border-r border-[#384352] overflow-y-auto">
 
-  <!-- Tab 1: Earnings -->
-  <div class="table-wrap" id="earningsPanel">
-    <div id="earningsApp" class="empty">No employees loaded yet.</div>
-  </div>
+      <!-- Transaction context -->
+      <div class="bg-[#242D38] border border-[#384352] p-3 rounded-xl flex items-center gap-3 shadow-sm">
+        <div class="p-2 bg-[#287FE01a] text-[#4DA3FF] rounded-lg border border-[#287FE033] shrink-0">
+          <i data-lucide="user" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-[#B4C0CC]">Customer / Account</label>
+          <select id="customer-select" class="w-full bg-transparent text-sm font-semibold text-white focus:outline-none cursor-pointer truncate">
+          </select>
+        </div>
+        <button type="button" onclick="openNewCustomer()" title="Add new customer"
+          class="h-9 px-3 rounded-lg border border-[#d1d5db] bg-white text-[#111827] hover:bg-[#f8fafc] active:scale-95 transition-all flex items-center gap-1.5 text-xs font-semibold shrink-0">
+          <i data-lucide="user-plus" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">New</span>
+        </button>
+      </div>
 
-  <!-- Tab 2: Deductions -->
-  <div class="table-wrap" id="deductionsPanel" style="display:none">
-    <div id="deductionsApp" class="empty">No employees loaded yet.</div>
-  </div>
+      <!-- Find an item -->
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 text-[#B4C0CC] absolute left-3.5 top-3 z-10"></i>
+        <div class="relative">
+          <input type="text" id="search-input" placeholder="Search products by name or code..."
+            oninput="handleSearch(this.value)" onfocus="handleSearch(this.value)" onkeydown="handleSearchKeydown(event)"
+            autocomplete="off"
+            class="w-full bg-[#111820] border border-[#384352] rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-[#B4C0CC] focus:outline-none focus:border-[#4DA3FF] focus:ring-1 focus:ring-[#4DA3FF]">
+          <div id="inventory-dropdown" class="hidden absolute left-0 right-0 top-full mt-1 z-50 bg-[#111820] border border-[#384352] rounded-xl shadow-2xl max-h-72 overflow-y-auto"></div>
+        </div>
+        <div class="mt-1.5 text-[11px] text-[#687385]">Use Quick Add for frequently used items, or search to find any item.</div>
+      </div>
 
-  <!-- Tab 3: Contributions -->
-  <div class="table-wrap" id="contributionsPanel" style="display:none">
-    <div id="contributionsApp" class="empty">No employees loaded yet.</div>
-  </div>
+      <!-- Available items -->
+      <div class="flex-1 flex flex-col min-h-0">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-[#B4C0CC] uppercase tracking-wider">Quick Add</span>
+          <span id="item-count" class="text-xs text-[#B4C0CC] font-medium">0 quick-add items</span>
+        </div>
+        
+        <div id="bestsellers-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 overflow-y-auto p-0.5 max-h-[220px] md:max-h-none">
+          <div class="col-span-full text-center py-10 text-xs text-[#B4C0CC] bg-[#242D38] rounded-2xl border border-dashed border-[#384352]">
+            <i data-lucide="refresh-cw" class="w-6 h-6 mx-auto mb-2 text-[#B4C0CC] opacity-40"></i>
+            Sync data to display available items
+          </div>
+        </div>
+      </div>
 
-  <!-- Tab 4: Summary -->
-  <div class="table-wrap" id="summaryPanel" style="display:none">
-    <div id="summaryApp" class="empty">No employees loaded yet.</div>
-  </div>
+    </section>
 
-  <div id="excludedApp"></div>
+    <!-- RIGHT COLUMN: Transaction details -->
+    <section class="md:col-span-5 lg:col-span-4 bg-[#202832] flex flex-col h-full min-h-0">
+      
+      <!-- Cart Header -->
+      <div class="p-4 border-b border-[#384352] flex items-center justify-between shrink-0 bg-[#1B222B]">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shopping-cart" class="w-4 h-4 text-[#4DA3FF]"></i>
+          <span class="text-xs font-bold text-white uppercase tracking-wider">Transaction Details</span>
+        </div>
+        <button onclick="clearCart()" class="text-xs text-[#FF5C5C] hover:underline font-semibold flex items-center gap-1">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear
+        </button>
+      </div>
+
+      <!-- Cart Line Items Scroll Area -->
+      <div id="cart-container" class="flex-1 min-h-[220px] overflow-y-auto p-4 flex flex-col justify-center items-center text-center">
+        <i data-lucide="shopping-bag" class="w-10 h-10 text-[#B4C0CC] opacity-30 mb-2"></i>
+        <p class="text-xs text-[#B4C0CC]">No items added.<br>Select an item to begin the transaction.</p>
+      </div>
+
+      <!-- Cart Checkout Footer -->
+      <footer class="shrink-0 bg-[#1B222B] border-t border-[#384352] p-4 shadow-lg">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs text-[#B4C0CC] font-medium">Subtotal</span>
+          <span id="cart-subtotal" class="text-sm font-semibold text-white">₱0.00</span>
+        </div>
+        <div class="flex items-end justify-between mb-4">
+          <span class="text-sm font-bold text-white">Total</span>
+          <span id="cart-total" class="text-2xl font-black text-[#28D66B]">₱0.00</span>
+        </div>
+        <button id="checkout-btn" disabled onclick="checkout()"
+          class="w-full bg-[#1C9E4B] hover:bg-[#25B85A] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-all active:scale-98 shadow-lg flex items-center justify-center gap-2 text-sm">
+          <i data-lucide="credit-card" class="w-4 h-4"></i>
+          <span>Save Transaction</span>
+        </button>
+      </footer>
+
+    </section>
+
+  </main>
 </div>
 
-<!-- Docked Sticky Action Footer -->
-<div class="actions-footer">
-  <button class="primary" id="previewBtn" type="button" disabled>Preview Payslips</button>
-  <button class="success" id="createBtn" type="button" disabled>Create Payslips in Manager</button>
-  <span class="status" id="writeStatus">No payslips created yet.</span>
+<!-- Modals & Toasts Container -->
+<div id="pos-toast-container" class="fixed left-1/2 -translate-x-1/2 bottom-8 z-[300] w-[min(92vw,420px)] flex flex-col gap-2"></div>
+
+<!-- Supabase Authentication Modal -->
+<div id="auth-modal" class="hidden fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="w-full max-w-md bg-white border border-[#d1d5db] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#e5e7eb]">
+      <div>
+        <div id="auth-modal-title" class="font-bold text-[#111827] text-sm">Sign in</div>
+        <div id="auth-modal-subtitle" class="text-xs text-[#4B5563]">Sign in to access your businesses and branches.</div>
+      </div>
+      <button type="button" onclick="closeAuthModal()" class="text-[#6B7280] hover:text-[#111827] p-1">&times;</button>
+    </div>
+    <div class="p-5">
+      <label class="block text-xs font-semibold text-[#374151] mb-1">Email</label>
+      <input id="auth-email" type="email" autocomplete="email" class="w-full border border-[#d1d5db] rounded-lg px-3 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]" placeholder="you@example.com">
+      <label class="block text-xs font-semibold text-[#374151] mt-4 mb-1">Password</label>
+      <input id="auth-password" type="password" autocomplete="current-password" class="w-full border border-[#d1d5db] rounded-lg px-3 py-2.5 text-sm text-[#111827] focus:outline-none focus:border-[#2563EB] focus:ring-1 focus:ring-[#2563EB]" placeholder="Password" onkeydown="if(event.key==='Enter') signInToSupabase()">
+      <div id="auth-error" class="hidden mt-3 rounded-lg border border-[#fecaca] bg-[#fef2f2] p-3 text-xs text-[#b91c1c]"></div>
+      <button type="button" id="auth-submit" onclick="signInToSupabase()" class="mt-5 w-full px-4 py-2.5 rounded-lg bg-[#2563EB] text-white text-sm font-bold hover:bg-[#1d4ed8]">Sign In</button>
+      <button type="button" id="sign-out-button" onclick="signOutFromSupabase()" class="hidden mt-2 w-full px-4 py-2.5 rounded-lg border border-[#d1d5db] bg-white text-[#111827] text-sm font-semibold hover:bg-[#f8fafc]">Sign Out</button>
+      <button type="button" id="branch-mapping-button" onclick="openBranchMapping()" class="hidden mt-2 w-full px-4 py-2.5 rounded-lg border border-[#d1d5db] bg-white text-[#111827] text-sm font-semibold hover:bg-[#f8fafc] flex items-center justify-center gap-2">
+        <i data-lucide="git-branch" class="w-4 h-4 text-[#2563eb]"></i>
+        Branch &amp; Division Mapping
+      </button>
+      <p class="mt-3 text-[11px] leading-4 text-[#6B7280]">Your Supabase publishable/anon key is safe to use in a browser. Never place a service-role key in this file.</p>
+    </div>
+  </div>
 </div>
 
-<div class="modal-backdrop" id="modalBackdrop">
-  <div class="modal">
-    <h2 id="modalTitle">Payslip Preview</h2>
-    <p id="modalIntro"></p>
-    <div id="modalBody"></div>
-    <div class="actions" style="margin-top:12px"><button id="closeModal" type="button">Close</button></div>
+<!-- Branch → Manager Division Mapping Modal -->
+<div id="branch-mapping-modal" class="hidden fixed inset-0 z-[210] bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="w-full max-w-2xl bg-white border border-[#d1d5db] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#e5e7eb]">
+      <div><div class="font-bold text-[#111827] text-sm">Branch &amp; Manager Division Mapping</div><div class="text-xs text-[#4B5563] mt-0.5">Connect each Alcaraz branch to its corresponding Manager division.</div></div>
+      <button type="button" onclick="closeBranchMapping()" class="text-[#6B7280] hover:text-[#111827] p-1">&times;</button>
+    </div>
+    <div class="p-5">
+      <div id="branch-mapping-status" class="hidden mb-4 rounded-lg border p-3 text-xs"></div>
+      <div id="branch-mapping-list" class="space-y-3"><div class="text-sm text-[#6B7280] py-6 text-center">Loading branches and Manager divisions…</div></div>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" onclick="closeBranchMapping()" class="px-4 py-2.5 rounded-lg border border-[#d1d5db] bg-white text-[#111827] text-sm font-semibold hover:bg-[#f8fafc]">Cancel</button>
+        <button type="button" id="save-branch-mapping-button" onclick="saveBranchMappings()" class="px-4 py-2.5 rounded-lg bg-[#2563eb] text-white text-sm font-bold hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed">Save Mapping</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Parked Orders Modal -->
+<div id="parked-orders-modal" class="hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="w-full max-w-md bg-[#1B222B] border border-[#384352] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[#384352]">
+      <div>
+        <div class="font-bold text-white text-sm">Draft Transactions</div>
+        <div class="text-xs text-[#B4C0CC]">Open a saved transaction to continue editing.</div>
+      </div>
+      <button type="button" onclick="closeParkedOrders()" class="text-[#B4C0CC] hover:text-white p-1">&times;</button>
+    </div>
+    <div id="parked-orders-list" class="max-h-[60vh] overflow-y-auto"></div>
+  </div>
+</div>
+
+<!-- Review & Checkout Modal -->
+<div id="checkout-modal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="w-full max-w-md bg-[#1B222B] border border-[#384352] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[#384352]">
+      <div>
+        <div class="font-bold text-white text-sm">Review Transaction</div>
+        <div class="text-xs text-[#B4C0CC]">Creates the corresponding sales transaction in Manager.io</div>
+      </div>
+      <button type="button" onclick="closeCheckout()" class="text-[#B4C0CC] hover:text-white p-1">&times;</button>
+    </div>
+    <div class="p-4">
+      <div id="checkout-customer" class="mb-3 text-xs font-medium text-[#B4C0CC]"></div>
+      <div id="checkout-summary" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+      <div class="mt-4 pt-3 border-t border-[#384352] flex items-center justify-between">
+        <span class="font-bold text-white text-sm">Total</span>
+        <span id="checkout-total" class="font-black text-lg text-[#28D66B]">₱0.00</span>
+      </div>
+      <div id="checkout-error" class="hidden mt-3 rounded-xl border border-[#FF5C5C]/40 bg-[#FF5C5C]/10 p-3 text-xs text-[#FF5C5C]"></div>
+      <div class="mt-4 flex gap-2">
+        <button type="button" onclick="closeCheckout()" class="flex-1 px-4 py-2.5 rounded-xl border border-[#384352] bg-[#242D38] text-xs font-bold text-white hover:bg-[#384352]">Cancel</button>
+        <button type="button" id="create-invoice-button" onclick="createSalesInvoiceFromCart()" class="flex-1 px-4 py-2.5 rounded-xl bg-[#1C9E4B] text-white text-xs font-bold hover:bg-[#25B85A]">Save Transaction</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="payment-modal" class="hidden fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="w-full max-w-md bg-[#1B222B] border border-[#384352] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[#384352]">
+      <div>
+        <div class="font-bold text-white text-sm">Record Receipt</div>
+        <div class="text-xs text-[#B4C0CC]">Record a payment against this transaction</div>
+      </div>
+      <button type="button" onclick="closePayment()" class="text-[#B4C0CC] hover:text-white p-1">&times;</button>
+    </div>
+
+    <div class="p-4">
+      <div id="payment-invoice-info" class="text-xs font-medium text-[#B4C0CC] bg-[#242D38] p-2.5 rounded-xl border border-[#384352]"></div>
+
+      <div class="mt-4">
+        <label class="block text-xs font-bold text-[#B4C0CC] mb-1 uppercase tracking-wider">Deposit Account</label>
+        <select id="payment-account-select" class="w-full bg-[#111820] border border-[#384352] rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-[#4DA3FF]"></select>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-xs font-bold text-[#B4C0CC] mb-1 uppercase tracking-wider">Amount Received</label>
+        <input id="payment-amount" type="number" min="0" step="0.01" class="w-full bg-[#111820] border border-[#384352] rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-[#4DA3FF]">
+      </div>
+
+      <div id="payment-error" class="hidden mt-3 rounded-xl border border-[#FF5C5C]/40 bg-[#FF5C5C]/10 p-3 text-xs text-[#FF5C5C]"></div>
+
+      <div class="mt-5 flex gap-2">
+        <button type="button" onclick="closePayment()" class="flex-1 px-4 py-2.5 rounded-xl border border-[#384352] bg-[#242D38] text-xs font-bold text-white hover:bg-[#384352]">Cancel</button>
+        <button type="button" id="record-payment-button" onclick="createReceiptForLastInvoice()" class="flex-1 px-4 py-2.5 rounded-xl bg-[#1C9E4B] text-white text-xs font-bold hover:bg-[#25B85A]">Save Receipt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Outstanding Sales Transactions Modal -->
+<div id="unpaid-invoices-modal" class="hidden fixed inset-0 z-[115] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="w-full max-w-md bg-[#1B222B] border border-[#384352] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[#384352]">
+      <div>
+        <div class="font-bold text-white text-sm">Outstanding Sales Transactions</div>
+        <div class="text-xs text-[#B4C0CC]">Select an outstanding transaction to record a receipt</div>
+      </div>
+      <button type="button" onclick="closeUnpaidInvoices()" class="text-[#B4C0CC] hover:text-white p-1">&times;</button>
+    </div>
+    <div class="p-3 border-b border-[#384352]">
+      <input id="unpaid-invoice-search" type="text" placeholder="Search reference or customer..." oninput="filterUnpaidInvoices(this.value)" class="w-full bg-[#111820] border border-[#384352] rounded-xl px-3 py-2 text-sm text-white placeholder-[#B4C0CC] focus:outline-none focus:border-[#4DA3FF]">
+    </div>
+    <div id="unpaid-invoices-status" class="px-4 py-2 text-xs font-medium text-[#B4C0CC]"></div>
+    <div id="unpaid-invoices-list" class="max-h-[55vh] overflow-y-auto"></div>
+  </div>
+</div>
+
+<!-- New Customer Modal -->
+<div id="new-customer-modal" class="hidden fixed inset-0 z-[125] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center">
+  <div class="w-full max-w-md bg-[#1B222B] border border-[#384352] rounded-2xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-[#384352]">
+      <div>
+        <div class="font-bold text-white text-sm">New Customer</div>
+        <div class="text-xs text-[#B4C0CC]">Add a customer to your business records</div>
+      </div>
+      <button type="button" onclick="closeNewCustomer()" class="text-[#B4C0CC] hover:text-white p-1">&times;</button>
+    </div>
+    <div class="p-4">
+      <label class="block text-xs font-bold text-[#B4C0CC] mb-1">Customer Name</label>
+      <input id="new-customer-name" type="text" autocomplete="off"
+        class="w-full bg-[#111820] border border-[#384352] rounded-xl px-3 py-2 text-sm text-white placeholder-[#B4C0CC] focus:outline-none focus:border-[#4DA3FF]"
+        placeholder="e.g. Juan Dela Cruz">
+      <label class="block text-xs font-bold text-[#B4C0CC] mt-3 mb-1">Customer Code <span class="text-[#687585]">(optional)</span></label>
+      <input id="new-customer-code" type="text" autocomplete="off"
+        class="w-full bg-[#111820] border border-[#384352] rounded-xl px-3 py-2 text-sm text-white placeholder-[#B4C0CC] focus:outline-none focus:border-[#4DA3FF]"
+        placeholder="e.g. CUST-001">
+      <label class="block text-xs font-bold text-[#B4C0CC] mt-3 mb-1">Mobile Number <span class="text-[#687585]">(optional)</span></label>
+      <input id="new-customer-mobile" type="tel" autocomplete="tel"
+        class="w-full bg-[#111820] border border-[#384352] rounded-xl px-3 py-2 text-sm text-white placeholder-[#B4C0CC] focus:outline-none focus:border-[#4DA3FF]"
+        placeholder="e.g. 0917 123 4567">
+      <label class="block text-xs font-bold text-[#B4C0CC] mt-3 mb-1">Address <span class="text-[#687585]">(optional)</span></label>
+      <textarea id="new-customer-address" rows="3" autocomplete="street-address"
+        class="w-full resize-none bg-[#111820] border border-[#384352] rounded-xl px-3 py-2 text-sm text-white placeholder-[#B4C0CC] focus:outline-none focus:border-[#4DA3FF]"
+        placeholder="e.g. 123 Rizal Street, Davao City"></textarea>
+      <p class="mt-2 text-[11px] leading-4 text-[#4B5563]">Mobile number and address will be saved in Manager.io as the customer’s billing address.</p>
+      <div id="new-customer-error" class="hidden mt-3 rounded-xl border border-[#FF5C5C]/40 bg-[#FF5C5C]/10 p-3 text-xs text-[#FF5C5C]"></div>
+      <div class="mt-5 flex gap-2">
+        <button type="button" onclick="closeNewCustomer()" class="new-customer-secondary flex-1 px-4 py-2.5 rounded-xl border border-[#d1d5db] bg-white text-xs font-bold text-[#111827]">Cancel</button>
+        <button type="button" id="create-customer-button" onclick="createNewCustomer()" class="new-customer-primary flex-1 px-4 py-2.5 rounded-xl bg-[#2563eb] text-white text-xs font-bold">Save Customer</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-let detectedBusinessContextKey = null;
+// -----------------------------------------------------------------------------
+// Supabase application context
+// Replace these two PUBLIC values with your Supabase project settings.
+// Never use the service_role key in a browser.
+// -----------------------------------------------------------------------------
+const SUPABASE_URL = 'https://zkcmxqtlxeuprsejfgjt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_KMoesIhDCMKOey5ioPsxPA_6ml8Ev6l';
+let supabaseClient = null;
+let currentSupabaseUser = null;
+let businessList = [];
+let branchList = [];
+let selectedBusinessId = localStorage.getItem('abm_business_id') || '';
+let selectedBranchId = localStorage.getItem('abm_branch_id') || '';
+let managerTestBusy = false;
 
-function captureBusinessContext(body) {
-  try {
-    const href = body?._links?.self?.href || '';
-    const match = href.match(/[?&]q=([^&]+)/);
-    if (match && match[1]) {
-      detectedBusinessContextKey = decodeURIComponent(match[1]);
-      const el = document.getElementById('businessDetectionStatus');
-      if (el) el.textContent = `✓ Business context detected: ${detectedBusinessContextKey}`;
+function updateManagerTestButton() {
+  const button = document.getElementById('manager-test-btn');
+  if (!button) return;
+  button.disabled = !currentSupabaseUser || !selectedBusinessId || !selectedBranchId || managerTestBusy;
+  button.title = managerTestBusy
+    ? 'Testing Manager Cloud connection'
+    : (currentSupabaseUser && selectedBusinessId && selectedBranchId
+      ? 'Test Manager Cloud connection'
+      : 'Sign in and select a business and branch first');
+}
+
+function isSupabaseConfigured() {
+  return SUPABASE_URL.startsWith('https://') &&
+    !SUPABASE_URL.includes('YOUR_SUPABASE') &&
+    SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE');
+}
+
+function setSupabaseStatus(message, type='info') {
+  const status = document.getElementById('status-txt');
+  if (status) status.textContent = message;
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  if (!dot || !label) return;
+  const colors = { success:'#16a34a', error:'#dc2626', info:'#2563eb', pending:'#d97706' };
+  dot.style.background = colors[type] || colors.info;
+  label.textContent = type === 'success' ? 'Connected' : type === 'error' ? 'Connection error' : type === 'pending' ? 'Connecting…' : 'Not synced';
+}
+
+function openAuthModal() {
+  document.getElementById('auth-modal')?.classList.remove('hidden');
+  const title=document.getElementById('auth-modal-title');
+  const subtitle=document.getElementById('auth-modal-subtitle');
+  const email=document.getElementById('auth-email');
+  const password=document.getElementById('auth-password');
+  const emailLabel=email?.previousElementSibling;
+  const passwordLabel=password?.previousElementSibling;
+  if (currentSupabaseUser) {
+    if(title) title.textContent='Account';
+    if(subtitle) subtitle.textContent=currentSupabaseUser.email || 'Signed in';
+    email?.classList.add('hidden'); emailLabel?.classList.add('hidden');
+    password?.classList.add('hidden'); passwordLabel?.classList.add('hidden');
+    document.getElementById('auth-submit')?.classList.add('hidden');
+    document.getElementById('sign-out-button')?.classList.remove('hidden');
+    document.getElementById('branch-mapping-button')?.classList.remove('hidden');
+  } else {
+    if(title) title.textContent='Sign in';
+    if(subtitle) subtitle.textContent='Sign in to access your businesses and branches.';
+    email?.classList.remove('hidden'); emailLabel?.classList.remove('hidden');
+    password?.classList.remove('hidden'); passwordLabel?.classList.remove('hidden');
+    document.getElementById('auth-submit')?.classList.remove('hidden');
+    document.getElementById('sign-out-button')?.classList.add('hidden');
+    document.getElementById('branch-mapping-button')?.classList.add('hidden');
+    document.getElementById('auth-email')?.focus();
+  }
+}
+function closeAuthModal() { document.getElementById('auth-modal')?.classList.add('hidden'); }
+
+let managerDivisionList = [];
+let branchMappingRows = [];
+
+function setBranchMappingStatus(message, type='info') {
+  const el=document.getElementById('branch-mapping-status'); if(!el) return;
+  const cfg={info:['#dbeafe','#1e40af','#bfdbfe'],success:['#dcfce7','#166534','#bbf7d0'],error:['#fef2f2','#b91c1c','#fecaca'],pending:['#fffbeb','#92400e','#fde68a']};
+  const [bg,text,border]=cfg[type]||cfg.info; el.style.background=bg; el.style.color=text; el.style.borderColor=border; el.textContent=message; el.classList.remove('hidden');
+}
+function closeBranchMapping(){ document.getElementById('branch-mapping-modal')?.classList.add('hidden'); }
+async function openBranchMapping(){
+  if(!currentSupabaseUser||!selectedBusinessId){showToast('Sign in and select a business first.','error');return;}
+  document.getElementById('auth-modal')?.classList.add('hidden'); document.getElementById('branch-mapping-modal')?.classList.remove('hidden');
+  setBranchMappingStatus('Loading your branches and Manager divisions…','pending');
+  const saveBtn=document.getElementById('save-branch-mapping-button'); if(saveBtn) saveBtn.disabled=true;
+  try{
+    const {data:branchData,error:branchError}=await supabaseClient.from('branch_members').select('branch_id, branches(id, name, business_id, manager_division_key)').eq('user_id',currentSupabaseUser.id);
+    if(branchError) throw branchError;
+    const branches=(branchData||[]).map(r=>r.branches).filter(b=>b&&b.business_id===selectedBusinessId);
+    const result=await managerFunction('list_divisions');
+    managerDivisionList=Array.isArray(result?.divisions)?result.divisions:[];
+    branchMappingRows=branches.map(b=>({id:b.id,name:b.name,manager_division_key:b.manager_division_key||''}));
+    renderBranchMapping(); setBranchMappingStatus(`${managerDivisionList.length} Manager division(s) found.`,'success');
+    if(saveBtn) saveBtn.disabled=!branchMappingRows.length;
+  }catch(error){console.error(error);setBranchMappingStatus(error.message||'Unable to load branch mapping data.','error');}
+}
+function renderBranchMapping(){
+  const c=document.getElementById('branch-mapping-list'); if(!c)return;
+  if(!branchMappingRows.length){c.innerHTML='<div class="text-sm text-[#6B7280] py-6 text-center">No branches are assigned to you for this business.</div>';return;}
+  const options='<option value="">Not mapped</option>'+managerDivisionList.map(d=>`<option value="${escapeHtml(d.key)}">${escapeHtml(d.name)}${d.code?` (${escapeHtml(d.code)})`:''}</option>`).join('');
+  c.innerHTML=branchMappingRows.map((row,i)=>`<div class="rounded-xl border border-[#e5e7eb] bg-[#f8fafc] p-4"><div class="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-3 items-center"><div><div class="text-[10px] font-bold uppercase tracking-wider text-[#6B7280]">Alcaraz Branch</div><div class="mt-1 text-sm font-bold text-[#111827]">${escapeHtml(row.name)}</div></div><div><label class="text-[10px] font-bold uppercase tracking-wider text-[#6B7280]">Manager Division</label><select data-branch-map-index="${i}" class="mt-1 w-full border border-[#d1d5db] rounded-lg px-3 py-2.5 text-sm text-[#111827] bg-white focus:outline-none focus:border-[#2563eb]">${options}</select></div></div></div>`).join('');
+  c.querySelectorAll('[data-branch-map-index]').forEach(sel=>{const i=Number(sel.dataset.branchMapIndex);sel.value=branchMappingRows[i].manager_division_key||'';sel.addEventListener('change',()=>branchMappingRows[i].manager_division_key=sel.value);});
+}
+async function saveBranchMappings(){
+  if(!currentSupabaseUser||!selectedBusinessId)return; const b=document.getElementById('save-branch-mapping-button'); if(b){b.disabled=true;b.textContent='Saving…';} setBranchMappingStatus('Saving branch mappings…','pending');
+  try{for(const row of branchMappingRows){const {error}=await supabaseClient.from('branches').update({manager_division_key:row.manager_division_key||null}).eq('id',row.id).eq('business_id',selectedBusinessId);if(error)throw error;} await loadBranchesForBusiness();setBranchMappingStatus('Branch mappings saved successfully.','success');showToast('Branch mappings saved.','success');setTimeout(closeBranchMapping,650);}
+  catch(error){console.error(error);setBranchMappingStatus(error.message||'Unable to save branch mappings. Check your Supabase permissions.','error');}
+  finally{if(b){b.disabled=false;b.textContent='Save Mapping';}}
+}
+
+async function initializeSupabase() {
+  if (!isSupabaseConfigured()) {
+    setSupabaseStatus('Supabase is not configured yet. Add the project URL and publishable/anon key in the code.', 'error');
+    document.getElementById('load-btn').disabled = true;
+    return;
+  }
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  setSupabaseStatus('Checking your Supabase session…', 'pending');
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) { setSupabaseStatus(error.message, 'error'); return; }
+  currentSupabaseUser = data.session?.user || null;
+  updateAuthUI();
+  if (currentSupabaseUser) await loadBusinessContext();
+  else setSupabaseStatus('Sign in to load your businesses and branches.', 'info');
+  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    currentSupabaseUser = session?.user || null;
+    updateAuthUI();
+    if (currentSupabaseUser) await loadBusinessContext();
+    else {
+      businessList=[]; branchList=[]; selectedBusinessId=''; selectedBranchId='';
+      renderBusinessSelect(); renderBranchSelect();
+      document.getElementById('load-btn').disabled = true;
+      updateManagerTestButton();
+      setSupabaseStatus('Sign in to load your businesses and branches.', 'info');
     }
-  } catch (_) {}
+  });
+}
+
+function updateAuthUI() {
+  const label=document.getElementById('auth-btn-label');
+  if(label) label.textContent=currentSupabaseUser ? 'Account' : 'Sign In';
+  const btn=document.getElementById('auth-btn');
+  if(btn) btn.title=currentSupabaseUser ? `Signed in as ${currentSupabaseUser.email || 'user'}` : 'Sign in to Supabase';
+  document.getElementById('branch-mapping-button')?.classList.toggle('hidden', !currentSupabaseUser);
+  updateManagerTestButton();
+}
+
+async function signInToSupabase() {
+  if (!supabaseClient) {
+    document.getElementById('auth-error').textContent='Supabase is not configured. Add the project URL and publishable/anon key first.';
+    document.getElementById('auth-error').classList.remove('hidden');
+    return;
+  }
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  const err=document.getElementById('auth-error');
+  err.classList.add('hidden');
+  if(!email || !password){ err.textContent='Enter your email and password.'; err.classList.remove('hidden'); return; }
+  const button=document.getElementById('auth-submit'); button.disabled=true; button.textContent='Signing in…';
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  button.disabled=false; button.textContent='Sign In';
+  if(error){ err.textContent=error.message; err.classList.remove('hidden'); }
+  else closeAuthModal();
+}
+
+async function signOutFromSupabase() {
+  if(!supabaseClient) return;
+  const { error } = await supabaseClient.auth.signOut();
+  if(error) showToast(error.message,'error');
+  else { closeAuthModal(); showToast('Signed out.','success'); }
+}
+
+async function loadBusinessContext() {
+  if (!supabaseClient || !currentSupabaseUser) return;
+  try {
+    setSupabaseStatus('Loading your businesses…', 'pending');
+    const { data, error } = await supabaseClient
+      .from('business_members')
+      .select('business_id, businesses(id, name)')
+      .eq('user_id', currentSupabaseUser.id);
+    if(error) throw error;
+    businessList = (data || []).map(row => row.businesses).filter(Boolean);
+    renderBusinessSelect();
+    if (!businessList.some(b => b.id === selectedBusinessId)) selectedBusinessId = businessList[0]?.id || '';
+    document.getElementById('business-select').value = selectedBusinessId;
+    await loadBranchesForBusiness();
+    document.getElementById('load-btn').disabled = !selectedBusinessId || !selectedBranchId;
+    updateManagerTestButton();
+    setSupabaseStatus(selectedBusinessId && selectedBranchId ? 'Connected · select Sync to load Manager.io data.' : 'Select a business and branch.', 'success');
+  } catch (error) {
+    console.error(error);
+    setSupabaseStatus(error.message || 'Unable to load businesses.', 'error');
+    showToast(error.message || 'Unable to load businesses.', 'error', 4200);
+  }
+}
+
+async function loadBranchesForBusiness() {
+  const select=document.getElementById('branch-select');
+  if(!selectedBusinessId){ branchList=[]; selectedBranchId=''; renderBranchSelect(); return; }
+  const { data, error } = await supabaseClient
+    .from('branch_members')
+    .select('branch_id, branches(id, name, business_id, manager_division_key)')
+    .eq('user_id', currentSupabaseUser.id);
+  if(error) throw error;
+  branchList=(data || []).map(row => row.branches).filter(b => b && b.business_id === selectedBusinessId);
+  if(!branchList.some(b => b.id === selectedBranchId)) selectedBranchId=branchList[0]?.id || '';
+  renderBranchSelect();
+  select.value=selectedBranchId;
+  localStorage.setItem('abm_business_id', selectedBusinessId);
+  localStorage.setItem('abm_branch_id', selectedBranchId);
+}
+
+function renderBusinessSelect() {
+  const select=document.getElementById('business-select'); if(!select) return;
+  select.innerHTML = businessList.length ? businessList.map(b=>`<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join('') : '<option value="">No businesses available</option>';
+  select.disabled=!businessList.length;
+  select.value=selectedBusinessId || '';
+}
+function renderBranchSelect() {
+  const select=document.getElementById('branch-select'); if(!select) return;
+  select.innerHTML = branchList.length ? branchList.map(b=>`<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join('') : '<option value="">No branches available</option>';
+  select.disabled=!branchList.length;
+  select.value=selectedBranchId || '';
+}
+
+document.addEventListener('change', async (event) => {
+  if(event.target?.id === 'business-select') {
+    selectedBusinessId=event.target.value;
+    selectedBranchId='';
+    localStorage.setItem('abm_business_id',selectedBusinessId);
+    localStorage.removeItem('abm_branch_id');
+    try { await loadBranchesForBusiness(); setSupabaseStatus('Business selected · choose a branch.', 'success'); }
+    catch(e){ setSupabaseStatus(e.message,'error'); showToast(e.message,'error'); }
+    document.getElementById('load-btn').disabled=!selectedBusinessId || !selectedBranchId;
+    updateManagerTestButton();
+  }
+  if(event.target?.id === 'branch-select') {
+    selectedBranchId=event.target.value;
+    localStorage.setItem('abm_branch_id',selectedBranchId);
+    document.getElementById('load-btn').disabled=!selectedBusinessId || !selectedBranchId;
+    updateManagerTestButton();
+    setSupabaseStatus(selectedBranchId ? 'Branch selected · select Sync to load Manager.io data.' : 'Select a branch.', 'success');
+  }
+});
+
+async function testManagerConnection() {
+  if (managerTestBusy) return;
+
+  if (!supabaseClient || !currentSupabaseUser) {
+    showToast('Please sign in first.', 'error');
+    return;
+  }
+
+  if (!selectedBusinessId || !selectedBranchId) {
+    showToast('Select a business and branch first.', 'error');
+    return;
+  }
+
+  const button = document.getElementById('manager-test-btn');
+  const label = button?.querySelector('span');
+  const originalText = label?.textContent || 'Test Manager';
+
+  managerTestBusy = true;
+  updateManagerTestButton();
+  if (label) label.textContent = 'Testing…';
+
+  setSupabaseStatus('Testing Manager Cloud connection…', 'pending');
+
+  try {
+    const { data, error } = await supabaseClient.functions.invoke('manager-api', {
+      body: {
+        business_id: selectedBusinessId,
+        branch_id: selectedBranchId,
+        operation: 'test'
+      }
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Manager connection test failed.');
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || 'Manager Cloud connection failed.');
+    }
+
+    setSupabaseStatus('Manager Cloud connected successfully.', 'success');
+    showToast('Manager Cloud connection successful.', 'success', 4200);
+    console.log('Manager API connection test:', data);
+  } catch (error) {
+    console.error('Manager API connection test failed:', error);
+    setSupabaseStatus(error?.message || 'Manager connection failed.', 'error');
+    showToast(error?.message || 'Manager connection failed.', 'error', 5000);
+  } finally {
+    managerTestBusy = false;
+    if (label) label.textContent = originalText;
+    updateManagerTestButton();
+  }
 }
 
 function postMessageWithResponse(message) {
@@ -241,631 +963,1419 @@ function postMessageWithResponse(message) {
     const timer = setTimeout(() => {
       window.removeEventListener('message', handler);
       reject(new Error('Timeout — is this running inside Manager.io?'));
-    }, 15000);
+    }, 30000);
     function handler(event) {
-      if (event.data?.type?.endsWith('-response') && event.data?.requestId === requestId) {
+      if (event.data?.type?.endsWith('-response') &&
+          event.data?.requestId === requestId) {
         clearTimeout(timer);
         window.removeEventListener('message', handler);
-        captureBusinessContext(event.data.body);
         resolve(event.data.body);
       }
     }
     window.addEventListener('message', handler);
-    window.parent.postMessage({...message, requestId}, '*');
+    window.parent.postMessage({ ...message, requestId }, '*');
   });
 }
 
-const state = {
-  employees: [], excludedEmployees: [], dailyRateFieldKeys: [], values: new Map(),
-  searchQuery: '', activeTab: 'earnings',
-  mappings: {
-    earnings: {basic:null, holiday:null, overtime:null, allowance:null, commission:null},
-    deductions: {tardiness:null, sss:null, phic:null, pagibig:null, tax:null, loan:null},
-    contributions: {sss:null, phic:null, pagibig:null}
+async function directFetch(method, path, body) {
+  const ctx = window.managerAppContext;
+  if (!ctx || !ctx.apiEndpoint || !ctx.apiAccessToken) {
+    throw new Error('managerAppContext not available');
   }
-};
-
-const peso = new Intl.NumberFormat(undefined,{style:'currency',currency:'PHP',minimumFractionDigits:2,maximumFractionDigits:2});
-const money = v => peso.format(Number.isFinite(Number(v)) ? Number(v) : 0);
-const num = v => {const n=Number.parseFloat(v); return Number.isFinite(n)?Math.max(0,n):0;};
-const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-function getValues(id){
-  if(!state.values.has(id)) state.values.set(id,{
-    actualDaysDuty:0,overtimeHours:0,lateHours:0,holidayFactor:0,allowance:0,commission:0,
-    sss:0,phic:0,pagibig:0,tax:0,loan:0,
-    employerSss:0,employerPhic:0,employerPagibig:0
-  });
-  return state.values.get(id);
+  const base = ctx.apiEndpoint.replace(/\/+$/, '');
+  const url = base + (path.startsWith('/') ? path : '/' + path);
+  const opts = {
+    method,
+    headers: {
+      Authorization: 'Bearer ' + ctx.apiAccessToken,
+      'Content-Type': 'application/json',
+      Accept: 'application/json'
+    }
+  };
+  if (body !== undefined && body !== null) opts.body = JSON.stringify(body);
+  const resp = await fetch(url, opts);
+  const text = await resp.text();
+  if (!resp.ok) {
+    let detail = text;
+    try {
+      const parsed = JSON.parse(text);
+      detail = parsed?.error || parsed?.message || parsed?.detail || text;
+    } catch {}
+    throw new Error(`HTTP ${resp.status}: ${String(detail).substring(0, 500)}`);
+  }
+  try { return JSON.parse(text); } catch { return text; }
 }
 
-const HOURS_PER_DAY = 8;
-
-function calculate(e, v){
-  const dailyRate = num(e?.dailyRate);
-  const hourlyRate = dailyRate / HOURS_PER_DAY;
-  const basicPay = dailyRate * num(v.actualDaysDuty);
-  const overtimePay = hourlyRate * num(v.overtimeHours);
-  const holidayPay = dailyRate * num(v.holidayFactor);
-  const allowance = num(v.allowance);
-  const commission = num(v.commission);
-  const lateDeduction = hourlyRate * num(v.lateHours);
-  const gross = Math.max(0, basicPay + overtimePay + holidayPay + allowance + commission);
-  const deductions = lateDeduction + num(v.sss) + num(v.phic) + num(v.pagibig) + num(v.tax) + num(v.loan);
-  const rawNet = gross - deductions;
-  const net = Math.max(0, rawNet);
-  const contributions = num(v.employerSss) + num(v.employerPhic) + num(v.employerPagibig);
-  return {dailyRate, hourlyRate, basicPay, overtimePay, holidayPay, allowance, commission, lateDeduction, gross, deductions, net, rawNet, contributions};
+async function apiCall(method, path, body) {
+  const msg = { type:'api-request', method, path };
+  if (body !== undefined && body !== null) msg.body = body;
+  return postMessageWithResponse(msg);
 }
 
-/* Auto-Scaling Helper */
-function adjustScale() {
-  const wrapper = document.getElementById('scaleWrapper');
-  const winWidth = window.innerWidth;
-  if (winWidth < 1300) {
-    const scale = Math.max(0.82, winWidth / 1350);
-    wrapper.style.transform = `scale(${scale})`;
-    wrapper.style.width = `${100 / scale}%`;
+const PAGE_SIZE = 2000;
+async function fetchBatch(endpoint, onProgress) {
+  const all = [];
+  let token = null, skip = 0, useSkip = false, pageNo = 0, total = null;
+
+  while (true) {
+    let path = `${endpoint}?PageSize=${PAGE_SIZE}`;
+    if (useSkip) path += `&Skip=${skip}`;
+    else if (token) path += `&next_page_token=${encodeURIComponent(token)}`;
+
+    const data = await apiCall('GET', path);
+    const page = Array.isArray(data) ? data :
+      (Array.isArray(data?.items) ? data.items :
+       Array.isArray(data?.data) ? data.data : []);
+    all.push(...page);
+
+    if (total === null)
+      total = data?.totalCount ?? data?.total ?? data?.count ?? data?._metadata?.totalCount ?? null;
+
+    pageNo++;
+    onProgress?.(all.length, total, pageNo);
+
+    const next = data?.next_page_token || data?.nextPageToken ||
+      data?.NextPageToken || data?.nextPage || data?._links?.next?.href || null;
+
+    if (next) {
+      token = next;
+      useSkip = false;
+    } else if (page.length >= PAGE_SIZE) {
+      token = null;
+      useSkip = true;
+      skip = all.length;
+    } else break;
+
+    if (total !== null && all.length >= total) break;
+    if (pageNo >= 5000) break;
+  }
+  return all;
+}
+
+const SCALE = 1000000;
+let inventoryList = [], customerList = [], paymentAccounts = [], cart = [];
+const qtyOwned = Object.create(null);
+
+function addQty(k,q) {
+  const n=Number(q);
+  if(k && Number.isFinite(n) && n) qtyOwned[k]=(qtyOwned[k]||0)+Math.round(n*SCALE);
+}
+function subQty(k,q) {
+  const n=Number(q);
+  if(k && Number.isFinite(n) && n) qtyOwned[k]=(qtyOwned[k]||0)-Math.round(n*SCALE);
+}
+function getQtyOwned(k) { return (qtyOwned[k]||0)/SCALE; }
+function formatQty(q) {
+  const n = Number(q);
+  if (!Number.isFinite(n)) return '0';
+  if (Number.isInteger(n)) return String(n);
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+function parseCartQty(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  if (!/^\d+(?:\.\d{0,2})?$/.test(text)) return null;
+  const n = Number(text);
+  return Number.isFinite(n) ? n : null;
+}
+function setCartQty(key, value) {
+  const line = cart.find(x => x.key === key);
+  if (!line) return;
+
+  const qty = parseCartQty(value);
+  if (qty === null) {
+    showToast('Quantity must be a valid number with up to 2 decimal places.', 'error');
+    renderCart();
+    return;
+  }
+
+  if (qty <= 0) {
+    cart = cart.filter(x => x.key !== key);
+  } else if (isStocked(line) && qty > getQtyOwned(key) + 0.000001) {
+    showToast(`Only ${formatQty(getQtyOwned(key))} unit(s) on hand.`, 'error');
+    renderCart();
+    return;
   } else {
-    wrapper.style.transform = 'none';
-    wrapper.style.width = '100%';
-  }
-}
-window.addEventListener('resize', adjustScale);
-
-function updateSummary(){
-  let g=0, d=0, n=0, c=0, hasMissingRates=false, hasNegativeNet=false;
-  for(const e of state.employees){
-    const r = calculate(e, getValues(e.id));
-    g += r.gross; d += r.deductions; n += r.net; c += r.contributions;
-    if(e.dailyRate == null) hasMissingRates = true;
-    if(r.rawNet < 0) hasNegativeNet = true;
-  }
-  employeeCount.textContent = state.employees.length.toLocaleString();
-  grossTotal.textContent = money(g);
-  deductionTotal.textContent = money(d);
-  netTotal.textContent = money(n);
-  contributionTotal.textContent = money(c);
-
-  const banner = document.getElementById('validationBanner');
-  let warnings = [];
-  if(hasMissingRates) warnings.push('⚠ One or more employees are missing a Daily Rate in Manager.');
-  if(hasNegativeNet) warnings.push('⛔ Deductions exceed Gross Pay for one or more employees (Negative Net Pay).');
-  
-  if(warnings.length) {
-    banner.innerHTML = `<div class="warning">${warnings.join('<br>')}</div>`;
-  } else {
-    banner.innerHTML = '';
-  }
-}
-
-function inputCell(e, field, value){
-  return `<input class="pay-input" data-field="${field}" type="number" min="0" step="0.01" value="${value||''}" aria-label="${esc(e.name)} ${field}">`;
-}
-
-function getFilteredEmployees() {
-  if(!state.searchQuery) return state.employees;
-  const q = state.searchQuery.toLowerCase();
-  return state.employees.filter(e => e.name.toLowerCase().includes(q));
-}
-
-/* Fill Down Feature */
-function fillDown(field) {
-  const filtered = getFilteredEmployees();
-  if(!filtered.length) return;
-  const firstVal = getValues(filtered[0].id)[field];
-  filtered.forEach(e => { getValues(e.id)[field] = firstVal; });
-  render();
-  writeStatus.textContent = `Applied ${firstVal} to all visible rows.`;
-}
-
-function render(){
-  adjustScale();
-  const filtered = getFilteredEmployees();
-  
-  filterInfo.textContent = state.searchQuery 
-    ? `Showing ${filtered.length} of ${state.employees.length} employees` 
-    : `Showing all ${state.employees.length} employees`;
-
-  if(!filtered.length){
-    earningsApp.className='empty'; earningsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
-    deductionsApp.className='empty'; deductionsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
-    contributionsApp.className='empty'; contributionsApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
-    summaryApp.className='empty'; summaryApp.textContent= state.searchQuery ? 'No matching employees found.' : 'No active employees included in this payroll.';
-    renderExcluded(); updateSummary(); setButtons(); return;
+    line.qty = qty;
   }
 
-  earningsApp.className=''; deductionsApp.className=''; contributionsApp.className=''; summaryApp.className='';
+  renderCart();
+  closeInventoryDropdown();
+}
+function cartQty(k) {
+  const x=cart.find(i=>i.key===k);
+  return x ? Number(x.qty)||0 : 0;
+}
+function availableQty(k) { return getQtyOwned(k)-cartQty(k); }
 
-  // TAB 1: EARNINGS (Retains Late Hours for Encoder Convenience)
-  earningsApp.innerHTML=`<table><thead><tr>
-    <th class="employee-head">Employee</th>
-    <th>Actual Days <button type="button" class="fill-btn" onclick="fillDown('actualDaysDuty')" title="Fill down first row value">↓ Fill</button></th>
-    <th>OT Hours <button type="button" class="fill-btn" onclick="fillDown('overtimeHours')" title="Fill down first row value">↓ Fill</button></th>
-    <th>Late Hours <button type="button" class="fill-btn" onclick="fillDown('lateHours')" title="Fill down first row value">↓ Fill</button></th>
-    <th>Holiday Factor <button type="button" class="fill-btn" onclick="fillDown('holidayFactor')" title="Fill down first row value">↓ Fill</button></th>
-    <th>Allowances <button type="button" class="fill-btn" onclick="fillDown('allowance')" title="Fill down first row value">↓ Fill</button></th>
-    <th>Commissions <button type="button" class="fill-btn" onclick="fillDown('commission')" title="Fill down first row value">↓ Fill</button></th>
-    <th style="text-align:right">Daily Rate</th><th style="text-align:right">Hourly Rate</th><th style="text-align:right">Basic Pay</th><th style="text-align:right">OT Pay</th><th style="text-align:right">Holiday Pay</th><th style="text-align:right">Gross Pay</th>
-  </tr></thead><tbody>${filtered.map(e=>{
-    const v = getValues(e.id), r = calculate(e, v);
-    const rateClass = e.dailyRate == null ? 'rate-missing' : '';
-    return `<tr data-id="${esc(e.id)}">
-      <td class="name">
-        <div class="row-actions">
-          <button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude employee">×</button>
-          <button class="reset-btn" type="button" data-reset="${esc(e.id)}" title="Reset inputs">↺</button>
-        </div>
-        <span>${esc(e.name)}</span>
-      </td>
-      <td class="manual-cell">${inputCell(e,'actualDaysDuty',v.actualDaysDuty)}</td>
-      <td class="manual-cell">${inputCell(e,'overtimeHours',v.overtimeHours)}</td>
-      <td class="manual-cell">${inputCell(e,'lateHours',v.lateHours)}</td>
-      <td class="manual-cell">${inputCell(e,'holidayFactor',v.holidayFactor)}</td>
-      <td class="manual-cell">${inputCell(e,'allowance',v.allowance)}</td>
-      <td class="manual-cell">${inputCell(e,'commission',v.commission)}</td>
-      <td class="reference-cell money dailyRate ${rateClass}">${e.dailyRate==null?'⚠ Missing':money(e.dailyRate)}</td>
-      <td class="calc-cell money hourlyRate">${money(r.hourlyRate)}</td>
-      <td class="calc-cell money basicPay">${money(r.basicPay)}</td>
-      <td class="calc-cell money overtimePay">${money(r.overtimePay)}</td>
-      <td class="calc-cell money holidayPay">${money(r.holidayPay)}</td>
-      <td class="calc-cell money gross">${money(r.gross)}</td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
+async function computeQtyOwned(status) {
+  Object.keys(qtyOwned).forEach(k=>delete qtyOwned[k]);
 
-  // TAB 2: DEDUCTIONS
-  deductionsApp.innerHTML=`<table><thead><tr>
-    <th class="employee-head">Employee</th><th style="text-align:right">Tardiness</th>
-    <th>SSS <button type="button" class="fill-btn" onclick="fillDown('sss')" title="Fill down">↓ Fill</button></th>
-    <th>PHIC <button type="button" class="fill-btn" onclick="fillDown('phic')" title="Fill down">↓ Fill</button></th>
-    <th>Pag-IBIG <button type="button" class="fill-btn" onclick="fillDown('pagibig')" title="Fill down">↓ Fill</button></th>
-    <th>Tax <button type="button" class="fill-btn" onclick="fillDown('tax')" title="Fill down">↓ Fill</button></th>
-    <th>Loans <button type="button" class="fill-btn" onclick="fillDown('loan')" title="Fill down">↓ Fill</button></th>
-    <th style="text-align:right">Total Deductions</th><th style="text-align:right">Net Pay</th>
-  </tr></thead><tbody>${filtered.map(e=>{
-    const v = getValues(e.id), r = calculate(e, v);
-    const netClass = r.rawNet < 0 ? 'net-negative' : '';
-    return `<tr data-id="${esc(e.id)}">
-      <td class="name">
-        <div class="row-actions">
-          <button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude employee">×</button>
-          <button class="reset-btn" type="button" data-reset="${esc(e.id)}" title="Reset inputs">↺</button>
-        </div>
-        <span>${esc(e.name)}</span>
-      </td>
-      <td class="calc-cell money tardiness">${money(r.lateDeduction)}</td>
-      <td class="manual-cell">${inputCell(e,'sss',v.sss)}</td>
-      <td class="manual-cell">${inputCell(e,'phic',v.phic)}</td>
-      <td class="manual-cell">${inputCell(e,'pagibig',v.pagibig)}</td>
-      <td class="manual-cell">${inputCell(e,'tax',v.tax)}</td>
-      <td class="manual-cell">${inputCell(e,'loan',v.loan)}</td>
-      <td class="calc-cell money deductionTotal">${money(r.deductions)}</td>
-      <td class="calc-cell money net ${netClass}">${money(r.net)}</td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
-
-  // TAB 3: EMPLOYER CONTRIBUTIONS
-  contributionsApp.innerHTML=`<table><thead><tr>
-    <th class="employee-head">Employee</th>
-    <th>ER SSS <button type="button" class="fill-btn" onclick="fillDown('employerSss')" title="Fill down">↓ Fill</button></th>
-    <th>ER PHIC <button type="button" class="fill-btn" onclick="fillDown('employerPhic')" title="Fill down">↓ Fill</button></th>
-    <th>ER Pag-IBIG <button type="button" class="fill-btn" onclick="fillDown('employerPagibig')" title="Fill down">↓ Fill</button></th>
-    <th style="text-align:right">Total ER Contributions</th>
-  </tr></thead><tbody>${filtered.map(e=>{
-    const v = getValues(e.id), r = calculate(e, v);
-    return `<tr data-id="${esc(e.id)}">
-      <td class="name">
-        <div class="row-actions">
-          <button class="exclude-btn" type="button" data-exclude="${esc(e.id)}" title="Exclude employee">×</button>
-          <button class="reset-btn" type="button" data-reset="${esc(e.id)}" title="Reset inputs">↺</button>
-        </div>
-        <span>${esc(e.name)}</span>
-      </td>
-      <td class="manual-cell">${inputCell(e,'employerSss',v.employerSss)}</td>
-      <td class="manual-cell">${inputCell(e,'employerPhic',v.employerPhic)}</td>
-      <td class="manual-cell">${inputCell(e,'employerPagibig',v.employerPagibig)}</td>
-      <td class="calc-cell money contributionsTotal">${money(r.contributions)}</td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
-
-  // TAB 4: PAYROLL SUMMARY (Read-only breakdown with Green Prominent Totals)
-  let sumG = 0, sumD = 0, sumC = 0, sumN = 0;
-  const summaryRows = filtered.map(e => {
-    const v = getValues(e.id), r = calculate(e, v);
-    sumG += r.gross; sumD += r.deductions; sumC += r.contributions; sumN += r.net;
-    const netClass = r.rawNet < 0 ? 'net-negative' : '';
-    return `<tr data-id="${esc(e.id)}">
-      <td class="name"><span>${esc(e.name)}</span></td>
-      <td class="calc-cell money">${money(r.gross)}</td>
-      <td class="calc-cell money">${money(r.deductions)}</td>
-      <td class="calc-cell money">${money(r.contributions)}</td>
-      <td class="calc-cell money net ${netClass}">${money(r.net)}</td>
-    </tr>`;
-  }).join('');
-
-  summaryApp.innerHTML=`<table class="summary-table"><thead><tr>
-    <th class="employee-head">Employee</th>
-    <th style="text-align:right">Gross Earnings (Tab 1)</th>
-    <th style="text-align:right">Total Deductions (Tab 2)</th>
-    <th style="text-align:right">Employer Contributions (Tab 3)</th>
-    <th style="text-align:right">Net Pay</th>
-  </tr></thead><tbody>${summaryRows}</tbody>
-  <tfoot><tr>
-    <th class="employee-head">TOTALS</th>
-    <th class="calc-cell money">${money(sumG)}</th>
-    <th class="calc-cell money">${money(sumD)}</th>
-    <th class="calc-cell money">${money(sumC)}</th>
-    <td class="calc-cell money net">${money(sumN)}</td>
-  </tr></tfoot></table>`;
-
-  // Attach Input Listeners & Excel Navigation
-  document.querySelectorAll('.pay-input').forEach(input => {
-    input.addEventListener('focus', () => input.select());
-    input.addEventListener('input', () => {
-      const row = input.closest('tr'), id = row.dataset.id, field = input.dataset.field, v = getValues(id);
-      v[field] = num(input.value);
-      updateRow(id);
-      updateSummary();
-      setButtons();
+  async function source(path,label) {
+    status(`${label}…`);
+    return fetchBatch(path,(loaded,total,page)=>{
+      status(`${label} · ${loaded.toLocaleString()} loaded`);
     });
+  }
 
-    // Excel Keyboard Navigation
-    input.addEventListener('keydown', e => {
-      const cell = input.closest('td');
-      const row = input.closest('tr');
-      const colIndex = Array.from(row.children).indexOf(cell);
+  const starting = await source('/api4/inventory-item-starting-balance-batch','Starting balances');
+  const purchases = await source('/api4/purchase-invoice-batch','Purchase invoices');
+  const debits = await source('/api4/debit-note-batch','Debit notes');
+  const sales = await source('/api4/sales-invoice-batch','Sales invoices');
+  const credits = await source('/api4/credit-note-batch','Credit notes');
+  const writes = await source('/api4/inventory-write-off-batch','Write-offs');
 
-      if (e.key === 'Enter' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        const nextRow = row.nextElementSibling;
-        if (nextRow) nextRow.children[colIndex]?.querySelector('input')?.focus();
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const prevRow = row.previousElementSibling;
-        if (prevRow) prevRow.children[colIndex]?.querySelector('input')?.focus();
+  starting.forEach(r=>{
+    const d=r.item||r, k=d.inventoryItem, lines=d.qtyOnHandLines||[];
+    if(lines.length) lines.forEach(x=>addQty(k,x.qtyOnHand));
+    else addQty(k,d.qtyOwned??0);
+  });
+  purchases.forEach(r=>(r.item?.lines||[]).forEach(x=>addQty(x.item,x.qty)));
+  debits.forEach(r=>(r.item?.lines||[]).forEach(x=>subQty(x.item,x.qty)));
+  sales.forEach(r=>(r.item?.lines||[]).forEach(x=>subQty(x.item,x.qty)));
+  credits.forEach(r=>(r.item?.lines||[]).forEach(x=>addQty(x.item,x.qty)));
+  writes.forEach(r=>(r.item?.items||[]).forEach(x=>subQty(x.inventoryItem,x.qty)));
+}
+
+function itemData(r) {
+  return r?.item || r?.nonInventoryItem || r?.inventoryKit || r || {};
+}
+function itemType(r) {
+  return r?.posType || r?.type || (r?.nonInventoryItem ? 'non-inventory' : r?.inventoryKit ? 'inventory-kit' : 'inventory');
+}
+function itemName(r) { const x=itemData(r); return x.itemName || x.ItemName || x.nameWithCode || x.NameWithCode || x.name || x.Name || x.description || x.Description || 'Unnamed Item'; }
+function itemCode(r) { const x=itemData(r); return x.itemCode || x.ItemCode || x.code || x.Code || ''; }
+function moneyNumber(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  if (typeof value === 'object') {
+    const nested=value.value ?? value.Value ?? value.amount ?? value.Amount;
+    return Number(nested)||0;
+  }
+  return Number(value)||0;
+}
+function itemPrice(r) {
+  const x=itemData(r);
+  // The Edge Function normalizes Manager API2 pricing into `price`.
+  // Keep the raw Manager fields as fallbacks for compatibility.
+  const candidates=[
+    r?.price, r?.defaultSalesUnitPrice, r?.DefaultSalesUnitPrice,
+    x.defaultSalesUnitPrice,x.DefaultSalesUnitPrice,
+    x.salesUnitPrice,x.SalesUnitPrice,
+    x.salesPrice,x.SalesPrice,
+    x.salePrice,x.SalePrice,
+    x.price,x.Price
+  ];
+  for (const value of candidates) {
+    if (value !== null && value !== undefined && value !== '') {
+      const n=moneyNumber(value);
+      if (n !== 0) return n;
+    }
+  }
+  return 0;
+}
+function inactive(r) { const x=itemData(r); return !!(x.inactive ?? x.Inactive); }
+function isStocked(r) { return itemType(r)==='inventory'; }
+function availableQtyForRecord(r) { return isStocked(r) ? availableQty(r.key) : Infinity; }
+
+function escapeHtml(v) {
+  return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+function showToast(message,type='success',duration=2600) {
+  const box=document.getElementById('pos-toast-container');
+  if(!box) return;
+  const isError=type==='error', isInfo=type==='info';
+  const toast=document.createElement('div');
+  toast.className=`pos-toast rounded-xl border px-4 py-3 shadow-2xl bg-[#1B222B] ${isError?'border-[#FF5C5C]/60':isInfo?'border-[#4DA3FF]/50':'border-[#28D66B]/50'}`;
+  toast.innerHTML=`<div class="flex items-start gap-3"><span class="text-base ${isError?'text-[#FF5C5C]':isInfo?'text-[#4DA3FF]':'text-[#28D66B]'}">${isError?'⚠':isInfo?'ℹ':'✓'}</span><div class="min-w-0 text-xs font-semibold text-white">${escapeHtml(message)}</div></div>`;
+  box.appendChild(toast);
+  setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateY(8px)';setTimeout(()=>toast.remove(),180)},duration);
+}
+
+function normalizePosRecord(record,type) {
+  const raw=record||{};
+  const key=raw.key||raw.Key||raw.item?.key||raw.item?.Key||raw.nonInventoryItem?.key||raw.inventoryKit?.key||'';
+  const nested=raw.item||raw.nonInventoryItem||raw.inventoryKit;
+  const normalized={...raw,key,posType:type};
+  if(nested) normalized.item={...nested};
+  else normalized.item={...raw};
+  return normalized;
+}
+
+async function fetchOptionalBatch(paths,label,status) {
+  let lastError=null;
+  for(const path of paths){
+    try{return await fetchBatch(path,(loaded,total)=>status?.(`${label} · ${loaded.toLocaleString()} loaded`));}
+    catch(err){lastError=err;}
+  }
+  throw lastError||new Error(`Unable to load ${label}.`);
+}
+
+async function loadPosData() {
+  if (!currentSupabaseUser || !selectedBusinessId || !selectedBranchId) {
+    showToast('Select a business and branch before syncing.','error');
+    return;
+  }
+  const btn=document.getElementById('load-btn'),bar=document.getElementById('prog-bar'),status=document.getElementById('status-txt');
+  btn.disabled=true; bar.style.width='5%';
+  const syncDot=document.getElementById('sync-dot'),syncLabel=document.getElementById('sync-label');
+  if(syncDot) syncDot.className='w-2 h-2 rounded-full bg-[#F6B73C] animate-pulse';
+  if(syncLabel) syncLabel.textContent='Syncing…';
+  try {
+    status.textContent='Syncing Manager Cloud data…';
+    bar.style.width='15%';
+
+    const { data, error } = await supabaseClient.functions.invoke('manager-api', {
+      body: {
+        business_id: selectedBusinessId,
+        branch_id: selectedBranchId,
+        operation: 'sync_data'
       }
     });
-  });
 
-  // Action Listeners
-  document.querySelectorAll('.exclude-btn').forEach(btn => btn.addEventListener('click', () => excludeEmployee(btn.dataset.exclude)));
-  document.querySelectorAll('.reset-btn').forEach(btn => btn.addEventListener('click', () => resetRowInputs(btn.dataset.reset)));
+    if (error) throw new Error(error.message || 'Manager data sync failed.');
+    if (!data?.success) throw new Error(data?.error || 'Manager data sync failed.');
 
-  renderExcluded();
-  updateSummary();
-  setButtons();
+    const synced = data?.data || {};
+    customerList = Array.isArray(synced.customers) ? synced.customers : [];
+    inventoryList = Array.isArray(synced.inventory) ? synced.inventory : [];
+    paymentAccounts = Array.isArray(synced.paymentAccounts) ? synced.paymentAccounts : [];
+
+    bar.style.width='55%';
+    renderCustomerDropdown(customerList);
+
+    // This Vercel/Supabase version must NOT call the old Manager.io
+    // embedded-app postMessage API for stock computation. That API only
+    // works when the HTML is running inside Manager.io itself.
+    // Stock quantities will be added through the server-side Manager API
+    // in the inventory-sync step. For now, load the catalog directly.
+    Object.keys(qtyOwned).forEach(k => delete qtyOwned[k]);
+    // Manager API2 returns stock quantities with the inventory catalog.
+    // Seed the local stock map from the synced quantity instead of using
+    // the old Manager.io embedded API4 postMessage stock calculation.
+    inventoryList.forEach(r => {
+      const key = r?.key || r?.Key;
+      if (!key || !isStocked(r)) return;
+      const raw = r?.qtyOwned ?? r?.QtyOwned ?? r?.qtyOnHand ?? r?.QtyOnHand ?? r?.qtyAvailable ?? r?.QtyAvailable;
+      const value = raw && typeof raw === 'object'
+        ? (raw.value ?? raw.Value ?? raw.amount ?? raw.Amount)
+        : raw;
+      const n = Number(value);
+      if (Number.isFinite(n)) qtyOwned[key] = Math.round(n * SCALE);
+    });
+
+    const saleable = getSearchableInventory();
+    document.getElementById('item-count').textContent=`${Math.min(5, saleable.length).toLocaleString()} quick-add items`;
+    renderBestsellers(saleable);
+
+    const counts = synced.counts || {};
+    const customerCount = Number(counts.customers ?? customerList.length);
+    const paymentCount = Number(counts.paymentAccounts ?? paymentAccounts.length);
+    status.textContent=`✓ Synced · ${saleable.length.toLocaleString()} saleable items · ${customerCount.toLocaleString()} customers · ${paymentCount.toLocaleString()} payment accounts`;
+    bar.style.width='100%';
+    if(syncDot) syncDot.className='w-2 h-2 rounded-full bg-[#28D66B]';
+    if(syncLabel) syncLabel.textContent='Synced';
+    showToast(`Manager data synced · ${saleable.length.toLocaleString()} items · ${customerCount.toLocaleString()} customers.`, 'success', 4200);
+    console.log('Manager sync response:', data);
+    if (data?.data?.debug) {
+      console.groupCollapsed('Manager inventory debug');
+      console.log('Raw inventory count:', data.data.debug.inventoryRawCount);
+      console.log('Inventory field names:', data.data.debug.inventoryFieldNames);
+      console.table(data.data.debug.inventorySample || []);
+      console.groupEnd();
+    }
+  } catch(e) {
+    console.error('Manager data sync failed:', e);
+    status.textContent='⚠ '+(e?.message || 'Sync failed.');
+    if(syncDot) syncDot.className='w-2 h-2 rounded-full bg-[#FF5C5C]';
+    if(syncLabel) syncLabel.textContent='Sync error';
+    bar.style.width='0%';
+    showToast(e?.message || 'Sync failed.','error',5000);
+  } finally {
+    btn.disabled=false;
+  }
 }
 
-/* Tab Switcher Logic */
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const tab = btn.dataset.tab;
-    state.activeTab = tab;
-    
-    earningsPanel.style.display      = tab === 'earnings'      ? 'block' : 'none';
-    deductionsPanel.style.display    = tab === 'deductions'    ? 'block' : 'none';
-    contributionsPanel.style.display = tab === 'contributions' ? 'block' : 'none';
-    summaryPanel.style.display       = tab === 'summary'       ? 'block' : 'none';
+function renderCustomerDropdown(customers) {
+  const select=document.getElementById('customer-select');
+  select.innerHTML='';
+  let walkInKey='';
+  customers.forEach(r=>{
+    const x=r?.item||r||{};
+    if(x.inactive) return;
+    const name=x.name||x.Name||x.nameWithCode||x.NameWithCode||'Unnamed Customer';
+    const key=r.key||r.Key||x.key||x.Key||'';
+    const o=document.createElement('option'); o.value=key; o.textContent=name; o.className='bg-[#242D38] text-white';
+    select.appendChild(o);
+    if(String(name).trim().toLowerCase()==='walk-in customer') walkInKey=key;
   });
+  if(walkInKey) select.value=walkInKey;
+  else if(select.options.length) select.selectedIndex=0;
+}
+
+function renderBestsellers(items) {
+  const box=document.getElementById('bestsellers-grid');
+  const quickItems = (items || []).slice(0, 5);
+  if(!quickItems.length){
+    box.innerHTML='<div class="col-span-full text-center py-8 text-xs text-[#B4C0CC] bg-[#242D38] rounded-2xl border border-dashed border-[#384352]">Sync data to display quick-add items</div>';
+    return;
+  }
+  box.innerHTML=quickItems.map(r=>{
+    const price=itemPrice(r),name=itemName(r),code=itemCode(r),type=itemType(r),stocked=isStocked(r),avail=availableQtyForRecord(r),disabled=stocked&&avail<=0;
+    const typeLabel=type==='inventory-kit'?'Kit':type==='non-inventory'?'Non-stock':`On hand: ${formatQty(getQtyOwned(r.key))}`;
+    return `<button ${disabled?'disabled':''} onclick="addToCart('${String(r.key).replace(/'/g,"\\'")}')"
+      class="bg-[#242D38] hover:bg-[#384352] disabled:opacity-40 disabled:cursor-not-allowed border border-[#384352] hover:border-[#4DA3FF] p-3 rounded-2xl text-left active:scale-95 transition-all flex flex-col justify-between min-h-[92px] group relative shadow-sm"
+      title="${escapeHtml(name)}${code?' · '+escapeHtml(code):''}">
+      <div class="w-full">
+        <span class="text-xs font-bold text-white group-hover:text-[#4DA3FF] line-clamp-2 leading-tight block">${escapeHtml(name)}</span>
+        ${code?`<span class="text-[9px] font-mono text-[#B4C0CC] truncate block mt-0.5">${escapeHtml(code)}</span>`:''}
+      </div>
+      <div class="mt-2 flex items-end justify-between gap-1 w-full border-t border-[#384352]/50 pt-1.5">
+        <span class="text-xs font-black text-[#28D66B]">₱${price.toFixed(2)}</span>
+        <span class="text-[9px] font-semibold ${disabled?'text-[#FF5C5C]':'text-[#B4C0CC]'}">${escapeHtml(typeLabel)}</span>
+      </div>
+    </button>`;
+  }).join('');
+}
+
+let searchDropdownIndex = -1;
+let searchDropdownResults = [];
+
+function closeInventoryDropdown() {
+  const dropdown = document.getElementById('inventory-dropdown');
+  if (dropdown) dropdown.classList.add('hidden');
+  searchDropdownIndex = -1;
+  searchDropdownResults = [];
+}
+
+function getSearchableInventory() {
+  return inventoryList.filter(r => {
+    const item = itemData(r);
+    return !Boolean(item.inactive ?? item.Inactive);
+  });
+}
+
+function getInventorySearchResults(query) {
+  const base = getSearchableInventory();
+  const q = query.trim().toLowerCase();
+
+  if (!q) return base.slice(0, 12);
+
+  return base.filter(r => {
+    const name = itemName(r).toLowerCase();
+    const code = itemCode(r).toLowerCase();
+    return name.includes(q) || code.includes(q);
+  }).slice(0, 12);
+}
+
+function renderInventoryDropdown(query) {
+  const dropdown=document.getElementById('inventory-dropdown'); if(!dropdown)return;
+  searchDropdownResults=getInventorySearchResults(query); searchDropdownIndex=-1;
+  if(!searchDropdownResults.length){dropdown.innerHTML='<div class="inventory-dropdown-empty">No matching products found.</div>';dropdown.classList.remove('hidden');return;}
+  dropdown.innerHTML=searchDropdownResults.map((r,i)=>{
+    const key=r.key,name=escapeHtml(itemName(r)),code=escapeHtml(itemCode(r)),price=Number(itemPrice(r)||0),stocked=isStocked(r),available=availableQtyForRecord(r),disabled=stocked&&available<=0;
+    const typeLabel=itemType(r)==='inventory-kit'?'Inventory kit':itemType(r)==='non-inventory'?'Non-inventory':`On hand: ${formatQty(getQtyOwned(key))}`;
+    return `<button type="button" class="inventory-dropdown-item ${disabled?'disabled':''}" ${disabled?'disabled':''} onclick="selectInventoryFromDropdown('${String(key).replace(/'/g,"\\'")}')" data-search-index="${i}">
+      <div class="flex items-center justify-between gap-3"><div class="min-w-0"><div class="font-semibold text-xs text-white truncate">${name}</div><div class="inventory-dropdown-meta"><span>${code?code+' · ':''}${escapeHtml(typeLabel)}</span></div></div><div class="inventory-dropdown-price">₱${price.toFixed(2)}</div></div>
+    </button>`;
+  }).join(''); dropdown.classList.remove('hidden');
+}
+
+function selectInventoryFromDropdown(key) {
+  const item=inventoryList.find(r=>r.key===key); if(!item)return;
+  if(isStocked(item)&&availableQtyForRecord(item)<=0){showToast(`No available stock for ${itemName(item)}.`,'error');return;}
+  addToCart(key); const input=document.getElementById('search-input'); if(input)input.value=''; closeInventoryDropdown();
+}
+
+function handleSearchKeydown(event) {
+  const dropdown = document.getElementById('inventory-dropdown');
+  if (!dropdown || dropdown.classList.contains('hidden')) return;
+
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeInventoryDropdown();
+    return;
+  }
+
+  if (!searchDropdownResults.length) return;
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    searchDropdownIndex = Math.min(searchDropdownIndex + 1, searchDropdownResults.length - 1);
+    updateSearchDropdownHighlight();
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    searchDropdownIndex = Math.max(searchDropdownIndex - 1, 0);
+    updateSearchDropdownHighlight();
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    const index = searchDropdownIndex >= 0 ? searchDropdownIndex : 0;
+    const selected = searchDropdownResults[index];
+    if (selected && availableQty(selected.key) > 0) {
+      selectInventoryFromDropdown(selected.key);
+    }
+  }
+}
+
+function updateSearchDropdownHighlight() {
+  document.querySelectorAll('#inventory-dropdown [data-search-index]').forEach(el => {
+    el.classList.toggle('active', Number(el.dataset.searchIndex) === searchDropdownIndex);
+  });
+}
+
+function handleSearch(query) {
+  const q=query.trim().toLowerCase();
+  renderInventoryDropdown(q);
+  if (!q) renderBestsellers(getSearchableInventory());
+}
+
+function addToCart(key) {
+  const r=inventoryList.find(x=>x.key===key); if(!r)return;
+  if(isStocked(r)&&availableQtyForRecord(r)<=0){showToast(`No available stock for ${itemName(r)}.`,'error');return;}
+  const line=cart.find(x=>x.key===key);
+  if(line) line.qty++; else cart.push({key,name:itemName(r),price:itemPrice(r),qty:1,type:itemType(r)});
+  renderCart(); handleSearch(document.getElementById('search-input').value);
+}
+
+function removeFromCart(key) {
+  cart = cart.filter(line => line.key !== key);
+  renderCart();
+  const input = document.getElementById('search-input');
+  if (input) handleSearch(input.value);
+}
+
+function changeCartQty(key,delta) {
+  const line=cart.find(x=>x.key===key); if(!line)return;
+  const next=line.qty+delta;
+  if(next<=0) cart=cart.filter(x=>x.key!==key);
+  else if(!isStocked(line)||next<=getQtyOwned(key)) line.qty=next;
+  else {showToast(`Only ${formatQty(getQtyOwned(key))} unit(s) on hand.`,'error');return;}
+  renderCart(); handleSearch(document.getElementById('search-input').value);
+}
+
+function clearCart() {
+  cart=[]; renderCart();
+  handleSearch(document.getElementById('search-input').value);
+}
+
+function renderCart() {
+  const box = document.getElementById('cart-container');
+  const total = cart.reduce((s, x) => s + x.price * x.qty, 0);
+
+  document.getElementById('cart-total').textContent = `₱${total.toFixed(2)}`;
+  document.getElementById('cart-subtotal').textContent = `₱${total.toFixed(2)}`;
+  document.getElementById('checkout-btn').disabled = !cart.length;
+
+  if (!cart.length) {
+    box.className = "flex-1 min-h-[200px] overflow-y-auto p-4 flex flex-col justify-center items-center text-center";
+    box.innerHTML = '<i data-lucide="shopping-bag" class="w-10 h-10 text-[#B4C0CC] opacity-30 mb-2"></i><p class="text-xs text-[#B4C0CC]">No items added.<br>Select an item to begin the transaction.</p>';
+    lucide.createIcons();
+    return;
+  }
+
+  box.className = "flex-1 min-h-0 overflow-y-auto divide-y divide-[#384352]/60 bg-[#1B222B]";
+  box.innerHTML = cart.map(x => {
+    const lineTotal = x.price * x.qty;
+    const available = isStocked(x) ? availableQty(x.key) : Infinity;
+
+    return `<div class="p-3 bg-[#1B222B] hover:bg-[#202832] transition-colors">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0 flex-1 pr-1">
+          <div class="font-bold text-white text-xs truncate">${escapeHtml(x.name)}</div>
+          <div class="text-[#B4C0CC] text-[10px] mt-0.5">₱${x.price.toFixed(2)} each${isStocked(x)?` · ${formatQty(available)} left`: ' · Non-stock'}</div>
+        </div>
+        <div class="text-xs font-bold text-[#28D66B] whitespace-nowrap">₱${lineTotal.toFixed(2)}</div>
+        <button type="button" onclick="removeFromCart('${x.key}')" title="Remove item"
+          class="w-6 h-6 rounded-lg text-[#FF5C5C] hover:bg-[#FF5C5C20] flex items-center justify-center shrink-0">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+      <div class="mt-2 flex items-center justify-between">
+        <div class="text-[10px] text-[#B4C0CC] font-medium">
+          Qty: ${escapeHtml(formatQty(x.qty))}
+        </div>
+        <div class="flex items-center gap-1">
+          <button type="button"
+            onclick="changeCartQty('${x.key}',-1)"
+            class="w-8 h-8 rounded-lg bg-[#242D38] border border-[#384352] text-white font-bold hover:bg-[#384352] active:scale-95 flex items-center justify-center text-sm"
+            aria-label="Decrease quantity">−</button>
+          <input type="text" inputmode="decimal" value="${escapeHtml(formatQty(x.qty))}"
+            onchange="setCartQty('${String(x.key).replace(/'/g,"\\'")}', this.value)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+            oninput="this.value=this.value.replace(/[^0-9.]/g,'').replace(/(\\..*)\\./g,'$1').replace(/^(\\d+\\.\\d{0,2}).*$/,'$1')"
+            class="cart-qty-editor"
+            aria-label="Editable quantity for ${escapeHtml(x.name)}"
+            title="Edit quantity — up to 2 decimal places">
+          <button type="button"
+            onclick="changeCartQty('${x.key}',1)"
+            class="w-8 h-8 rounded-lg bg-[#242D38] border border-[#384352] text-white font-bold hover:bg-[#384352] active:scale-95 flex items-center justify-center text-sm"
+            aria-label="Increase quantity">+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  lucide.createIcons();
+}
+
+document.addEventListener('click', function(event) {
+  const searchArea = document.getElementById('search-input')?.parentElement;
+  if (searchArea && !searchArea.contains(event.target)) {
+    closeInventoryDropdown();
+  }
 });
 
-function resetRowInputs(id) {
-  const v = getValues(id);
-  Object.assign(v, {
-    actualDaysDuty:0, overtimeHours:0, lateHours:0, holidayFactor:0, allowance:0, commission:0,
-    sss:0, phic:0, pagibig:0, tax:0, loan:0,
-    employerSss:0, employerPhic:0, employerPagibig:0
-  });
-  render();
+document.addEventListener('DOMContentLoaded',()=>{ lucide.createIcons(); renderCart(); renderBusinessSelect(); renderBranchSelect(); updateManagerTestButton(); initializeSupabase(); });
+
+// -----------------------------------------------------------------------------
+// Parked Orders
+// -----------------------------------------------------------------------------
+let parkedOrders = [];
+let nextParkedOrderNumber = 1;
+
+function parkedOrderTotal(order) {
+  return order.cart.reduce((sum, line) => sum + (Number(line.price) || 0) * (Number(line.qty) || 0), 0);
 }
 
-function renderExcluded(){
-  if(!excludedApp) return;
-  if(!state.excludedEmployees.length){ excludedApp.innerHTML = ''; return; }
-  excludedApp.innerHTML = `<div class="notice" style="margin-top:10px"><span><b>${state.excludedEmployees.length}</b> employee(s) excluded from this payroll.</span> <button type="button" id="showExcludedBtn">Show Excluded</button></div>`;
-  document.getElementById('showExcludedBtn')?.addEventListener('click', showExcludedEmployees);
+function getActiveCustomerName() {
+  const select = document.getElementById('customer-select');
+  return select?.options[select.selectedIndex]?.textContent?.trim() || 'Walk-in Customer';
 }
 
-function excludeEmployee(id){
-  const index = state.employees.findIndex(e => String(e.id) === String(id));
-  if(index < 0) return;
-  const [employee] = state.employees.splice(index, 1);
-  state.excludedEmployees.push(employee);
-  render();
-}
-
-function showExcludedEmployees(){
-  if(!state.excludedEmployees.length) return;
-  const names = state.excludedEmployees.map(e => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><span>${esc(e.name)}</span><button type="button" data-restore="${esc(e.id)}">Restore</button></div>`).join('');
-  modalTitle.textContent = 'Excluded Employees';
-  modalIntro.textContent = 'These employees are excluded from the active payroll run.';
-  modalBody.innerHTML = `<div>${names}</div>`;
-  modalBackdrop.style.display = 'flex';
-  document.querySelectorAll('[data-restore]').forEach(btn => btn.addEventListener('click', () => restoreEmployee(btn.dataset.restore)));
-}
-
-function restoreEmployee(id){
-  const index = state.excludedEmployees.findIndex(e => String(e.id) === String(id));
-  if(index < 0) return;
-  const [employee] = state.excludedEmployees.splice(index, 1);
-  state.employees.push(employee);
-  state.employees.sort((a,b) => a.name.localeCompare(b.name));
-  modalBackdrop.style.display = 'none';
-  render();
-}
-
-function updateRow(id){
-  const e = state.employees.find(x=>String(x.id)===String(id));
-  if(!e) return;
-  const r = calculate(e, getValues(id));
-  document.querySelectorAll(`tr[data-id="${CSS.escape(id)}"]`).forEach(row=>{
-    const fields={
-      '.dailyRate':r.dailyRate, '.hourlyRate':r.hourlyRate, '.basicPay':r.basicPay,
-      '.overtimePay':r.overtimePay, '.holidayPay':r.holidayPay, '.allowance':r.allowance,
-      '.commission':r.commission, '.tardiness':r.lateDeduction, '.lateDeduction':r.lateDeduction,
-      '.gross':r.gross, '.net':r.net, '.deductionTotal':r.deductions, '.contributionsTotal':r.contributions
-    };
-    Object.entries(fields).forEach(([sel,val])=>{
-      const el = row.querySelector(sel);
-      if(el) el.textContent = money(val);
-    });
-  });
-}
-
-async function loadDailyRateField(){
-  const data = await postMessageWithResponse({type:'api-request', method:'GET', path:'/api4/number-custom-field-batch?PageSize=99999'});
-  const items = Array.isArray(data)?data:(data?.items||data?.data||[]);
-  const matches = items.filter(x=>String(x?.item?.name||'').trim().toLowerCase()==='daily rate');
-  if(!matches.length) throw new Error('Daily Rate custom field was not found.');
-  state.dailyRateFieldKeys = matches.map(m => m?.key || m?.item?.key || m?.item?.id).filter(Boolean);
-  return state.dailyRateFieldKeys;
-}
-
-async function loadEmployees(){
-  loadBtn.disabled = true; loadBtn.textContent = 'Loading…';
-  try{
-    await loadDailyRateField();
-    const data = await postMessageWithResponse({type:'api-request', method:'GET', path:'/api4/employee-batch?PageSize=99999'});
-    const records = Array.isArray(data)?data:(data?.items||data?.data||[]);
-    state.excludedEmployees = [];
-    state.employees = records.map(record => {
-      const item = record?.item || {};
-      const decimals = item?.customFields2?.decimals || item?.customFields?.decimals || {};
-      let rawRate = null;
-      for (const k of state.dailyRateFieldKeys) {
-        if (decimals[k] !== undefined && decimals[k] !== null) { rawRate = decimals[k]; break; }
-      }
-      return {
-        id: record?.key,
-        name: item?.name || 'Unnamed employee',
-        inactive: Boolean(item?.inactive),
-        dailyRate: Number.isFinite(Number(rawRate)) ? Number(rawRate) : null
-      };
-    }).filter(e => e.id && !e.inactive).sort((a,b)=>a.name.localeCompare(b.name));
-
-    status.textContent = `✓ ${state.employees.length} active employees loaded`;
-    loadBtn.textContent = '↻ Reload Employees';
-    render();
-    try{
-      await loadPayslipItemMappings();
-    }catch(mappingErr){
-      const panel = document.getElementById('payslipItemsTest');
-      if(panel){
-        panel.className = 'warning';
-        panel.innerHTML = `<b>⚠ Payslip Item mapping notice:</b> ${esc(mappingErr?.message || mappingErr)}`;
-      }
-    }
-  }catch(err){
-    status.textContent = 'Failed to load employees';
-    error.innerHTML = `<div class="error">⚠ ${esc(err?.message)}</div>`;
-    loadBtn.textContent = '↻ Retry';
-  }finally{ loadBtn.disabled = false; }
-}
-
-async function fetchPayslipItems(path){
-  const data = await postMessageWithResponse({type:'api-request', method:'GET', path:`${path}?PageSize=99999`});
-  const records = Array.isArray(data) ? data : (data?.items || data?.data || []);
-  return records.map(record => {
-    const item = record?.item || record || {};
-    return {
-      key: record?.key || item?.key || item?.id || null,
-      name: String(item?.name || record?.name || '').trim()
-    };
-  }).filter(x => x.key && x.name);
-}
-
-function normalizePayslipItemName(name){
-  return String(name ?? '').toLowerCase().replace(/\s+/g, ' ').replace(/\s*\/\s*/g, '/').trim();
-}
-
-function indexPayslipItems(items){
-  const index = new Map();
-  for(const item of items){ index.set(normalizePayslipItemName(item.name), item); }
-  return index;
-}
-
-async function loadPayslipItemMappings(){
-  const panel = document.getElementById('payslipItemsTest');
-  if(panel){ panel.className = 'notice'; panel.textContent = 'Loading Payslip Items for this business…'; }
-
-  const [earningsItems, deductionItems, contributionItems] = await Promise.all([
-    fetchPayslipItems('/api4/payslip-earnings-item-batch'),
-    fetchPayslipItems('/api4/payslip-deduction-item-batch'),
-    fetchPayslipItems('/api4/payslip-contribution-item-batch')
-  ]);
-
-  const earnings = indexPayslipItems(earningsItems);
-  const deductions = indexPayslipItems(deductionItems);
-  const contributions = indexPayslipItems(contributionItems);
-
-  const required = {
-    earnings: { basic: 'Basic Salaries', holiday: 'Holiday Pay', overtime: 'Overtime', allowance: 'Allowances', commission: 'Commissions' },
-    deductions: { tardiness: 'Tardiness', sss: 'SSS Contributions', phic: 'PHIC Contributions', pagibig: 'Pag-IBIG Contributions', tax: 'Withholding Tax', loan: 'Employee Cash Advances/Loans' },
-    contributions: { sss: 'SSS Employer', phic: 'PHIC Employer', pagibig: 'Pag-IBIG Employer' }
-  };
-
-  const missing = [];
-  const resolve = (index, group, key) => {
-    const name = required[group][key];
-    const item = index.get(normalizePayslipItemName(name));
-    if(!item){ missing.push(`${group}: ${name}`); return null; }
-    return {key:item.key, name:item.name};
-  };
-
-  state.mappings = {
-    earnings: {
-      basic: resolve(earnings, 'earnings', 'basic'), holiday: resolve(earnings, 'earnings', 'holiday'),
-      overtime: resolve(earnings, 'earnings', 'overtime'), allowance: resolve(earnings, 'earnings', 'allowance'), commission: resolve(earnings, 'earnings', 'commission')
-    },
-    deductions: {
-      tardiness: resolve(deductions, 'deductions', 'tardiness'), sss: resolve(deductions, 'deductions', 'sss'),
-      phic: resolve(deductions, 'deductions', 'phic'), pagibig: resolve(deductions, 'deductions', 'pagibig'),
-      tax: resolve(deductions, 'deductions', 'tax'), loan: resolve(deductions, 'deductions', 'loan')
-    },
-    contributions: {
-      sss: resolve(contributions, 'contributions', 'sss'), phic: resolve(contributions, 'contributions', 'phic'), pagibig: resolve(contributions, 'contributions', 'pagibig')
-    }
-  };
-
-  if(missing.length) throw new Error(`Required Payslip Items missing: ${missing.join(', ')}`);
-
-  if(panel){
-    panel.className = 'notice';
-    panel.innerHTML = `<b>✓ Payslip Items mapped automatically for this business.</b>`;
+function parkCurrentOrder() {
+  if (!cart.length) {
+    showToast('There are no items in the current order to park.','error');
+    return;
   }
-  return state.mappings;
-}
 
-function buildLine(item, description, units, unitPrice){
-  if(!item || !(Number(unitPrice)>0 || Number(units)>0)) return null;
-  const u = Number(units)||0, p = Number(unitPrice)||0;
-  return { Item: item.key, Description: description, Units: u, UnitPrice: p, Amount: u * p };
-}
+  const customerSelect = document.getElementById('customer-select');
 
-function buildDeduction(item, description, amount){
-  const a = Number(amount)||0;
-  if(!item || a<=0) return null;
-  return { Item: item.key, Description: description, Amount: a, DeductionAmount: a };
-}
-
-function buildContribution(item, description, amount){
-  const a = Number(amount)||0;
-  if(!item || a<=0) return null;
-  return { Item: item.key, Description: description, Amount: a, ContributionAmount: a };
-}
-
-function buildBatchPayload(){
-  const items = state.employees.map(e=>{
-    const v = getValues(e.id), r = calculate(e, v);
-    const earnings = [], deductions = [], contributions = [];
-    
-    const add = a => a && earnings.push(a);
-    add(buildLine(state.mappings.earnings.basic, 'Basic Pay', num(v.actualDaysDuty), r.dailyRate));
-    add(buildLine(state.mappings.earnings.holiday, 'Holiday Pay', num(v.holidayFactor), r.dailyRate));
-    add(buildLine(state.mappings.earnings.overtime, 'Overtime', num(v.overtimeHours), r.hourlyRate));
-    add(buildLine(state.mappings.earnings.allowance, 'Allowances', 1, num(v.allowance)));
-    add(buildLine(state.mappings.earnings.commission, 'Commissions', 1, num(v.commission)));
-
-    const addD = a => a && deductions.push(a);
-    addD(buildDeduction(state.mappings.deductions.tardiness, 'Tardiness', r.lateDeduction));
-    addD(buildDeduction(state.mappings.deductions.sss, 'SSS', v.sss));
-    addD(buildDeduction(state.mappings.deductions.phic, 'PHIC', v.phic));
-    addD(buildDeduction(state.mappings.deductions.pagibig, 'Pag-IBIG', v.pagibig));
-    addD(buildDeduction(state.mappings.deductions.tax, 'Withholding Tax', v.tax));
-    addD(buildDeduction(state.mappings.deductions.loan, 'Loans / Advances', v.loan));
-
-    const addC = a => a && contributions.push(a);
-    addC(buildContribution(state.mappings.contributions.sss, 'Employer SSS', v.employerSss));
-    addC(buildContribution(state.mappings.contributions.phic, 'Employer PHIC', v.employerPhic));
-    addC(buildContribution(state.mappings.contributions.pagibig, 'Employer Pag-IBIG', v.employerPagibig));
-
-    const uid = crypto.randomUUID();
-    return {
-      Key: uid, Date: payslipDate.value, employee: e.id,
-      description: `Payroll ${periodStart.value} to ${periodEnd.value}`,
-      Earnings: earnings, Deductions: deductions, Contributions: contributions
-    };
+  parkedOrders.push({
+    id: crypto.randomUUID(),
+    number: String(nextParkedOrderNumber++).padStart(3, '0'),
+    parkedAt: new Date().toISOString(),
+    customerKey: customerSelect?.value || '',
+    customerName: getActiveCustomerName(),
+    cart: cart.map(line => ({ ...line }))
   });
-  return {Values: items};
+
+  cart = [];
+  renderCart();
+  updateParkedOrdersCount();
+
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.value = '';
+    closeInventoryDropdown();
+  }
+
+  showToast('Transaction saved as draft.','success');
 }
 
-function previewPayslips(){
-  if(!state.employees.length) return;
-  let totals = {gross:0, ded:0, net:0};
-  const rows = state.employees.map(e => {
-    const v = getValues(e.id), r = calculate(e, v);
-    totals.gross += r.gross; totals.ded += r.deductions; totals.net += r.net;
-    return `<tr><td>${esc(e.name)}</td><td class="money">${money(r.dailyRate)}</td><td class="money">${money(r.basicPay)}</td><td class="money">${money(r.overtimePay)}</td><td class="money">${money(r.holidayPay)}</td><td class="money">${money(r.allowance)}</td><td class="money">${money(r.commission)}</td><td class="money">${money(r.gross)}</td><td class="money">${money(r.deductions)}</td><td class="money net">${money(r.net)}</td></tr>`;
+function openParkedOrders() {
+  renderParkedOrders();
+  document.getElementById('parked-orders-modal')?.classList.remove('hidden');
+}
+
+function closeParkedOrders() {
+  document.getElementById('parked-orders-modal')?.classList.add('hidden');
+}
+
+function renderParkedOrders() {
+  const list = document.getElementById('parked-orders-list');
+  if (!list) return;
+
+  if (!parkedOrders.length) {
+    list.innerHTML = '<div class="p-6 text-center text-xs text-[#B4C0CC]">No draft transactions.</div>';
+    updateParkedOrdersCount();
+    return;
+  }
+
+  list.innerHTML = parkedOrders.map(order => {
+    const total = parkedOrderTotal(order);
+    const items = order.cart.reduce((sum, line) => sum + (Number(line.qty) || 0), 0);
+
+    return `
+      <div class="px-4 py-3 border-b border-[#242D38] hover:bg-[#242D38]/50 transition-colors">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="font-bold text-white text-xs">Draft #${escapeHtml(order.number)}</div>
+            <div class="text-[11px] text-[#B4C0CC] mt-0.5">${escapeHtml(order.customerName)} · ${items} item${items === 1 ? '' : 's'}</div>
+          </div>
+          <div class="text-xs font-black text-[#28D66B]">₱${total.toFixed(2)}</div>
+        </div>
+        <div class="mt-2 flex gap-2">
+          <button type="button" onclick="retrieveParkedOrder('${order.id}')" class="flex-1 px-3 py-1.5 rounded-lg bg-[#1C9E4B] text-white text-xs font-bold hover:bg-[#25B85A]">Retrieve</button>
+          <button type="button" onclick="deleteParkedOrder('${order.id}')" class="px-3 py-1.5 rounded-lg border border-[#384352] text-[#FF5C5C] text-xs font-semibold hover:bg-[#242D38]">Delete</button>
+        </div>
+      </div>
+    `;
   }).join('');
 
-  modalTitle.textContent = 'Review Payslips';
-  modalIntro.textContent = `${state.employees.length} employee(s) prepared for ${periodStart.value} to ${periodEnd.value}.`;
-  modalBody.innerHTML = `<div style="overflow:auto"><table style="min-width:850px"><thead><tr><th>Employee</th><th style="text-align:right">Daily Rate</th><th style="text-align:right">Basic</th><th style="text-align:right">OT</th><th style="text-align:right">Holiday</th><th style="text-align:right">Allowances</th><th style="text-align:right">Commission</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Net</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>TOTAL</th><th colspan="6"></th><th class="money">${money(totals.gross)}</th><th class="money">${money(totals.ded)}</th><th class="money net">${money(totals.net)}</th></tr></tfoot></table></div>`;
-  modalBackdrop.style.display = 'flex';
+  updateParkedOrdersCount();
 }
 
-async function createPayslips(){
-  if(!state.employees.length) return;
-  modalTitle.textContent = 'Confirm Batch Creation';
-  modalIntro.textContent = 'Review total payroll before committing to Manager.';
-  modalBody.innerHTML = '<div class="notice">Validating mappings...</div>';
-  modalBackdrop.style.display = 'flex';
-
-  try{
-    await loadPayslipItemMappings();
-    modalBody.innerHTML = `<div class="notice"><b>Ready to post:</b> ${state.employees.length} payslips.</div><div class="actions" style="margin-top:10px"><button class="success" id="confirmCreateBtn" type="button">✓ Confirm & Post Payslips</button></div>`;
-    document.getElementById('confirmCreateBtn')?.addEventListener('click', confirmCreatePayslips);
-  }catch(err){
-    modalBody.innerHTML = `<div class="error"><b>Error preparing payslips:</b> ${esc(err.message)}</div>`;
+function retrieveParkedOrder(id) {
+  if (cart.length) {
+    showToast('Please park or clear the current order before retrieving another order.','error');
+    return;
   }
+
+  const index = parkedOrders.findIndex(order => order.id === id);
+  if (index < 0) return;
+
+  const order = parkedOrders.splice(index, 1)[0];
+  cart = order.cart.map(line => ({ ...line }));
+
+  const customerSelect = document.getElementById('customer-select');
+  if (customerSelect && order.customerKey) {
+    const exists = Array.from(customerSelect.options).some(o => o.value === order.customerKey);
+    if (exists) customerSelect.value = order.customerKey;
+  }
+
+  renderCart();
+  updateParkedOrdersCount();
+  closeParkedOrders();
+  closeInventoryDropdown();
+
+  showToast(`Draft #${order.number} retrieved.`,'success');
 }
 
-async function confirmCreatePayslips(){
-  const btn = document.getElementById('confirmCreateBtn');
-  if(btn) btn.disabled = true;
-  modalBody.innerHTML = `<div class="notice">Submitting batch to Manager.io...</div>`;
+function deleteParkedOrder(id) {
+  const index = parkedOrders.findIndex(order => order.id === id);
+  if (index < 0) return;
 
-  try{
-    const payload = buildBatchPayload();
-    const response = await postMessageWithResponse({type:'api-request', method:'POST', path:'/api4/payslip-batch', body: payload});
-    if(response?.error || response?.errors || response?.success === false){
-      throw new Error(response?.message || response?.error || 'Manager rejected request.');
+  const order = parkedOrders[index];
+  if (!confirm(`Delete draft #${order.number}?`)) return;
+
+  parkedOrders.splice(index, 1);
+  renderParkedOrders();
+}
+
+function updateParkedOrdersCount() {
+  const el = document.getElementById('parked-orders-count');
+  if (el) el.textContent = `(${parkedOrders.length})`;
+}
+
+// -----------------------------------------------------------------------------
+// Checkout & Sales Invoice Creation
+// -----------------------------------------------------------------------------
+let checkoutBusy = false;
+
+function calculateCartTotal() {
+  return cart.reduce((sum, line) => sum + (Number(line.price) || 0) * (Number(line.qty) || 0), 0);
+}
+
+function checkout() {
+  if (!cart.length) {
+    showToast('There are no items in the current order.','error');
+    return;
+  }
+
+  const customerSelect = document.getElementById('customer-select');
+  if (!customerSelect?.value) {
+    showToast('Please select a Manager customer before creating a Sales Invoice.','error');
+    customerSelect?.focus();
+    return;
+  }
+
+  renderCheckoutSummary();
+  document.getElementById('checkout-error')?.classList.add('hidden');
+  document.getElementById('checkout-modal')?.classList.remove('hidden');
+}
+
+function closeCheckout() {
+  if (checkoutBusy) return;
+  document.getElementById('checkout-modal')?.classList.add('hidden');
+}
+
+function renderCheckoutSummary() {
+  const customerSelect = document.getElementById('customer-select');
+  const customer = customerSelect?.options[customerSelect.selectedIndex]?.textContent || '';
+
+  document.getElementById('checkout-customer').textContent = `Customer: ${customer}`;
+
+  document.getElementById('checkout-summary').innerHTML = cart.map(line => `
+    <div class="flex items-center justify-between gap-3 text-xs">
+      <div class="min-w-0">
+        <div class="text-white font-semibold truncate">${escapeHtml(line.name)}</div>
+        <div class="text-[10px] text-[#B4C0CC]">${Number(line.qty) || 0} × ₱${(Number(line.price) || 0).toFixed(2)}</div>
+      </div>
+      <div class="text-white font-bold whitespace-nowrap">₱${((Number(line.qty) || 0) * (Number(line.price) || 0)).toFixed(2)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('checkout-total').textContent = `₱${calculateCartTotal().toFixed(2)}`;
+}
+
+function setCheckoutBusy(busy) {
+  checkoutBusy = busy;
+  const button = document.getElementById('create-invoice-button');
+  if (!button) return;
+
+  button.disabled = busy;
+  button.textContent = busy ? 'Creating...' : 'Create Invoice';
+  button.classList.toggle('opacity-60', busy);
+}
+
+function showCheckoutError(message) {
+  const el = document.getElementById('checkout-error');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+
+function generateTransactionReference() {
+  const d = new Date();
+  return `TXN-${String(d.getFullYear()).slice(-2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}${String(d.getSeconds()).padStart(2,'0')}`;
+}
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Sales invoices created here store a bare "YYYY-MM-DD" issueDate, but
+// invoices loaded back from Manager's API (unpaid invoices) come with a
+// full "YYYY-MM-DDT00:00:00" timestamp already attached. Without this,
+// re-appending 'T00:00:00' to an already-stamped date produces a malformed
+// value like "2025-01-15T00:00:00T00:00:00", which Manager silently
+// rejects — the reason payments on existing unpaid invoices failed to
+// post while payments on freshly created sales worked fine.
+function dateOnly(value) {
+  if (!value) return '';
+  const s = String(value);
+  const tIndex = s.indexOf('T');
+  return tIndex > -1 ? s.slice(0, tIndex) : s.slice(0, 10);
+}
+
+async function managerFunction(operation, extra = {}) {
+  if (!supabaseClient || !currentSupabaseUser) throw new Error('Please sign in first.');
+  if (!selectedBusinessId || !selectedBranchId) throw new Error('Select a business and branch first.');
+
+  const { data, error } = await supabaseClient.functions.invoke('manager-api', {
+    body: {
+      business_id: selectedBusinessId,
+      branch_id: selectedBranchId,
+      operation,
+      ...extra
     }
-    writeStatus.textContent = `✓ ${payload.Values.length} payslips created in Manager`;
-    modalTitle.textContent = 'Payslips Created';
-    modalIntro.textContent = 'The batch was successfully posted.';
-    modalBody.innerHTML = `<div class="notice"><b>Success!</b> ${payload.Values.length} payslips created.</div>`;
-  }catch(err){
-    if(btn) btn.disabled = false;
-    modalBody.innerHTML = `<div class="error"><b>Failed to create payslips:</b><br>${esc(err.message)}</div>`;
+  });
+
+  if (error) {
+    const detailed = data?.error || error.message || `Manager ${operation} failed.`;
+    throw new Error(detailed);
+  }
+  if (!data?.success) throw new Error(data?.error || `Manager ${operation} failed.`);
+  return data;
+}
+
+async function createSalesInvoiceFromCart() {
+  if (checkoutBusy || !cart.length) return;
+
+  const customerSelect = document.getElementById('customer-select');
+  const customerKey = customerSelect?.value || '';
+
+  if (!customerKey) {
+    showCheckoutError('Please select a Manager customer.');
+    return;
+  }
+
+  for (const line of cart) {
+    if (!isStocked(line)) continue;
+    const onHand = getQtyOwned(line.key);
+    if (onHand + 0.000001 < Number(line.qty || 0)) {
+      showCheckoutError(`Insufficient stock for ${line.name}. Available: ${formatQty(onHand)}.`);
+      return;
+    }
+  }
+
+  setCheckoutBusy(true);
+  document.getElementById('checkout-error')?.classList.add('hidden');
+
+  try {
+    const issueDate = todayISO();
+    const reference = generateTransactionReference();
+
+    const result = await managerFunction('create_sales_invoice', {
+      issueDate,
+      reference,
+      customer: customerKey,
+      description: 'Business Sale',
+      lines: cart.map(line => ({
+        item: line.key,
+        qty: Number(line.qty) || 0,
+        salesUnitPrice: Number(line.price) || 0,
+        lineDescription: ''
+      }))
+    });
+
+    const invoiceKey = result?.key;
+    if (!invoiceKey) throw new Error('Manager did not return the created Sales Invoice key.');
+
+    window.posPaymentInvoice = null;
+    window.posLastCreatedInvoice = {
+      key: invoiceKey,
+      reference: result.reference || reference,
+      invoicePaymentTarget: invoiceKey,
+      issueDate: result.issueDate || issueDate,
+      customerKey,
+      total: calculateCartTotal(),
+      outstanding: calculateCartTotal(),
+      paid: 0,
+      cart: cart.map(line => ({ ...line })),
+      fromUnpaidInvoices: false
+    };
+
+    cart = [];
+    renderCart();
+    document.getElementById('checkout-modal')?.classList.add('hidden');
+
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+      searchInput.value = '';
+      closeInventoryDropdown();
+    }
+
+    showToast(`Sales Invoice ${result.reference || reference} created successfully.`, 'success');
+    // Continue directly to collection for the newly created invoice.
+    // The user can close the payment modal if the sale is on credit.
+    setTimeout(() => openPaymentForLastInvoice(), 120);
+  } catch (error) {
+    console.error('Sales Invoice creation failed:', error);
+    showCheckoutError(error?.message || 'Unable to create the Sales Invoice.');
+  } finally {
+    setCheckoutBusy(false);
   }
 }
 
-function setButtons(){ previewBtn.disabled = !state.employees.length; createBtn.disabled = !state.employees.length; }
+// -----------------------------------------------------------------------------
+// Payment -> Manager Receipt
+// -----------------------------------------------------------------------------
+let paymentBusy = false;
 
-function clearManualInputs(){
-  state.employees.forEach(e => Object.assign(getValues(e.id), {
-    actualDaysDuty:0, overtimeHours:0, lateHours:0, holidayFactor:0, allowance:0, commission:0,
-    sss:0, phic:0, pagibig:0, tax:0, loan:0,
-    employerSss:0, employerPhic:0, employerPagibig:0
-  }));
-  render();
-  writeStatus.textContent = 'Manual inputs cleared.';
+function getActivePaymentAccounts() {
+  return (paymentAccounts || []).filter(record => {
+    const item = record.item || record.account || record;
+    return item && !Boolean(item.inactive);
+  });
 }
 
-searchInput.addEventListener('input', e => { state.searchQuery = e.target.value.trim(); render(); });
-loadBtn.addEventListener('click', loadEmployees);
-recalcBtn.addEventListener('click', render);
-clearBtn.addEventListener('click', clearManualInputs);
-previewBtn.addEventListener('click', previewPayslips);
-createBtn.addEventListener('click', createPayslips);
-closeModal.addEventListener('click', () => modalBackdrop.style.display = 'none');
-modalBackdrop.addEventListener('click', e => { if(e.target === modalBackdrop) modalBackdrop.style.display = 'none'; });
+function paymentAccountName(record) {
+  const item = record.item || record.account || record;
+  return item.name || item.accountName || 'Unnamed account';
+}
 
-const today = new Date(), yyyy = today.getFullYear(), mm = String(today.getMonth()+1).padStart(2,'0'), dd = String(today.getDate()).padStart(2,'0');
-periodStart.value = `${yyyy}-${mm}-01`; periodEnd.value = `${yyyy}-${mm}-${dd}`; payslipDate.value = `${yyyy}-${mm}-${dd}`;
+function paymentAccountKey(record) {
+  return record.key || record.Key || record.item?.key || record.account?.key || '';
+}
+
+function openPaymentForLastInvoice() {
+  const sale = window.posLastCreatedInvoice;
+
+  if (!sale?.key) {
+    showToast('No Sales Invoice is available for payment.','error');
+    return;
+  }
+
+  const activeAccounts = getActivePaymentAccounts();
+  const select = document.getElementById('payment-account-select');
+  if (!select) return;
+
+  if (!activeAccounts.length) {
+    showToast('No active bank or cash accounts are available for payment.','error');
+    return;
+  }
+
+  select.innerHTML = activeAccounts.map(account => {
+    const key = paymentAccountKey(account);
+    return `<option value="${escapeHtml(key)}">${escapeHtml(paymentAccountName(account))}</option>`;
+  }).join('');
+
+  document.getElementById('payment-invoice-info').textContent =
+    `Invoice ${sale.reference} · Total ₱${Number(sale.total || 0).toFixed(2)}`;
+
+  document.getElementById('payment-amount').value = Number(sale.total || 0).toFixed(2);
+  document.getElementById('payment-error')?.classList.add('hidden');
+  document.getElementById('payment-modal')?.classList.remove('hidden');
+}
+
+function closePayment() {
+  if (paymentBusy) return;
+  document.getElementById('payment-modal')?.classList.add('hidden');
+}
+
+function setPaymentBusy(busy) {
+  paymentBusy = busy;
+  const button = document.getElementById('record-payment-button');
+  if (!button) return;
+
+  button.disabled = busy;
+  button.textContent = busy ? 'Recording...' : 'Record Payment';
+  button.classList.toggle('opacity-60', busy);
+}
+
+function showPaymentError(message) {
+  const el = document.getElementById('payment-error');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+
+const TEST_BUSINESS_AR_FALLBACK = 'd1489e95-bb28-4f5d-b42e-67d3291b3893';
+let cachedDefaultARAccount = undefined;
+let cachedReceiptsForAR = undefined;
+
+async function getDefaultARAccount() {
+  if (cachedDefaultARAccount !== undefined) return cachedDefaultARAccount;
+
+  try {
+    const [bsData, caData] = await Promise.all([
+      apiCall('GET', '/api4/balance-sheet-account-batch?PageSize=500'),
+      apiCall('GET', '/api4/control-account-batch?PageSize=500')
+    ]);
+
+    const toItems = data => Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
+    const all = [...toItems(bsData), ...toItems(caData)];
+    const arAccount = all.find(a => a?.item?.isAccountsReceivable === true);
+
+    cachedDefaultARAccount = arAccount ? (arAccount.key || arAccount.Key) : TEST_BUSINESS_AR_FALLBACK;
+  } catch (err) {
+    console.error('AR lookup failed; using fallback:', err);
+    cachedDefaultARAccount = TEST_BUSINESS_AR_FALLBACK;
+  }
+
+  return cachedDefaultARAccount;
+}
+
+async function getReceiptsForAR() {
+  if (cachedReceiptsForAR !== undefined) return cachedReceiptsForAR;
+
+  try {
+    cachedReceiptsForAR = await fetchBatch('/api4/receipt-batch');
+  } catch (err) {
+    console.error('Receipt lookup failed:', err);
+    cachedReceiptsForAR = [];
+  }
+
+  return cachedReceiptsForAR;
+}
+
+async function resolveARAccountForCustomer(customerKey) {
+  const customerRec = customerList.find(c => (c.key || c.Key) === customerKey);
+  let arAccount = customerRec?.item?.controlAccount || null;
+  if (arAccount && typeof arAccount === 'object') arAccount = arAccount.key || arAccount.Key || arAccount.id || null;
+
+  if (!arAccount) {
+    const receipts = await getReceiptsForAR();
+
+    for (const receipt of receipts) {
+      for (const line of (receipt?.item?.lines || [])) {
+        if (line?.accountsReceivableCustomer === customerKey && line?.account) {
+          arAccount = line.account;
+          break;
+        }
+      }
+      if (arAccount) break;
+    }
+
+    if (!arAccount) {
+      for (const receipt of receipts) {
+        const account = receipt?.item?.lines?.find(line => line?.account)?.account;
+        if (account) {
+          arAccount = account;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!arAccount) arAccount = await getDefaultARAccount();
+  return arAccount;
+}
+
+async function createReceiptForLastInvoice() {
+  if (paymentBusy) return;
+
+  const sale = window.posPaymentInvoice || window.posLastCreatedInvoice;
+  if (!sale?.key) {
+    showPaymentError('No Sales Invoice is available for payment.');
+    return;
+  }
+
+  const accountSelect = document.getElementById('payment-account-select');
+  const receivedIn = accountSelect?.value || '';
+  const amount = Number(document.getElementById('payment-amount')?.value || 0);
+
+  if (!receivedIn) {
+    showPaymentError('Please select an active bank or cash account.');
+    return;
+  }
+  if (!(amount > 0)) {
+    showPaymentError('Please enter a payment amount greater than zero.');
+    return;
+  }
+  if (amount > Number(sale.outstanding ?? sale.total ?? 0) + 0.000001) {
+    showPaymentError('Payment cannot exceed the outstanding invoice balance.');
+    return;
+  }
+
+  const customerKey = relationKey(sale.customerKey);
+  if (!customerKey) {
+    showPaymentError('The selected Sales Invoice does not contain a valid Manager customer key.');
+    return;
+  }
+
+  setPaymentBusy(true);
+  document.getElementById('payment-error')?.classList.add('hidden');
+
+  try {
+    const result = await managerFunction('create_receipt', {
+      customerKey,
+      invoiceKey: sale.key,
+      receivedIn,
+      amount,
+      reference: sale.reference,
+      description: `Payment for Invoice ${sale.reference}`,
+      date: todayISO()
+    });
+
+    const key = result?.key || result?.receiptKey || result?.response?.key || result?.response?.Key || '';
+    if (!result?.success && !key) {
+      throw new Error(result?.error || 'Manager rejected the Receipt.');
+    }
+
+    window.posLastCreatedReceipt = {
+      key,
+      reference: sale.reference,
+      invoiceKey: sale.key,
+      customerKey,
+      receivedIn,
+      amount
+    };
+
+    window.posPaymentInvoice = null;
+    document.getElementById('payment-modal')?.classList.add('hidden');
+    document.getElementById('unpaid-invoices-modal')?.classList.add('hidden');
+    document.getElementById('checkout-modal')?.classList.add('hidden');
+
+    showToast(`Payment recorded: ${sale.reference}`, 'success');
+  } catch (err) {
+    console.error('Receipt creation failed:', err);
+    showPaymentError(err?.message || 'Could not record payment.');
+  } finally {
+    setPaymentBusy(false);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Unpaid Invoices Loader
+// -----------------------------------------------------------------------------
+let unpaidInvoices = [];
+let unpaidInvoicesBusy = false;
+
+function recordItem(record) { return record?.item || record || {}; }
+
+function getRecordKey(record) {
+  return record?.key || record?.Key || record?.item?.key || record?.item?.Key || record?.id || '';
+}
+
+function getInvoiceDate(invoice) {
+  const item = recordItem(invoice);
+  return item.issueDate || item.date || '';
+}
+
+function getInvoiceReference(invoice) {
+  const item = recordItem(invoice);
+  return item.reference || item.invoiceNumber || getRecordKey(invoice);
+}
+
+function relationKey(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') return value.key || value.Key || value.id || value.value || '';
+  return '';
+}
+
+function getInvoiceCustomerKey(invoice) {
+  const item = recordItem(invoice);
+  return relationKey(item.customer) || relationKey(item.customerKey);
+}
+
+function getInvoiceLines(invoice) {
+  const item = recordItem(invoice);
+  return Array.isArray(item.lines) ? item.lines : [];
+}
+
+function getInvoiceTotal(invoice) {
+  const item = recordItem(invoice);
+
+  const direct = [item.total, item.totalAmount, item.amount]
+    .map(Number)
+    .find(n => Number.isFinite(n) && n >= 0);
+
+  if (direct !== undefined) return direct;
+
+  return getInvoiceLines(invoice).reduce((sum, line) => {
+    const qty = Number(line.qty || line.quantity || 0);
+    const price = Number(line.salesUnitPrice || line.unitPrice || line.price || 0);
+    const lineTotal = Number(line.amount || line.total || 0);
+
+    return sum + (Number.isFinite(lineTotal) && lineTotal !== 0 ? lineTotal : qty * price);
+  }, 0);
+}
+
+function getReceiptInvoiceKey(line) {
+  return line?.accountsReceivableSalesInvoice || line?.salesInvoice || '';
+}
+
+function getReceiptAmount(line) {
+  return Number(line?.amount || 0);
+}
+
+function calculateInvoicePayments(receipts) {
+  const paidMap = Object.create(null);
+
+  for (const receipt of receipts || []) {
+    const item = recordItem(receipt);
+    for (const line of (item.lines || [])) {
+      const invoiceKey = getReceiptInvoiceKey(line);
+      const amount = getReceiptAmount(line);
+
+      if (invoiceKey && Number.isFinite(amount) && amount > 0) {
+        paidMap[invoiceKey] = (paidMap[invoiceKey] || 0) + amount;
+      }
+    }
+  }
+
+  return paidMap;
+}
+
+function customerNameForKey(key) {
+  const rec = customerList.find(c => (c.key || c.Key) === key);
+  if (!rec) return 'Unknown customer';
+
+  const item = recordItem(rec);
+  return item.name || item.customerName || 'Unknown customer';
+}
+
+function formatInvoiceDate(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
+  return d.toLocaleDateString();
+}
+
+async function loadUnpaidInvoices() {
+  const status = document.getElementById('unpaid-invoices-status');
+  if (status) status.textContent = 'Loading unpaid invoices…';
+
+  const result = await managerFunction('get_unpaid_invoices');
+  unpaidInvoices = Array.isArray(result?.invoices) ? result.invoices.map(invoice => ({
+    key: invoice.key || '',
+    reference: String(invoice.reference || invoice.key || ''),
+    customerKey: relationKey(invoice.customerKey),
+    customerName: invoice.customerName || customerNameForKey(relationKey(invoice.customerKey)),
+    issueDate: invoice.issueDate || '',
+    total: Number(invoice.total || 0),
+    paid: Math.max(0, Number(invoice.total || 0) - Number(invoice.balanceDue || 0)),
+    outstanding: Number(invoice.balanceDue || 0),
+    status: invoice.status || 'Unpaid'
+  })).filter(invoice => invoice.key && invoice.outstanding > 0.000001) : [];
+
+  if (status) {
+    status.textContent = `${unpaidInvoices.length} unpaid invoice${unpaidInvoices.length === 1 ? '' : 's'}`;
+  }
+}
+
+async function openUnpaidInvoices() {
+  if (unpaidInvoicesBusy) return;
+
+  unpaidInvoicesBusy = true;
+  document.getElementById('unpaid-invoices-modal')?.classList.remove('hidden');
+
+  try {
+    await loadUnpaidInvoices();
+    filterUnpaidInvoices('');
+  } catch (error) {
+    console.error('Could not load unpaid invoices:', error);
+    const status = document.getElementById('unpaid-invoices-status');
+    if (status) status.textContent = 'Error: ' + (error?.message || 'Unknown error');
+    document.getElementById('unpaid-invoices-list').innerHTML =
+      '<div class="p-6 text-center text-xs text-[#FF5C5C]">Unable to load unpaid invoices.</div>';
+  } finally {
+    unpaidInvoicesBusy = false;
+  }
+}
+
+function closeUnpaidInvoices() {
+  document.getElementById('unpaid-invoices-modal')?.classList.add('hidden');
+}
+
+function filterUnpaidInvoices(query) {
+  const list = document.getElementById('unpaid-invoices-list');
+  if (!list) return;
+
+  const q = String(query || '').trim().toLowerCase();
+
+  const matches = unpaidInvoices.filter(invoice =>
+    !q || invoice.reference.toLowerCase().includes(q) || invoice.customerName.toLowerCase().includes(q)
+  );
+
+  if (!matches.length) {
+    list.innerHTML = '<div class="p-6 text-center text-xs text-[#B4C0CC]">No unpaid invoices match search.</div>';
+    return;
+  }
+
+  list.innerHTML = matches.map(invoice => `
+    <div class="px-4 py-3 border-b border-[#242D38] hover:bg-[#242D38]/50 transition-colors">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-bold text-white text-xs truncate">${escapeHtml(invoice.reference)}</div>
+          <div class="text-[11px] text-[#B4C0CC] mt-0.5">${escapeHtml(invoice.customerName)} · ${escapeHtml(formatInvoiceDate(invoice.issueDate))}</div>
+        </div>
+        <div class="text-xs font-black text-[#28D66B] whitespace-nowrap">₱${invoice.outstanding.toFixed(2)}</div>
+      </div>
+      <div class="mt-1 text-[10px] text-[#B4C0CC]">Invoice ₱${invoice.total.toFixed(2)} · Paid ₱${invoice.paid.toFixed(2)}</div>
+      <button type="button" onclick="receivePaymentForInvoice('${invoice.key}')" class="mt-2 w-full px-3 py-2 rounded-xl bg-[#1C9E4B] text-white text-xs font-bold hover:bg-[#25B85A]">
+        Receive Payment
+      </button>
+    </div>
+  `).join('');
+}
+
+function receivePaymentForInvoice(invoiceKey) {
+  const invoice = unpaidInvoices.find(i => i.key === invoiceKey);
+  if (!invoice) return;
+
+  const activeAccounts = getActivePaymentAccounts();
+  if (!activeAccounts.length) {
+    showToast('No active bank or cash accounts are available for payment.','error');
+    return;
+  }
+
+  const select = document.getElementById('payment-account-select');
+  if (!select) return;
+
+  select.innerHTML = activeAccounts.map(account => `
+    <option value="${escapeHtml(paymentAccountKey(account))}">
+      ${escapeHtml(paymentAccountName(account))}
+    </option>
+  `).join('');
+
+  window.posPaymentInvoice = {
+    key: invoice.key,
+    reference: invoice.reference,
+    invoicePaymentTarget: invoice.key,
+    issueDate: invoice.issueDate,
+    customerKey: invoice.customerKey,
+    customerName: invoice.customerName,
+    total: invoice.total,
+    paid: invoice.paid,
+    outstanding: invoice.outstanding,
+    fromUnpaidInvoices: true
+  };
+
+  document.getElementById('payment-invoice-info').textContent =
+    `Invoice ${invoice.reference} · Outstanding ₱${invoice.outstanding.toFixed(2)}`;
+
+  document.getElementById('payment-amount').value = invoice.outstanding.toFixed(2);
+  document.getElementById('payment-error')?.classList.add('hidden');
+
+  closeUnpaidInvoices();
+  document.getElementById('payment-modal')?.classList.remove('hidden');
+}
+
+// -----------------------------------------------------------------------------
+// Customer Creation
+// -----------------------------------------------------------------------------
+let newCustomerBusy = false;
+
+function openNewCustomer() {
+  document.getElementById('new-customer-name').value = '';
+  document.getElementById('new-customer-code').value = '';
+  document.getElementById('new-customer-mobile').value = '';
+  document.getElementById('new-customer-address').value = '';
+  document.getElementById('new-customer-error')?.classList.add('hidden');
+  document.getElementById('new-customer-modal')?.classList.remove('hidden');
+  setTimeout(() => document.getElementById('new-customer-name')?.focus(), 0);
+}
+
+function closeNewCustomer() {
+  if (newCustomerBusy) return;
+  document.getElementById('new-customer-modal')?.classList.add('hidden');
+}
+
+function showNewCustomerError(message) {
+  const el = document.getElementById('new-customer-error');
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove('hidden');
+}
+
+async function createNewCustomer() {
+  if (newCustomerBusy) return;
+
+  const name = document.getElementById('new-customer-name')?.value.trim() || '';
+  const code = document.getElementById('new-customer-code')?.value.trim() || '';
+  const mobile = document.getElementById('new-customer-mobile')?.value.trim() || '';
+  const address = document.getElementById('new-customer-address')?.value.trim() || '';
+
+  if (!name) {
+    showNewCustomerError('Customer name is required.');
+    return;
+  }
+
+  newCustomerBusy = true;
+  const button = document.getElementById('create-customer-button');
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Creating...';
+  }
+
+  try {
+    const result = await managerFunction('create_customer', {
+      name,
+      code,
+      mobile,
+      address
+    });
+
+    const key = result?.key || result?.customerKey || result?.response?.key || result?.response?.Key || '';
+    if (!key) throw new Error('Manager did not return the new customer key.');
+
+    const customerRecord = {
+      key,
+      item: {
+        name,
+        ...(code ? { code } : {}),
+        ...(result?.billingAddress ? { billingAddress: result.billingAddress } : {})
+      }
+    };
+
+    const existingIndex = customerList.findIndex(c => (c.key || c.Key) === key);
+    if (existingIndex >= 0) customerList[existingIndex] = customerRecord;
+    else customerList.push(customerRecord);
+
+    renderCustomerDropdown(customerList);
+
+    const select = document.getElementById('customer-select');
+    if (select) select.value = key;
+
+    closeNewCustomer();
+    showToast(result?.alreadyExists ? `Customer "${name}" already exists. Selected it.` : `Customer "${name}" created successfully.`,'success');
+  } catch (error) {
+    console.error('Customer creation failed:', error);
+    showNewCustomerError(error?.message || 'Unable to create customer.');
+  } finally {
+    newCustomerBusy = false;
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Save Customer';
+    }
+  }
+}
 </script>
 </body>
 </html>
