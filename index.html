@@ -66,6 +66,22 @@
 }
 
 
+
+/* Workspace navigation */
+.workspace-nav-button{
+  cursor:pointer;
+  border:0;
+  background:transparent;
+  color:#687385;
+  padding:6px 10px;
+  border-radius:7px;
+  font:inherit;
+  font-weight:600;
+  transition:all .15s ease;
+}
+.workspace-nav-button:hover{color:#1d4ed8;background:#eff6ff}
+.workspace-nav-button.active{color:#111827;background:#f3f4f6;font-weight:800}
+
 /* Customers workspace */
 .customer-nav-button{cursor:pointer;transition:color .15s ease,background .15s ease;padding:3px 7px;border-radius:6px}
 .customer-nav-button:hover{color:#2563eb;background:#eff6ff}
@@ -386,8 +402,14 @@ main > section:last-child > div:first-child i{color:var(--abm-blue)!important}
       </div>
     </div>
 
-    <div class="mt-3 flex items-center gap-4 text-[11px] text-[#687385] border-t border-[#eef0f3] pt-2">
-      <span><strong class="text-[#344054]">Transactions</strong></span><span>Sales</span><span>Expenses</span><span>Receipts</span><button type="button" class="customer-nav-button" onclick="openCustomers()">Customers</button><span>Items</span><span>Reports</span>
+    <div class="mt-3 flex items-center gap-1 text-[11px] text-[#687385] border-t border-[#eef0f3] pt-2">
+      <button type="button" class="workspace-nav-button active" data-workspace="transactions" onclick="switchWorkspace('transactions')">Transactions</button>
+      <button type="button" class="workspace-nav-button" data-workspace="sales" onclick="switchWorkspace('sales')">Sales</button>
+      <button type="button" class="workspace-nav-button" data-workspace="expenses" onclick="switchWorkspace('expenses')">Expenses</button>
+      <button type="button" class="workspace-nav-button" data-workspace="receipts" onclick="switchWorkspace('receipts')">Receipts</button>
+      <button type="button" class="workspace-nav-button" data-workspace="customers" onclick="switchWorkspace('customers')">Customers</button>
+      <button type="button" class="workspace-nav-button" data-workspace="items" onclick="switchWorkspace('items')">Items</button>
+      <button type="button" class="workspace-nav-button" data-workspace="reports" onclick="switchWorkspace('reports')">Reports</button>
     </div>
   </header>
 
@@ -2303,6 +2325,61 @@ function receivePaymentForInvoice(invoiceKey) {
 }
 
 // -----------------------------------------------------------------------------
+// Workspace navigation
+function setActiveWorkspaceTab(workspace){
+  document.querySelectorAll('.workspace-nav-button').forEach(btn=>btn.classList.toggle('active', btn.dataset.workspace===workspace));
+}
+function switchWorkspace(workspace){
+  setActiveWorkspaceTab(workspace);
+  if(workspace==='transactions'){
+    closeCustomers();
+    closeUnpaidInvoices();
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  if(workspace==='customers'){
+    openCustomers();
+    return;
+  }
+  if(workspace==='receipts'){
+    closeCustomers();
+    openUnpaidInvoices();
+    return;
+  }
+  if(workspace==='items'){
+    closeCustomers();
+    showItemsWorkspace();
+    return;
+  }
+  const labels={sales:'Sales workspace',expenses:'Expenses workspace',reports:'Reports workspace'};
+  closeCustomers();
+  closeUnpaidInvoices();
+  showToast(`${labels[workspace] || 'Workspace'} is the next module to build.`,'info',3000);
+}
+function showItemsWorkspace(){
+  const existing=document.getElementById('items-workspace-modal');
+  if(existing){ existing.classList.remove('hidden'); renderItemsWorkspace(); return; }
+  const modal=document.createElement('div');
+  modal.id='items-workspace-modal';
+  modal.className='fixed inset-0 z-[118] bg-black/70 backdrop-blur-sm p-4 flex items-center justify-center';
+  modal.innerHTML=`<div class="w-full max-w-4xl max-h-[85vh] bg-white border border-[#e5e7eb] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-[#e5e7eb]"><div><div class="font-bold text-[#111827] text-base">Items</div><div id="items-workspace-context" class="text-xs text-[#6B7280] mt-0.5"></div></div><button type="button" onclick="closeItemsWorkspace()" class="text-[#6B7280] hover:text-[#111827] p-1 text-xl leading-none">&times;</button></div>
+    <div class="p-3 border-b border-[#e5e7eb]"><input id="items-workspace-search" type="text" placeholder="Search items by name or code..." oninput="renderItemsWorkspace()" class="w-full bg-white border border-[#d1d5db] rounded-xl px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] focus:outline-none focus:border-[#2563eb]"></div>
+    <div id="items-workspace-list" class="flex-1 min-h-0 overflow-y-auto"></div>
+  </div>`;
+  document.body.appendChild(modal);
+  renderItemsWorkspace();
+}
+function closeItemsWorkspace(){document.getElementById('items-workspace-modal')?.classList.add('hidden');}
+function renderItemsWorkspace(){
+  const list=document.getElementById('items-workspace-list'); if(!list)return;
+  const q=String(document.getElementById('items-workspace-search')?.value||'').trim().toLowerCase();
+  const items=(inventoryList||[]).filter(r=>{const n=itemName(r).toLowerCase(),c=itemCode(r).toLowerCase();return !q||n.includes(q)||c.includes(q);});
+  const ctx=document.getElementById('items-workspace-context'); if(ctx)ctx.textContent=`${items.length.toLocaleString()} item${items.length===1?'':'s'} · ${branchList.find(b=>b.id===selectedBranchId)?.name||'Selected branch'}`;
+  if(!items.length){list.innerHTML='<div class="p-10 text-center text-sm text-[#6B7280]">No items match your search.</div>';return;}
+  list.innerHTML=items.map(r=>{const name=itemName(r),code=itemCode(r),price=Number(itemSalePrice(r.key)||0),stock=isStocked(r)?availableQtyForRecord(r):null;return `<div class="px-5 py-3 border-b border-[#eef0f3] flex items-center justify-between gap-4"><div class="min-w-0"><div class="text-sm font-bold text-[#111827] truncate">${escapeHtml(name)}</div><div class="text-[11px] text-[#6B7280] mt-0.5">${code?escapeHtml(code)+' · ':''}${isStocked(r)?'Inventory':'Non-stock'}</div></div><div class="text-right shrink-0"><div class="text-sm font-bold text-[#2563eb]">₱${price.toFixed(2)}</div><div class="text-[10px] text-[#6B7280]">${isStocked(r)?'On hand: '+stock:'Non-stock'}</div></div></div>`;}).join('');
+}
+
 // Customers Workspace
 // -----------------------------------------------------------------------------
 let customersModalOpen = false;
