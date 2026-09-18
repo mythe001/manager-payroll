@@ -68,6 +68,8 @@
 
 
 /* Workspace navigation */
+#workspace-nav{position:relative;z-index:200;pointer-events:auto;}
+#workspace-nav .workspace-nav-button{pointer-events:auto;position:relative;z-index:201;}
 .workspace-nav-button{
   cursor:pointer;
   border:0;
@@ -402,7 +404,7 @@ main > section:last-child > div:first-child i{color:var(--abm-blue)!important}
       </div>
     </div>
 
-    <div class="mt-3 flex items-center gap-1 text-[11px] text-[#687385] border-t border-[#eef0f3] pt-2">
+    <div id="workspace-nav" class="mt-3 flex items-center gap-1 text-[11px] text-[#687385] border-t border-[#eef0f3] pt-2">
       <button type="button" class="workspace-nav-button active" data-workspace="transactions" onclick="switchWorkspace('transactions')">Transactions</button>
       <button type="button" class="workspace-nav-button" data-workspace="sales" onclick="switchWorkspace('sales')">Sales</button>
       <button type="button" class="workspace-nav-button" data-workspace="expenses" onclick="switchWorkspace('expenses')">Expenses</button>
@@ -2356,6 +2358,23 @@ function switchWorkspace(workspace){
   closeUnpaidInvoices();
   showToast(`${labels[workspace] || 'Workspace'} is the next module to build.`,'info',3000);
 }
+// Bind navigation directly as a fallback to inline handlers. This keeps the workspace tabs clickable even if a deployment/browser policy interferes with inline onclick handlers.
+function bindWorkspaceNavigation(){
+  document.querySelectorAll('#workspace-nav .workspace-nav-button').forEach(btn=>{
+    btn.addEventListener('click', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      const workspace=this.dataset.workspace;
+      if(workspace) switchWorkspace(workspace);
+    }, {capture:false});
+  });
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', bindWorkspaceNavigation, {once:true});
+}else{
+  bindWorkspaceNavigation();
+}
+
 function showItemsWorkspace(){
   const existing=document.getElementById('items-workspace-modal');
   if(existing){ existing.classList.remove('hidden'); renderItemsWorkspace(); return; }
